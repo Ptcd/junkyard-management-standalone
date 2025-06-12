@@ -27,40 +27,49 @@ export interface AuthUser {
 // Sign up a new user
 export const signUp = async (email: string, password: string, userData: Partial<User>) => {
   try {
+    console.log('Starting signUp with:', { email, userData });
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
+    console.log('Auth signUp result:', { data, error });
+
     if (error) throw error;
 
     if (data.user) {
       // Insert user profile data - matching actual database schema
+      const profileData = {
+        id: data.user.id,
+        username: data.user.email, // Use email as username since we removed username field from signup
+        email: data.user.email,
+        role: userData.role || 'driver',
+        yard_id: userData.yardId || 'default-yard', // Use yard_id (text) instead of junkyard_id
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        phone: userData.phone,
+        license_number: userData.licenseNumber || '',
+        hire_date: new Date().toISOString().split('T')[0], // Today's date
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('Inserting profile data:', profileData);
+
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .insert([
-          {
-            id: data.user.id,
-            username: data.user.email, // Use email as username since we removed username field from signup
-            email: data.user.email,
-            role: userData.role || 'driver',
-            yard_id: userData.yardId || 'default-yard', // Use yard_id (text) instead of junkyard_id
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            phone: userData.phone,
-            license_number: userData.licenseNumber || '',
-            hire_date: new Date().toISOString().split('T')[0], // Today's date
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+        .insert([profileData]);
+
+      console.log('Profile insert result:', { profileError });
 
       if (profileError) throw profileError;
     }
 
     return { data, error: null };
   } catch (error) {
+    console.error('SignUp error:', error);
     return { data: null, error };
   }
 };
