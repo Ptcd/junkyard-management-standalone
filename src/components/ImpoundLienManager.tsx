@@ -72,7 +72,6 @@ interface ImpoundLienVehicle {
 
 interface User {
   id: string;
-  username: string;
   role: "admin" | "driver";
   yardId: string;
   firstName: string;

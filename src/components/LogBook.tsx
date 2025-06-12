@@ -24,7 +24,6 @@ import { Download, FilterList } from "@mui/icons-material";
 
 interface User {
   id: string;
-  username: string;
   role: "admin" | "driver";
   yardId: string;
   firstName: string;

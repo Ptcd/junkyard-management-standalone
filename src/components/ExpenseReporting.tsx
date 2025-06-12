@@ -44,7 +44,6 @@ import { getDriverCashBalance } from "../utils/cashTracker";
 
 interface User {
   id: string;
-  username: string;
   role: "admin" | "driver";
   yardId: string;
   firstName: string;

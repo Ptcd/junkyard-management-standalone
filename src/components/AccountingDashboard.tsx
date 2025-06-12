@@ -55,7 +55,6 @@ import { sendMV2459Email, downloadMV2459 } from "../utils/mv2459Generator";
 
 interface User {
   id: string;
-  username: string;
   role: "admin" | "driver";
   yardId: string;
   firstName: string;

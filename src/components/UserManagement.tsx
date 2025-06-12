@@ -55,7 +55,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [newUser, setNewUser] = useState({
-    username: "",
     password: "",
     firstName: "",
     lastName: "",
@@ -81,21 +80,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   };
 
   const handleAddUser = async () => {
-    if (!newUser.username || !newUser.password || !newUser.firstName || !newUser.lastName || !newUser.email) {
+    if (!newUser.password || !newUser.firstName || !newUser.lastName || !newUser.email) {
       setError("Please fill in all required fields");
       return;
     }
 
     setLoading(true);
     const userData = {
-      username: newUser.username,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
       role: newUser.role,
       yardId: currentUser.yardId,
       phone: newUser.phone,
       licenseNumber: newUser.licenseNumber,
-      hireDate: new Date().toISOString().split("T")[0],
     };
 
     const { data, error: createError } = await signUp(newUser.email, newUser.password, userData);
@@ -106,7 +103,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       setSuccess("User added successfully!");
       setShowAddUserDialog(false);
       setNewUser({
-        username: "",
         password: "",
         firstName: "",
         lastName: "",
@@ -196,7 +192,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                         {driver.firstName} {driver.lastName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {driver.username} • {driver.licenseNumber || "No license"}
+                        {driver.email} • {driver.licenseNumber || "No license"}
                       </Typography>
                     </Box>
                     <Box sx={{ ml: "auto" }}>
@@ -263,18 +259,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Username</TableCell>
+                <TableCell>Email</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Hire Date</TableCell>
+                <TableCell>Phone</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
                   <TableCell>{user.firstName} {user.lastName}</TableCell>
                   <TableCell>
                     <Chip
@@ -291,7 +287,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                     />
                   </TableCell>
                   <TableCell>
-                    {user.hireDate ? new Date(user.hireDate).toLocaleDateString() : "N/A"}
+                    {user.phone}
                   </TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
@@ -341,13 +337,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                 fullWidth
               />
             </Stack>
-
-            <TextField
-              label="Username *"
-              value={newUser.username}
-              onChange={(e) => setNewUser(prev => ({ ...prev, username: e.target.value }))}
-              fullWidth
-            />
 
             <TextField
               label="Email *"
@@ -419,12 +408,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               <Box>
                 <Typography variant="h6" gutterBottom>User Information</Typography>
                 <Stack spacing={1}>
-                  <Typography><strong>Username:</strong> {selectedUser.username}</Typography>
-                  <Typography><strong>Role:</strong> {selectedUser.role}</Typography>
                   <Typography><strong>Email:</strong> {selectedUser.email || "Not provided"}</Typography>
                   <Typography><strong>Phone:</strong> {selectedUser.phone || "Not provided"}</Typography>
-                  <Typography><strong>License:</strong> {selectedUser.licenseNumber || "Not provided"}</Typography>
-                  <Typography><strong>Hire Date:</strong> {selectedUser.hireDate ? new Date(selectedUser.hireDate).toLocaleDateString() : "N/A"}</Typography>
+                  <Typography><strong>Role:</strong> {selectedUser.role}</Typography>
                 </Stack>
               </Box>
 
