@@ -36,3 +36,100 @@
     transform: rotate(360deg);
   }
 }
+
+/* Mobile-first responsive design */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Ensure full width on mobile */
+@media (max-width: 960px) {
+  .MuiContainer-root {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  
+  /* Make cards and papers full width on mobile */
+  .MuiPaper-root {
+    border-radius: 8px;
+  }
+  
+  /* Larger touch targets on mobile */
+  .MuiButton-root {
+    min-height: 56px;
+    font-size: 1.1rem;
+  }
+  
+  .MuiTextField-root .MuiInputBase-root {
+    min-height: 56px;
+    font-size: 1.1rem;
+  }
+  
+  /* Better spacing on mobile */
+  .MuiCard-root {
+    margin: 8px 0;
+  }
+  
+  /* Improve table responsiveness */
+  .MuiTableContainer-root {
+    overflow-x: auto;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 960px) {
+  .MuiContainer-root {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+/* Better focus states for accessibility */
+.MuiButton-root:focus,
+.MuiIconButton-root:focus,
+.MuiTextField-root input:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+.MuiDrawer-paper {
+  transition: width 0.3s ease-in-out;
+}
+
+/* Ensure text is readable on all devices */
+.MuiTypography-root {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Loading states */
+.loading-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

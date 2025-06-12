@@ -81,25 +81,51 @@ const theme = createTheme({
     },
   },
   typography: {
+    h4: {
+      fontSize: '1.5rem',
+      '@media (min-width:600px)': {
+        fontSize: '2.125rem',
+      },
+    },
+    h5: {
+      fontSize: '1.25rem',
+      '@media (min-width:600px)': {
+        fontSize: '1.5rem',
+      },
+    },
     h6: {
-      fontSize: '1rem',
+      fontSize: '1.125rem',
       '@media (min-width:600px)': {
         fontSize: '1.25rem',
       },
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
     },
   },
   components: {
     MuiContainer: {
       defaultProps: {
-        maxWidth: 'lg',
+        maxWidth: false,
       },
       styleOverrides: {
         root: {
-          paddingLeft: 16,
-          paddingRight: 16,
+          paddingLeft: 8,
+          paddingRight: 8,
           '@media (min-width:600px)': {
+            paddingLeft: 16,
+            paddingRight: 16,
+          },
+          '@media (min-width:960px)': {
             paddingLeft: 24,
             paddingRight: 24,
+            maxWidth: '1200px',
+            margin: '0 auto',
           },
         },
       },
@@ -107,7 +133,36 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          minHeight: 48, // Better touch targets on mobile
+          minHeight: 48,
+          fontSize: '1rem',
+          padding: '12px 24px',
+          '@media (max-width:600px)': {
+            fontSize: '1.1rem',
+            padding: '16px 24px',
+            minHeight: 56,
+          },
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiInputBase-root': {
+            fontSize: '1rem',
+            '@media (max-width:600px)': {
+              fontSize: '1.1rem',
+              minHeight: 56,
+            },
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          '@media (max-width:600px)': {
+            margin: '8px 0',
+          },
         },
       },
     },
@@ -219,7 +274,7 @@ function MainApp() {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
-        <Toolbar>
+        <Toolbar sx={{ minHeight: { xs: 64, sm: 64 } }}>
           {isMobile && (
             <IconButton
               size="large"
@@ -227,19 +282,20 @@ function MainApp() {
               color="inherit"
               aria-label="menu"
               onClick={toggleMobileDrawer}
-              sx={{ mr: 2 }}
+              sx={{ mr: 2, p: 2 }}
             >
-              <MenuIcon />
+              <MenuIcon sx={{ fontSize: 28 }} />
             </IconButton>
           )}
           
-          <DirectionsCar sx={{ mr: 2 }} />
+          <DirectionsCar sx={{ mr: 2, fontSize: { xs: 28, sm: 32 } }} />
           <Typography 
             variant="h6" 
             component="div" 
             sx={{ 
               flexGrow: 1,
-              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontSize: { xs: '1.1rem', sm: '1.25rem' },
+              fontWeight: 500,
             }}
           >
             {isMobile ? "Junkyard Mgmt" : "Junkyard Management System"}
@@ -247,28 +303,46 @@ function MainApp() {
 
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {!isMobile && (
-              <Typography variant="body2" sx={{ mr: 2 }}>
+              <Typography variant="body2" sx={{ mr: 2, fontSize: '0.9rem' }}>
                 {user.firstName} {user.lastName} ({user.role})
               </Typography>
             )}
-            <IconButton size="large" onClick={handleMenu} color="inherit">
-              <AccountCircle />
+            <IconButton 
+              size="large" 
+              onClick={handleMenu} 
+              color="inherit"
+              sx={{ p: { xs: 2, sm: 1.5 } }}
+            >
+              <AccountCircle sx={{ fontSize: { xs: 28, sm: 24 } }} />
             </IconButton>
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleClose}
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  minWidth: 200,
+                },
+              }}
             >
               {isMobile && (
-                <MenuItem disabled>
-                  <Person sx={{ mr: 1 }} />
-                  {user.firstName} {user.lastName} ({user.role})
+                <MenuItem disabled sx={{ py: 2 }}>
+                  <Person sx={{ mr: 2, fontSize: 20 }} />
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {user.firstName} {user.lastName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {user.role}
+                    </Typography>
+                  </Box>
                 </MenuItem>
               )}
               {isMobile && <Divider />}
-              <MenuItem onClick={handleLogout}>
-                <Logout sx={{ mr: 1 }} />
-                Logout
+              <MenuItem onClick={handleLogout} sx={{ py: 2, minHeight: 48 }}>
+                <Logout sx={{ mr: 2, fontSize: 20 }} />
+                <Typography variant="body1">Logout</Typography>
               </MenuItem>
             </Menu>
           </Box>
@@ -284,39 +358,44 @@ function MainApp() {
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
-            width: 280,
+            width: { xs: '85vw', sm: 320 },
+            maxWidth: 400,
           },
         }}
       >
-        <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+        <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
-                {user.firstName[0]}{user.lastName[0]}
+              <Avatar sx={{ bgcolor: 'secondary.main', mr: 2, width: 48, height: 48 }}>
+                <Typography variant="h6" sx={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                  {user.firstName[0]}{user.lastName[0]}
+                </Typography>
               </Avatar>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                   {user.firstName} {user.lastName}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.95rem' }}>
                   {user.role}
                 </Typography>
               </Box>
             </Box>
-            <IconButton color="inherit" onClick={toggleMobileDrawer}>
+            <IconButton color="inherit" onClick={toggleMobileDrawer} size="large">
               <CloseIcon />
             </IconButton>
           </Box>
         </Box>
         
-        <List>
+        <List sx={{ pt: 2 }}>
           {menuItems.map((item) => (
             <ListItem key={item.path} disablePadding>
               <ListItemButton 
                 onClick={() => handleNavigate(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
-                  minHeight: 56,
+                  minHeight: 64,
+                  px: 3,
+                  py: 2,
                   '&.Mui-selected': {
                     bgcolor: 'primary.light',
                     color: 'primary.contrastText',
@@ -326,12 +405,17 @@ function MainApp() {
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  {item.icon}
+                <ListItemIcon sx={{ minWidth: 48 }}>
+                  {React.cloneElement(item.icon, { sx: { fontSize: 28 } })}
                 </ListItemIcon>
                 <ListItemText 
                   primary={item.label}
-                  sx={{ '& .MuiListItemText-primary': { fontSize: '1rem' } }}
+                  sx={{ 
+                    '& .MuiListItemText-primary': { 
+                      fontSize: '1.1rem',
+                      fontWeight: 500,
+                    } 
+                  }}
                 />
               </ListItemButton>
             </ListItem>
@@ -376,7 +460,15 @@ function MainApp() {
         </Paper>
       )}
 
-      <Container sx={{ mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 } }}>
+      <Container 
+        sx={{ 
+          mt: { xs: 1, sm: 2 }, 
+          mb: { xs: 1, sm: 2 },
+          px: { xs: 1, sm: 2, md: 3 },
+          maxWidth: { xs: '100%', md: 'lg' },
+          width: '100%',
+        }}
+      >
         <Routes>
           <Route
             path="/"
