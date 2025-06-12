@@ -16,12 +16,17 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from "@mui/material";
-import { Save as SaveIcon, Settings as SettingsIcon, Backup, People, Business } from "@mui/icons-material";
+import { Save as SaveIcon, Settings as SettingsIcon, Backup, People, Business, AccountCircle, Delete } from "@mui/icons-material";
 import BackupManager from "./BackupManager";
 import UserManagement from "./UserManagement";
 import BuyerProfilesManager from "./BuyerProfilesManager";
-import { User } from "../utils/supabaseAuth";
+import { User, updateUserProfile, deleteAccount } from "../utils/supabaseAuth";
 
 interface NMVTISSettings {
   nmvtisId: string;
@@ -68,6 +73,14 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [profileForm, setProfileForm] = useState({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone || "",
+    email: user.email || "",
+  });
 
   const [yardSettings, setYardSettings] = useState<YardSettings>({
     name: "Demo Junkyard & Auto Parts",
@@ -138,6 +151,39 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     setTabValue(newValue);
   };
 
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const { error: updateError } = await updateUserProfile(user.id, {
+      firstName: profileForm.firstName,
+      lastName: profileForm.lastName,
+      phone: profileForm.phone,
+    });
+
+    if (updateError) {
+      setError(typeof updateError === 'string' ? updateError : 'Failed to update profile');
+    } else {
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setError('Please type DELETE to confirm account deletion');
+      return;
+    }
+
+    const { error: deleteError } = await deleteAccount();
+    
+    if (deleteError) {
+      setError(typeof deleteError === 'string' ? deleteError : 'Failed to delete account');
+    } else {
+      // User will be signed out automatically
+      window.location.href = '/';
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -154,6 +200,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
           <Tab icon={<People />} label="User Management" iconPosition="start" />
           <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
+          <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
         </Tabs>
       </Paper>
 
@@ -299,6 +346,156 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       {tabValue === 3 && (
         <BuyerProfilesManager user={user} />
       )}
+
+      {tabValue === 4 && (
+        <Box>
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Profile updated successfully!
+            </Alert>
+          )}
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Profile Management */}
+          <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Profile Information
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            <form onSubmit={handleProfileUpdate}>
+              <Stack spacing={3}>
+                <Stack direction="row" spacing={2}>
+                  <TextField
+                    fullWidth
+                    label="First Name"
+                    value={profileForm.firstName}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, firstName: e.target.value }))}
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    label="Last Name"
+                    value={profileForm.lastName}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, lastName: e.target.value }))}
+                    required
+                  />
+                </Stack>
+
+                <TextField
+                  fullWidth
+                  label="Email"
+                  value={profileForm.email}
+                  disabled
+                  helperText="Email cannot be changed. Contact an administrator if needed."
+                />
+
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  value={profileForm.phone}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                />
+
+                <Typography variant="body2" color="text.secondary">
+                  Role: {user.role} • Yard ID: {user.yardId}
+                </Typography>
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  sx={{ alignSelf: 'flex-start' }}
+                >
+                  Update Profile
+                </Button>
+              </Stack>
+            </form>
+          </Paper>
+
+          {/* Account Deletion */}
+          <Paper elevation={2} sx={{ p: 3, border: '1px solid', borderColor: 'error.main' }}>
+            <Typography variant="h6" gutterBottom color="error">
+              Danger Zone
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            <Typography variant="body1" gutterBottom>
+              Delete your account permanently. This action cannot be undone.
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              • All your data will be permanently deleted
+              • You will be immediately signed out
+              • This action cannot be reversed
+            </Typography>
+
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<Delete />}
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              Delete Account
+            </Button>
+          </Paper>
+        </Box>
+      )}
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setDeleteConfirmText("");
+          setError("");
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle color="error">Delete Account</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            This will permanently delete your account and all associated data. This action cannot be undone.
+          </DialogContentText>
+          
+          <DialogContentText sx={{ mb: 2 }}>
+            Type <strong>DELETE</strong> to confirm:
+          </DialogContentText>
+          
+          <TextField
+            fullWidth
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Type DELETE here"
+            error={error.includes('DELETE')}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setShowDeleteDialog(false);
+              setDeleteConfirmText("");
+              setError("");
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount}
+            color="error"
+            variant="contained"
+            disabled={deleteConfirmText !== 'DELETE'}
+          >
+            Delete Account
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

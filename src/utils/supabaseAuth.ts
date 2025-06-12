@@ -219,4 +219,32 @@ export const getAllUsers = async () => {
   } catch (error) {
     return { users: [], error };
   }
+};
+
+// Delete current user account
+export const deleteAccount = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return { error: 'No authenticated user' };
+    }
+
+    // First delete the user profile (the auth user will be handled by RLS/triggers)
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', user.id);
+
+    if (profileError) throw profileError;
+
+    // Sign out the user
+    const { error: signOutError } = await supabase.auth.signOut();
+    
+    if (signOutError) throw signOutError;
+
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
 }; 
