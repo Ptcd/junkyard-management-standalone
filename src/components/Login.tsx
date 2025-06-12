@@ -30,7 +30,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
   const [role, setRole] = useState<"admin" | "driver">("driver");
   const [yardId, setYardId] = useState("");
   const [phone, setPhone] = useState("");
@@ -73,14 +72,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
       setLoading(false);
       return;
     }
 
+    // Use email as username since we're eliminating separate username field
     const userData = {
-      username,
+      username: email, // Use email as username
       firstName,
       lastName,
       role,
@@ -102,7 +102,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setConfirmPassword("");
       setFirstName("");
       setLastName("");
-      setUsername("");
       setPhone("");
       setLicenseNumber("");
     }
@@ -251,6 +250,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           {tabValue === 1 && (
             <Box component="form" onSubmit={handleSignUp}>
               <Stack spacing={2}>
+                <TextField
+                  required
+                  fullWidth
+                  label="Email Address"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  helperText="This will be your login email"
+                />
+
                 <Stack direction="row" spacing={2}>
                   <TextField
                     required
@@ -271,28 +280,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <TextField
                   required
                   fullWidth
-                  label="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-
-                <TextField
-                  required
-                  fullWidth
-                  label="Email Address"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-
-                <TextField
-                  required
-                  fullWidth
                   label="Password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  helperText="Password must be at least 6 characters"
+                  helperText="Password must be at least 8 characters"
                 />
 
                 <TextField
