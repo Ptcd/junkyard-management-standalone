@@ -40,6 +40,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Bypass non-GET or cross-origin requests (including CORS preflights)
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    return; // Let the browser handle these
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
