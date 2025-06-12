@@ -39,32 +39,28 @@ export const signUp = async (email: string, password: string, userData: Partial<
     if (error) throw error;
 
     if (data.user) {
-      // Insert user profile data - matching actual database schema
-      const profileData = {
-        id: data.user.id,
-        username: data.user.email, // Use email as username since we removed username field from signup
-        email: data.user.email,
-        role: userData.role || 'driver',
-        yard_id: userData.yardId || 'default-yard', // Use yard_id (text) instead of junkyard_id
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        phone: userData.phone,
-        license_number: userData.licenseNumber || '',
-        hire_date: new Date().toISOString().split('T')[0], // Today's date
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log('Inserting profile data:', profileData);
-
-      const { error: profileError } = await supabase
+      // Wait a moment for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the profile with the correct data
+      const { error: updateError } = await supabase
         .from('user_profiles')
-        .insert([profileData]);
+        .update({
+          role: userData.role || 'driver',
+          yard_id: userData.yardId || 'default-yard',
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          phone: userData.phone,
+          license_number: userData.licenseNumber || '',
+          hire_date: new Date().toISOString().split('T')[0],
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', data.user.id);
 
-      console.log('Profile insert result:', { profileError });
+      console.log('Profile update result:', { updateError });
 
-      if (profileError) throw profileError;
+      if (updateError) throw updateError;
     }
 
     return { data, error: null };
