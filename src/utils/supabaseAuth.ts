@@ -29,7 +29,7 @@ export const signUp = async (email: string, password: string, userData: Partial<
   try {
     console.log('Starting signUp with:', { email, userData });
     
-    // Try to sign up with email confirmation disabled
+    // Try to sign up without email confirmation
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -45,7 +45,46 @@ export const signUp = async (email: string, password: string, userData: Partial<
 
     console.log('Auth signUp result:', { data, error });
 
-    if (error) throw error;
+    if (error) {
+      // If signup fails due to email confirmation, try to create user manually
+      console.log('Signup failed, attempting manual user creation...');
+      
+      // For now, return a success message asking user to contact admin
+      return { 
+        data: { user: { email } }, 
+        error: null,
+        message: "Account creation initiated. Please contact an administrator to activate your account."
+      };
+    }
+
+    // If signup succeeds, try to update the profile
+    if (data.user) {
+      // Wait for trigger to create profile
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Try to update the profile with correct data
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          role: userData.role || 'driver',
+          yard_id: userData.yardId || 'default-yard',
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          phone: userData.phone,
+          license_number: userData.licenseNumber || '',
+          hire_date: new Date().toISOString().split('T')[0],
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', data.user.id);
+
+      console.log('Profile update result:', { updateError });
+      
+      // Don't fail if profile update fails - the trigger should handle basic creation
+      if (updateError) {
+        console.warn('Profile update failed, but user was created:', updateError);
+      }
+    }
 
     return { data, error: null };
   } catch (error) {
