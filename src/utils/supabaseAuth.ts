@@ -29,39 +29,23 @@ export const signUp = async (email: string, password: string, userData: Partial<
   try {
     console.log('Starting signUp with:', { email, userData });
     
+    // Try to sign up with email confirmation disabled
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: undefined,
+        data: {
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          role: userData.role || 'driver'
+        }
+      }
     });
 
     console.log('Auth signUp result:', { data, error });
 
     if (error) throw error;
-
-    if (data.user) {
-      // Wait a moment for the trigger to create the profile
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update the profile with the correct data
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          role: userData.role || 'driver',
-          yard_id: userData.yardId || 'default-yard',
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          phone: userData.phone,
-          license_number: userData.licenseNumber || '',
-          hire_date: new Date().toISOString().split('T')[0],
-          status: 'active',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', data.user.id);
-
-      console.log('Profile update result:', { updateError });
-
-      if (updateError) throw updateError;
-    }
 
     return { data, error: null };
   } catch (error) {
