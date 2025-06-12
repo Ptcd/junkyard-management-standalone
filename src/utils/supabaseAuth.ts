@@ -29,12 +29,10 @@ export const signUp = async (email: string, password: string, userData: Partial<
   try {
     console.log('Starting signUp with:', { email, userData });
     
-    // Try to sign up without email confirmation
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: undefined,
         data: {
           first_name: userData.firstName,
           last_name: userData.lastName,
@@ -45,17 +43,7 @@ export const signUp = async (email: string, password: string, userData: Partial<
 
     console.log('Auth signUp result:', { data, error });
 
-    if (error) {
-      // If signup fails due to email confirmation, try to create user manually
-      console.log('Signup failed, attempting manual user creation...');
-      
-      // For now, return a success message asking user to contact admin
-      return { 
-        data: { user: { email } }, 
-        error: null,
-        message: "Account creation initiated. Please contact an administrator to activate your account."
-      };
-    }
+    if (error) throw error;
 
     // If signup succeeds, try to update the profile
     if (data.user) {

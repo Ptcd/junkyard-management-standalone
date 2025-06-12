@@ -88,20 +88,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       licenseNumber: role === "driver" ? licenseNumber : undefined,
     };
 
-    const { data, error: authError, message } = await signUp(email, password, userData);
+    const { data, error: authError } = await signUp(email, password, userData);
 
     if (authError) {
       setError(typeof authError === 'string' ? authError : (authError as any)?.message || "Failed to create account");
-    } else if (message) {
-      setSuccess(message);
-      setTabValue(0); // Switch to sign-in tab
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setFirstName("");
-      setLastName("");
-      setPhone("");
-      setLicenseNumber("");
     } else if (data?.user) {
       setSuccess("Account created successfully! Please check your email to verify your account.");
       setTabValue(0); // Switch to sign-in tab
