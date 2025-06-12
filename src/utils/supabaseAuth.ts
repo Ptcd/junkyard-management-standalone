@@ -8,7 +8,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface User {
   id: string;
-  username: string;
   role: "admin" | "driver";
   yardId: string;
   firstName: string;
@@ -16,7 +15,6 @@ export interface User {
   email?: string;
   phone?: string;
   licenseNumber?: string;
-  hireDate?: string;
   status: "active" | "inactive";
   createdAt?: string;
 }
@@ -37,23 +35,20 @@ export const signUp = async (email: string, password: string, userData: Partial<
     if (error) throw error;
 
     if (data.user) {
-      // Insert user profile data
+      // Insert user profile data - matching actual database schema
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert([
           {
             id: data.user.id,
             email: data.user.email,
-            username: userData.username,
             role: userData.role || 'driver',
-            yard_id: userData.yardId,
+            junkyard_id: 1, // Using integer 1 as default
             first_name: userData.firstName,
             last_name: userData.lastName,
             phone: userData.phone,
-            license_number: userData.licenseNumber,
-            hire_date: userData.hireDate,
-            status: 'active',
             created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           },
         ]);
 
@@ -88,16 +83,14 @@ export const signIn = async (email: string, password: string) => {
 
       const user: User = {
         id: profile.id,
-        username: profile.username,
         role: profile.role,
-        yardId: profile.yard_id,
+        yardId: profile.junkyard_id?.toString() || '1', // Convert integer to string
         firstName: profile.first_name,
         lastName: profile.last_name,
         email: profile.email,
         phone: profile.phone,
-        licenseNumber: profile.license_number,
-        hireDate: profile.hire_date,
-        status: profile.status,
+        licenseNumber: '', // Not in database, default to empty
+        status: 'active', // Not in database, default to active
         createdAt: profile.created_at,
       };
 
@@ -133,16 +126,14 @@ export const getCurrentUser = async () => {
 
     const userData: User = {
       id: profile.id,
-      username: profile.username,
       role: profile.role,
-      yardId: profile.yard_id,
+      yardId: profile.junkyard_id?.toString() || '1',
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: profile.license_number,
-      hireDate: profile.hire_date,
-      status: profile.status,
+      licenseNumber: '',
+      status: 'active',
       createdAt: profile.created_at,
     };
 
@@ -164,13 +155,11 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
     const { error } = await supabase
       .from('user_profiles')
       .update({
-        username: updates.username,
         first_name: updates.firstName,
         last_name: updates.lastName,
         phone: updates.phone,
-        license_number: updates.licenseNumber,
         role: updates.role,
-        status: updates.status,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', userId);
 
@@ -193,16 +182,14 @@ export const getAllUsers = async () => {
 
     const users: User[] = data.map((profile: any) => ({
       id: profile.id,
-      username: profile.username,
       role: profile.role,
-      yardId: profile.yard_id,
+      yardId: profile.junkyard_id?.toString() || '1',
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: profile.license_number,
-      hireDate: profile.hire_date,
-      status: profile.status,
+      licenseNumber: '',
+      status: 'active',
       createdAt: profile.created_at,
     }));
 
