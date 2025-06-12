@@ -80,14 +80,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Use email as username since we're eliminating separate username field
     const userData = {
-      username: email, // Use email as username
       firstName,
       lastName,
       role,
-      yardId: yardId || "yard001", // Default yard ID
+      yardId: yardId || "default-yard", // Use consistent default yard ID
       phone,
       licenseNumber: role === "driver" ? licenseNumber : undefined,
-      hireDate: new Date().toISOString().split("T")[0],
     };
 
     const { data, error: authError } = await signUp(email, password, userData);
