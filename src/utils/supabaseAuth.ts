@@ -41,12 +41,16 @@ export const signUp = async (email: string, password: string, userData: Partial<
         .insert([
           {
             id: data.user.id,
+            username: data.user.email, // Use email as username since we removed username field from signup
             email: data.user.email,
             role: userData.role || 'driver',
-            junkyard_id: 1, // Using integer 1 as default
+            yard_id: userData.yardId || 'default-yard', // Use yard_id (text) instead of junkyard_id
             first_name: userData.firstName,
             last_name: userData.lastName,
             phone: userData.phone,
+            license_number: userData.licenseNumber || '',
+            hire_date: new Date().toISOString().split('T')[0], // Today's date
+            status: 'active',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -84,13 +88,13 @@ export const signIn = async (email: string, password: string) => {
       const user: User = {
         id: profile.id,
         role: profile.role,
-        yardId: profile.junkyard_id?.toString() || '1', // Convert integer to string
+        yardId: profile.yard_id || 'default-yard',
         firstName: profile.first_name,
         lastName: profile.last_name,
         email: profile.email,
         phone: profile.phone,
-        licenseNumber: '', // Not in database, default to empty
-        status: 'active', // Not in database, default to active
+        licenseNumber: profile.license_number || '',
+        status: profile.status || 'active',
         createdAt: profile.created_at,
       };
 
@@ -127,13 +131,13 @@ export const getCurrentUser = async () => {
     const userData: User = {
       id: profile.id,
       role: profile.role,
-      yardId: profile.junkyard_id?.toString() || '1',
+      yardId: profile.yard_id || 'default-yard',
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: '',
-      status: 'active',
+      licenseNumber: profile.license_number || '',
+      status: profile.status || 'active',
       createdAt: profile.created_at,
     };
 
@@ -159,6 +163,8 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
         last_name: updates.lastName,
         phone: updates.phone,
         role: updates.role,
+        license_number: updates.licenseNumber,
+        status: updates.status,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId);
@@ -183,13 +189,13 @@ export const getAllUsers = async () => {
     const users: User[] = data.map((profile: any) => ({
       id: profile.id,
       role: profile.role,
-      yardId: profile.junkyard_id?.toString() || '1',
+      yardId: profile.yard_id || 'default-yard',
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: '',
-      status: 'active',
+      licenseNumber: profile.license_number || '',
+      status: profile.status || 'active',
       createdAt: profile.created_at,
     }));
 

@@ -1,0 +1,22 @@
+# Supabase Configuration
+# Get these values from your Supabase project dashboard → Settings → API
+
+REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Brevo Email Service (Optional - for MV2459 forms)
+REACT_APP_BREVO_API_KEY=your-brevo-api-key
+REACT_APP_BREVO_SENDER_EMAIL=your-sender@email.com
+REACT_APP_BREVO_SENDER_NAME=Your Company Name
+
+# Instructions:
+# 1. Copy these variables to your Vercel project settings under Environment Variables
+# 2. For local development, create a .env.local file with these variables
+# 3. Never commit .env.local to git (it's in .gitignore)
+
+# Steps to fix the "Database error saving new user":
+# 1. Go to your Supabase dashboard
+# 2. Navigate to Settings → API
+# 3. Copy the Project URL and anon public key
+# 4. Add them as environment variables in Vercel
+# 5. Redeploy your app 
