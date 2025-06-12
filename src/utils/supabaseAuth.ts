@@ -1,10 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 
-// Supabase configuration
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create Supabase client with standard settings (no custom CORS headers)
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: window.localStorage,
+    storageKey: 'junkyard-auth-token',
+  },
+});
 
 export interface User {
   id: string;
@@ -84,20 +91,44 @@ export const signUp = async (email: string, password: string, userData: Partial<
 // Sign in user
 export const signIn = async (email: string, password: string) => {
   try {
+    // Clear any existing session first
+    await supabase.auth.signOut();
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
 
     if (data.user) {
-      // Get user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
+      // Get user profile with retry logic for mobile
+      let profile = null;
+      let profileError = null;
+      let retries = 3;
+
+      while (retries > 0 && !profile) {
+        try {
+          const { data: profileData, error: pError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (pError) throw pError;
+          profile = profileData;
+          break;
+        } catch (e) {
+          profileError = e;
+          retries--;
+          if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+          }
+        }
+      }
 
       if (profileError) throw profileError;
 
@@ -119,6 +150,7 @@ export const signIn = async (email: string, password: string) => {
 
     return { user: null, session: null, error: 'No user data' };
   } catch (error) {
+    console.error('Authentication error:', error);
     return { user: null, session: null, error };
   }
 };

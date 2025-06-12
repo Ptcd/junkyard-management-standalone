@@ -34,6 +34,8 @@ import {
   useMediaQuery,
   Avatar,
   Badge,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   AccountCircle,
@@ -202,36 +204,68 @@ const getMenuItems = (userRole: string) => [
 function MainApp() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const menuItems = user ? getMenuItems(user.role) : [];
 
+  // Check authentication status
   useEffect(() => {
     const checkUser = async () => {
-      const { user: currentUser } = await getCurrentUser();
-      setUser(currentUser);
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        const { user: currentUser, error: authError } = await getCurrentUser();
+        
+        if (authError) {
+          console.error('Auth check error:', authError);
+          setError(typeof authError === 'string' ? authError : 'Authentication error');
+          setUser(null);
+        } else {
+          setUser(currentUser);
+        }
+      } catch (e) {
+        console.error('Unexpected error during auth check:', e);
+        setError('Unexpected authentication error');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkUser();
   }, []);
 
+  // Handle login success
   const handleLogin = (userData: User) => {
     setUser(userData);
-    navigate("/");
+    setError(null);
+    navigate('/');
   };
 
+  // Handle logout
   const handleLogout = async () => {
-    const { error } = await signOut();
-    if (!error) {
-      setUser(null);
+    try {
+      setLoading(true);
+      const { error: signOutError } = await signOut();
+      if (signOutError) {
+        console.error('Sign out error:', signOutError);
+        setError('Error signing out');
+      } else {
+        setUser(null);
+        setError(null);
+        navigate('/login');
+      }
+    } catch (e) {
+      console.error('Unexpected error during sign out:', e);
+      setError('Error signing out');
+    } finally {
+      setLoading(false);
       setAnchorEl(null);
-      setMobileDrawerOpen(false);
-      navigate("/login");
     }
   };
 
@@ -262,7 +296,31 @@ function MainApp() {
           height: "100vh",
         }}
       >
-        <Typography>Loading...</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ 
+        p: 3, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center' 
+      }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button 
+          variant="contained" 
+          onClick={() => {
+            setError(null);
+            navigate('/login');
+          }}
+        >
+          Return to Login
+        </Button>
       </Box>
     );
   }
