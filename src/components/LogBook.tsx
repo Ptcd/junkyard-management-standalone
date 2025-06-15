@@ -89,7 +89,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       "Year",
       "Make",
       "Model",
-      "Seller Name",
+      "Seller First Name",
+      "Seller Last Name",
       "Seller Address",
       "Sale Price",
       "Disposition",
@@ -103,7 +104,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       t.vehicleYear,
       t.vehicleMake,
       t.vehicleModel,
-      t.sellerName,
+      t.sellerFirstName,
+      t.sellerLastName,
       `"${t.sellerAddress} ${t.sellerCity} ${t.sellerState} ${t.sellerZip}"`,
       t.salePrice,
       t.vehicleDisposition,
@@ -273,7 +275,9 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                 <TableCell>Date</TableCell>
                 <TableCell>VIN</TableCell>
                 <TableCell>Vehicle</TableCell>
-                <TableCell>Seller</TableCell>
+                <TableCell>Seller First Name</TableCell>
+                <TableCell>Seller Last Name</TableCell>
+                <TableCell>Seller Address</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Disposition</TableCell>
                 {user.role === "admin" && <TableCell>Driver</TableCell>}
@@ -300,10 +304,16 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {transaction.sellerName}
+                    {transaction.sellerFirstName}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.sellerLastName}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.sellerAddress}
                     <br />
                     <Typography variant="caption" color="text.secondary">
-                      {transaction.sellerPhone}
+                      {transaction.sellerCity}, {transaction.sellerState} {transaction.sellerZip}
                     </Typography>
                   </TableCell>
                   <TableCell>

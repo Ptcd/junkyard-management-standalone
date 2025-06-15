@@ -45,7 +45,8 @@ interface VINDecodeResult {
 
 interface VehiclePurchaseData {
   // Seller Information (MV2459 Requirements)
-  sellerName: string;
+  sellerFirstName: string;
+  sellerLastName: string;
   sellerAddress: string;
   sellerCity: string;
   sellerState: string;
@@ -75,7 +76,8 @@ interface VehiclePurchaseProps {
 const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<VehiclePurchaseData>({
-    sellerName: "",
+    sellerFirstName: "",
+    sellerLastName: "",
     sellerAddress: "",
     sellerCity: "",
     sellerState: "WI",
@@ -157,7 +159,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
 
     // Validate required fields
     const requiredFields = [
-      "sellerName",
+      "sellerFirstName",
+      "sellerLastName",
       "sellerAddress",
       "sellerPhone",
       "vehicleYear",
@@ -250,7 +253,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             transactionId,
             formData.vehicleVIN,
             formData.saleDate,
-            formData.sellerName,
+            `${formData.sellerFirstName} ${formData.sellerLastName}`,
           );
         } catch (nmvtisError) {
           console.error("Failed to schedule NMVTIS report:", nmvtisError);
@@ -308,9 +311,19 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             <Box>
               <TextField
                 fullWidth
-                label="Seller's Full Name *"
-                value={formData.sellerName}
-                onChange={handleInputChange("sellerName")}
+                label="Seller's First Name *"
+                value={formData.sellerFirstName}
+                onChange={handleInputChange("sellerFirstName")}
+                required
+              />
+            </Box>
+
+            <Box>
+              <TextField
+                fullWidth
+                label="Seller's Last Name *"
+                value={formData.sellerLastName}
+                onChange={handleInputChange("sellerLastName")}
                 required
               />
             </Box>
@@ -544,7 +557,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
         onClose={() => setShowSignaturePad(false)}
         onSave={handleSignatureSaved}
         title="Seller Signature Required"
-        signerName={formData.sellerName || "Seller"}
+        signerName={`${formData.sellerFirstName} ${formData.sellerLastName} ${formData.sellerLastName ? "Seller" : ""}`}
       />
     </Box>
   );
