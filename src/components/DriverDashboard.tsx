@@ -95,59 +95,30 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ user }) => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                My Statistics
+                Quick Vehicle Checks
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
+                <Button
+                  variant="contained"
+                  color="info"
+                  size="large"
+                  href="https://trust.dot.state.wi.us/linq/linqservlet?whoami=linqp1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ mb: 1 }}
                 >
-                  <Typography color="text.secondary">
-                    Vehicles Purchased
-                  </Typography>
-                  <Typography variant="h5" color="primary">
-                    {transactions.length}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
+                  Check for Liens (WisDOT)
+                </Button>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  href="https://trust.dot.state.wi.us/totl/totlservlet?whoami=totlp1"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <Typography color="text.secondary">Total Value</Typography>
-                  <Typography variant="h5" color="success.main">
-                    $
-                    {transactions
-                      .reduce(
-                        (sum, t) => sum + parseFloat(t.salePrice || "0"),
-                        0,
-                      )
-                      .toLocaleString()}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography color="text.secondary">This Month</Typography>
-                  <Typography variant="h5" color="info.main">
-                    {
-                      transactions.filter(
-                        (t) =>
-                          new Date(t.timestamp).getMonth() ===
-                          new Date().getMonth(),
-                      ).length
-                    }
-                  </Typography>
-                </Box>
+                  Verify Seller is Owner (WisDOT)
+                </Button>
               </Box>
             </CardContent>
           </Card>

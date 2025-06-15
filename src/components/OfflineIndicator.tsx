@@ -49,14 +49,20 @@ const OfflineIndicator: React.FC = () => {
     };
 
     offlineManager.addOnlineStatusListener(handleOnlineStatusChange);
-    window.addEventListener('syncComplete', handleSyncComplete as EventListener);
+    window.addEventListener(
+      "syncComplete",
+      handleSyncComplete as EventListener,
+    );
 
     // Initial load
     updateQueuedCount();
 
     return () => {
       offlineManager.removeOnlineStatusListener(handleOnlineStatusChange);
-      window.removeEventListener('syncComplete', handleSyncComplete as EventListener);
+      window.removeEventListener(
+        "syncComplete",
+        handleSyncComplete as EventListener,
+      );
     };
   }, []);
 
@@ -90,7 +96,7 @@ const OfflineIndicator: React.FC = () => {
   return (
     <>
       {/* Connection Status Indicator */}
-      <Box sx={{ position: 'fixed', top: 70, right: 16, zIndex: 1300 }}>
+      <Box sx={{ position: "fixed", top: 70, right: 16, zIndex: 1300 }}>
         <Stack spacing={1} alignItems="flex-end">
           {/* Online/Offline Status */}
           <Chip
@@ -110,9 +116,9 @@ const OfflineIndicator: React.FC = () => {
               size="small"
               variant="filled"
               onClick={isOnline ? handleManualSync : undefined}
-              sx={{ 
-                cursor: isOnline ? 'pointer' : 'default',
-                opacity: isOnline ? 1 : 0.7
+              sx={{
+                cursor: isOnline ? "pointer" : "default",
+                opacity: isOnline ? 1 : 0.7,
               }}
             />
           )}
@@ -136,7 +142,7 @@ const OfflineIndicator: React.FC = () => {
       <Snackbar
         open={showOfflineAlert}
         autoHideDuration={null} // Keep open until manually closed
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           severity="warning"
@@ -152,11 +158,10 @@ const OfflineIndicator: React.FC = () => {
           }
         >
           <Typography variant="body2">
-            <strong>You're offline!</strong> 
-            {queuedCount > 0 
+            <strong>You're offline!</strong>
+            {queuedCount > 0
               ? ` ${queuedCount} transactions will sync when connection returns.`
-              : " New transactions will be saved locally and synced when connection returns."
-            }
+              : " New transactions will be saved locally and synced when connection returns."}
           </Typography>
         </Alert>
       </Snackbar>
@@ -166,12 +171,9 @@ const OfflineIndicator: React.FC = () => {
         open={showSyncMessage}
         autoHideDuration={4000}
         onClose={handleCloseSyncMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          severity="success"
-          onClose={handleCloseSyncMessage}
-        >
+        <Alert severity="success" onClose={handleCloseSyncMessage}>
           {syncMessage}
         </Alert>
       </Snackbar>
@@ -179,4 +181,4 @@ const OfflineIndicator: React.FC = () => {
   );
 };
 
-export default OfflineIndicator; 
+export default OfflineIndicator;

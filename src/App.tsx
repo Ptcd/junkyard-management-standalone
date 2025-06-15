@@ -84,29 +84,29 @@ const theme = createTheme({
   },
   typography: {
     h4: {
-      fontSize: '1.5rem',
-      '@media (min-width:600px)': {
-        fontSize: '2.125rem',
+      fontSize: "1.5rem",
+      "@media (min-width:600px)": {
+        fontSize: "2.125rem",
       },
     },
     h5: {
-      fontSize: '1.25rem',
-      '@media (min-width:600px)': {
-        fontSize: '1.5rem',
+      fontSize: "1.25rem",
+      "@media (min-width:600px)": {
+        fontSize: "1.5rem",
       },
     },
     h6: {
-      fontSize: '1.125rem',
-      '@media (min-width:600px)': {
-        fontSize: '1.25rem',
+      fontSize: "1.125rem",
+      "@media (min-width:600px)": {
+        fontSize: "1.25rem",
       },
     },
     body1: {
-      fontSize: '1rem',
+      fontSize: "1rem",
       lineHeight: 1.6,
     },
     body2: {
-      fontSize: '0.875rem',
+      fontSize: "0.875rem",
       lineHeight: 1.5,
     },
   },
@@ -119,15 +119,15 @@ const theme = createTheme({
         root: {
           paddingLeft: 8,
           paddingRight: 8,
-          '@media (min-width:600px)': {
+          "@media (min-width:600px)": {
             paddingLeft: 16,
             paddingRight: 16,
           },
-          '@media (min-width:960px)': {
+          "@media (min-width:960px)": {
             paddingLeft: 24,
             paddingRight: 24,
-            maxWidth: '1200px',
-            margin: '0 auto',
+            maxWidth: "1200px",
+            margin: "0 auto",
           },
         },
       },
@@ -136,11 +136,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           minHeight: 48,
-          fontSize: '1rem',
-          padding: '12px 24px',
-          '@media (max-width:600px)': {
-            fontSize: '1.1rem',
-            padding: '16px 24px',
+          fontSize: "1rem",
+          padding: "12px 24px",
+          "@media (max-width:600px)": {
+            fontSize: "1.1rem",
+            padding: "16px 24px",
             minHeight: 56,
           },
         },
@@ -149,10 +149,10 @@ const theme = createTheme({
     MuiTextField: {
       styleOverrides: {
         root: {
-          '& .MuiInputBase-root': {
-            fontSize: '1rem',
-            '@media (max-width:600px)': {
-              fontSize: '1.1rem',
+          "& .MuiInputBase-root": {
+            fontSize: "1rem",
+            "@media (max-width:600px)": {
+              fontSize: "1.1rem",
               minHeight: 56,
             },
           },
@@ -162,8 +162,8 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          '@media (max-width:600px)': {
-            margin: '8px 0',
+          "@media (max-width:600px)": {
+            margin: "8px 0",
           },
         },
       },
@@ -188,18 +188,69 @@ function TabPanel({
 }
 
 // Navigation menu items
-const getMenuItems = (userRole: string) => [
-  { path: "/", label: "Dashboard", icon: <Dashboard />, roles: ["admin", "driver"] },
-  { path: "/purchase", label: "Vehicle Purchase", icon: <DirectionsCar />, roles: ["admin", "driver"] },
-  { path: "/sell", label: "Vehicle Sell", icon: <AttachMoney />, roles: ["admin", "driver"] },
-  { path: "/logbook", label: "Log Book", icon: <Assignment />, roles: ["admin", "driver"] },
-  { path: "/impound", label: "Impound/Lien", icon: <CarRepair />, roles: ["admin", "driver"] },
-  { path: "/accounting", label: "Accounting", icon: <AccountBalanceWallet />, roles: ["admin"] },
-  { path: "/expenses", label: "Expenses", icon: <Receipt />, roles: ["admin", "driver"] },
-  { path: "/nmvtis", label: "NMVTIS", icon: <Assessment />, roles: ["admin"] },
-  { path: "/va-workflow", label: "VA Workflow", icon: <SupportAgent />, roles: ["admin"] },
-  { path: "/settings", label: "Settings", icon: <SettingsIcon />, roles: ["admin"] },
-].filter(item => item.roles.includes(userRole));
+const getMenuItems = (userRole: string) =>
+  [
+    {
+      path: "/",
+      label: "Dashboard",
+      icon: <Dashboard />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/purchase",
+      label: "Vehicle Purchase",
+      icon: <DirectionsCar />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/sell",
+      label: "Vehicle Sell",
+      icon: <AttachMoney />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/logbook",
+      label: "Log Book",
+      icon: <Assignment />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/impound",
+      label: "Impound/Lien",
+      icon: <CarRepair />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/accounting",
+      label: "Accounting",
+      icon: <AccountBalanceWallet />,
+      roles: ["admin"],
+    },
+    {
+      path: "/expenses",
+      label: "Expenses",
+      icon: <Receipt />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/nmvtis",
+      label: "NMVTIS",
+      icon: <Assessment />,
+      roles: ["admin"],
+    },
+    {
+      path: "/va-workflow",
+      label: "VA Workflow",
+      icon: <SupportAgent />,
+      roles: ["admin"],
+    },
+    {
+      path: "/settings",
+      label: "Settings",
+      icon: <SettingsIcon />,
+      roles: ["admin"],
+    },
+  ].filter((item) => item.roles.includes(userRole));
 
 function MainApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -208,7 +259,7 @@ function MainApp() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const location = useLocation();
   const menuItems = user ? getMenuItems(user.role) : [];
@@ -220,17 +271,19 @@ function MainApp() {
         setLoading(true);
         setError(null);
         const { user: currentUser, error: authError } = await getCurrentUser();
-        
+
         if (authError) {
-          console.error('Auth check error:', authError);
-          setError(typeof authError === 'string' ? authError : 'Authentication error');
+          console.error("Auth check error:", authError);
+          setError(
+            typeof authError === "string" ? authError : "Authentication error",
+          );
           setUser(null);
         } else {
           setUser(currentUser);
         }
       } catch (e) {
-        console.error('Unexpected error during auth check:', e);
-        setError('Unexpected authentication error');
+        console.error("Unexpected error during auth check:", e);
+        setError("Unexpected authentication error");
         setUser(null);
       } finally {
         setLoading(false);
@@ -244,7 +297,7 @@ function MainApp() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setError(null);
-    navigate('/');
+    navigate("/");
   };
 
   // Handle logout
@@ -253,16 +306,16 @@ function MainApp() {
       setLoading(true);
       const { error: signOutError } = await signOut();
       if (signOutError) {
-        console.error('Sign out error:', signOutError);
-        setError('Error signing out');
+        console.error("Sign out error:", signOutError);
+        setError("Error signing out");
       } else {
         setUser(null);
         setError(null);
-        navigate('/login');
+        navigate("/login");
       }
     } catch (e) {
-      console.error('Unexpected error during sign out:', e);
-      setError('Error signing out');
+      console.error("Unexpected error during sign out:", e);
+      setError("Error signing out");
     } finally {
       setLoading(false);
       setAnchorEl(null);
@@ -303,20 +356,22 @@ function MainApp() {
 
   if (error) {
     return (
-      <Box sx={{ 
-        p: 3, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center' 
-      }}>
+      <Box
+        sx={{
+          p: 3,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <Button 
-          variant="contained" 
+        <Button
+          variant="contained"
           onClick={() => {
             setError(null);
-            navigate('/login');
+            navigate("/login");
           }}
         >
           Return to Login
@@ -345,14 +400,14 @@ function MainApp() {
               <MenuIcon sx={{ fontSize: 28 }} />
             </IconButton>
           )}
-          
+
           <DirectionsCar sx={{ mr: 2, fontSize: { xs: 28, sm: 32 } }} />
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
               flexGrow: 1,
-              fontSize: { xs: '1.1rem', sm: '1.25rem' },
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
               fontWeight: 500,
             }}
           >
@@ -361,13 +416,13 @@ function MainApp() {
 
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {!isMobile && (
-              <Typography variant="body2" sx={{ mr: 2, fontSize: '0.9rem' }}>
+              <Typography variant="body2" sx={{ mr: 2, fontSize: "0.9rem" }}>
                 {user.firstName} {user.lastName} ({user.role})
               </Typography>
             )}
-            <IconButton 
-              size="large" 
-              onClick={handleMenu} 
+            <IconButton
+              size="large"
+              onClick={handleMenu}
               color="inherit"
               sx={{ p: { xs: 2, sm: 1.5 } }}
             >
@@ -413,52 +468,74 @@ function MainApp() {
         open={mobileDrawerOpen}
         onClose={toggleMobileDrawer}
         sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: { xs: '85vw', sm: 320 },
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: { xs: "85vw", sm: 320 },
             maxWidth: 400,
           },
         }}
       >
-        <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar sx={{ bgcolor: 'secondary.main', mr: 2, width: 48, height: 48 }}>
-                <Typography variant="h6" sx={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-                  {user.firstName[0]}{user.lastName[0]}
+        <Box sx={{ p: 3, bgcolor: "primary.main", color: "white" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Avatar
+                sx={{ bgcolor: "secondary.main", mr: 2, width: 48, height: 48 }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                >
+                  {user.firstName[0]}
+                  {user.lastName[0]}
                 </Typography>
               </Avatar>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: "bold", fontSize: "1.1rem" }}
+                >
                   {user.firstName} {user.lastName}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8, fontSize: '0.95rem' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ opacity: 0.8, fontSize: "0.95rem" }}
+                >
                   {user.role}
                 </Typography>
               </Box>
             </Box>
-            <IconButton color="inherit" onClick={toggleMobileDrawer} size="large">
+            <IconButton
+              color="inherit"
+              onClick={toggleMobileDrawer}
+              size="large"
+            >
               <CloseIcon />
             </IconButton>
           </Box>
         </Box>
-        
+
         <List sx={{ pt: 2 }}>
           {menuItems.map((item) => (
             <ListItem key={item.path} disablePadding>
-              <ListItemButton 
+              <ListItemButton
                 onClick={() => handleNavigate(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
                   minHeight: 64,
                   px: 3,
                   py: 2,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.light',
-                    color: 'primary.contrastText',
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.contrastText',
+                  "&.Mui-selected": {
+                    bgcolor: "primary.light",
+                    color: "primary.contrastText",
+                    "& .MuiListItemIcon-root": {
+                      color: "primary.contrastText",
                     },
                   },
                 }}
@@ -466,13 +543,13 @@ function MainApp() {
                 <ListItemIcon sx={{ minWidth: 48 }}>
                   {React.cloneElement(item.icon, { sx: { fontSize: 28 } })}
                 </ListItemIcon>
-                <ListItemText 
+                <ListItemText
                   primary={item.label}
-                  sx={{ 
-                    '& .MuiListItemText-primary': { 
-                      fontSize: '1.1rem',
+                  sx={{
+                    "& .MuiListItemText-primary": {
+                      fontSize: "1.1rem",
                       fontWeight: 500,
-                    } 
+                    },
                   }}
                 />
               </ListItemButton>
@@ -483,31 +560,34 @@ function MainApp() {
 
       {/* Desktop Navigation */}
       {!isMobile && (
-        <Paper 
-          elevation={1} 
-          sx={{ 
+        <Paper
+          elevation={1}
+          sx={{
             borderRadius: 0,
-            bgcolor: 'primary.dark',
+            bgcolor: "primary.dark",
           }}
         >
           <Container maxWidth="lg">
-            <Box sx={{ display: 'flex', overflowX: 'auto' }}>
+            <Box sx={{ display: "flex", overflowX: "auto" }}>
               {menuItems.map((item) => (
                 <Button
                   key={item.path}
                   onClick={() => handleNavigate(item.path)}
                   startIcon={item.icon}
                   sx={{
-                    color: 'white',
-                    minWidth: 'auto',
+                    color: "white",
+                    minWidth: "auto",
                     px: 2,
                     py: 1.5,
                     borderRadius: 0,
-                    bgcolor: location.pathname === item.path ? 'rgba(255,255,255,0.1)' : 'transparent',
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.08)',
+                    bgcolor:
+                      location.pathname === item.path
+                        ? "rgba(255,255,255,0.1)"
+                        : "transparent",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.08)",
                     },
-                    whiteSpace: 'nowrap',
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {item.label}
@@ -518,13 +598,13 @@ function MainApp() {
         </Paper>
       )}
 
-      <Container 
-        sx={{ 
-          mt: { xs: 1, sm: 2 }, 
+      <Container
+        sx={{
+          mt: { xs: 1, sm: 2 },
           mb: { xs: 1, sm: 2 },
           px: { xs: 1, sm: 2, md: 3 },
-          maxWidth: { xs: '100%', md: 'lg' },
-          width: '100%',
+          maxWidth: { xs: "100%", md: "lg" },
+          width: "100%",
         }}
       >
         <Routes>
@@ -542,19 +622,22 @@ function MainApp() {
           <Route path="/sell" element={<VehicleSell user={user} />} />
           <Route path="/logbook" element={<LogBook user={user} />} />
           <Route path="/impound" element={<ImpoundLienManager user={user} />} />
-          <Route path="/accounting" element={<AccountingDashboard user={user} />} />
+          <Route
+            path="/accounting"
+            element={<AccountingDashboard user={user} />}
+          />
           <Route path="/expenses" element={<ExpenseReporting user={user} />} />
           <Route path="/nmvtis" element={<NMVTISManager user={user} />} />
-          <Route path="/va-workflow" element={<VAWorkflowHelper user={user} />} />
+          <Route
+            path="/va-workflow"
+            element={<VAWorkflowHelper user={user} />}
+          />
           {user.role === "admin" && (
             <Route path="/settings" element={<Settings user={user} />} />
           )}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>
-      
-      {/* Offline Indicator */}
-      <OfflineIndicator />
     </Box>
   );
 }

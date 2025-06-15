@@ -107,8 +107,11 @@ interface VehicleSellProps {
 const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
   const navigate = useNavigate();
   const [searchVIN, setSearchVIN] = useState("");
-  const [availableVehicles, setAvailableVehicles] = useState<VehicleTransaction[]>([]);
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleTransaction | null>(null);
+  const [availableVehicles, setAvailableVehicles] = useState<
+    VehicleTransaction[]
+  >([]);
+  const [selectedVehicle, setSelectedVehicle] =
+    useState<VehicleTransaction | null>(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
   const [showVINScanner, setShowVINScanner] = useState(false);
   const [formData, setFormData] = useState<VehicleSaleData>({
@@ -128,14 +131,15 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     yardSignature: null,
     sendEmailMV2459: false,
   });
-  
+
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [driverCashBalance, setDriverCashBalance] = useState(0);
   const [emailSending, setEmailSending] = useState(false);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [buyerProfiles, setBuyerProfiles] = useState<BuyerProfile[]>([]);
-  const [selectedBuyerProfile, setSelectedBuyerProfile] = useState<BuyerProfile | null>(null);
+  const [selectedBuyerProfile, setSelectedBuyerProfile] =
+    useState<BuyerProfile | null>(null);
   const [useCustomBuyer, setUseCustomBuyer] = useState(false);
 
   useEffect(() => {
@@ -150,12 +154,14 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
   const loadAvailableVehicles = () => {
     // Load vehicles that haven't been sold yet (vehicleDisposition is "TBD")
-    const stored = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+    const stored = JSON.parse(
+      localStorage.getItem("vehicleTransactions") || "[]",
+    );
     const available = stored.filter(
-      (vehicle: VehicleTransaction) => 
-        vehicle.vehicleDisposition === "TBD" && 
+      (vehicle: VehicleTransaction) =>
+        vehicle.vehicleDisposition === "TBD" &&
         !vehicle.isImpoundOrLien &&
-        (user.role === "admin" || vehicle.yardId === user.yardId)
+        (user.role === "admin" || vehicle.yardId === user.yardId),
     );
     setAvailableVehicles(available);
   };
@@ -172,12 +178,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
 
     const found = availableVehicles.find(
-      (vehicle) => vehicle.vehicleVIN.toLowerCase() === searchVIN.toLowerCase()
+      (vehicle) => vehicle.vehicleVIN.toLowerCase() === searchVIN.toLowerCase(),
     );
 
     if (found) {
       setSelectedVehicle(found);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         originalVehicle: found,
         actualSalePrice: "", // Leave empty for user to fill
@@ -186,11 +192,13 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       setSuccess(false);
     } else {
       setSelectedVehicle(null);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         originalVehicle: null,
       }));
-      setError("VIN not found in available inventory. Vehicle may already be sold or not exist.");
+      setError(
+        "VIN not found in available inventory. Vehicle may already be sold or not exist.",
+      );
     }
   };
 
@@ -200,11 +208,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     // Auto-search after scanning
     setTimeout(() => {
       const found = availableVehicles.find(
-        (vehicle) => vehicle.vehicleVIN.toLowerCase() === vinData.vin.toLowerCase()
+        (vehicle) =>
+          vehicle.vehicleVIN.toLowerCase() === vinData.vin.toLowerCase(),
       );
       if (found) {
         setSelectedVehicle(found);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           originalVehicle: found,
           actualSalePrice: "",
@@ -216,20 +225,22 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }, 100);
   };
 
-  const handleInputChange = (field: keyof VehicleSaleData) => (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any
-  ) => {
-    const value = event.target ? event.target.value : event;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const handleInputChange =
+    (field: keyof VehicleSaleData) =>
+    (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any,
+    ) => {
+      const value = event.target ? event.target.value : event;
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    };
 
   const handleSelectVehicle = (vehicle: VehicleTransaction) => {
     setSelectedVehicle(vehicle);
     setSearchVIN(vehicle.vehicleVIN);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       originalVehicle: vehicle,
       actualSalePrice: "",
@@ -244,10 +255,10 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
   };
 
   const handleBuyerProfileSelect = (profileId: string) => {
-    const profile = buyerProfiles.find(p => p.id === profileId);
+    const profile = buyerProfiles.find((p) => p.id === profileId);
     if (profile) {
       setSelectedBuyerProfile(profile);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         buyerName: profile.companyName,
         buyerAddress: profile.address,
@@ -267,7 +278,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     if (!useCustomBuyer) {
       // Clear buyer profile selection when switching to custom
       setSelectedBuyerProfile(null);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         buyerName: "",
         buyerAddress: "",
@@ -290,7 +301,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
 
     // Validate required fields
-    const requiredFields = ["buyerName", "buyerAddress", "buyerPhone", "actualSalePrice"];
+    const requiredFields = [
+      "buyerName",
+      "buyerAddress",
+      "buyerPhone",
+      "actualSalePrice",
+    ];
     const missingFields = requiredFields.filter(
       (field) => !formData[field as keyof VehicleSaleData],
     );
@@ -336,17 +352,27 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       const existingTransactions = JSON.parse(
         localStorage.getItem("vehicleTransactions") || "[]",
       );
-      const updatedTransactions = existingTransactions.map((t: VehicleTransaction) =>
-        t.id === formData.originalVehicle!.id
-          ? { ...t, vehicleDisposition: formData.disposition, saleRecordId: saleId }
-          : t
+      const updatedTransactions = existingTransactions.map(
+        (t: VehicleTransaction) =>
+          t.id === formData.originalVehicle!.id
+            ? {
+                ...t,
+                vehicleDisposition: formData.disposition,
+                saleRecordId: saleId,
+              }
+            : t,
       );
 
       // Save updated transactions
-      localStorage.setItem("vehicleTransactions", JSON.stringify(updatedTransactions));
+      localStorage.setItem(
+        "vehicleTransactions",
+        JSON.stringify(updatedTransactions),
+      );
 
       // Store sale record
-      const existingSales = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
+      const existingSales = JSON.parse(
+        localStorage.getItem("vehicleSales") || "[]",
+      );
       existingSales.push(saleRecord);
       localStorage.setItem("vehicleSales", JSON.stringify(existingSales));
 
@@ -358,9 +384,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           user.yardId,
           parseFloat(formData.actualSalePrice),
           formData.originalVehicle.vehicleVIN,
-          saleId
+          saleId,
         );
-        
+
         // Update driver's cash balance display
         const newBalance = getDriverCashBalance(user.id);
         setDriverCashBalance(newBalance);
@@ -376,9 +402,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           formData.originalVehicle.vehicleVIN,
           formData.originalVehicle.saleDate, // Original purchase date
           formData.originalVehicle.sellerName, // Original seller
-          formData.buyerName // Current buyer
+          formData.buyerName, // Current buyer
         );
-        
+
         if (!nmvtisResult.success) {
           console.warn("NMVTIS reporting failed:", nmvtisResult.message);
           // Don't fail the entire transaction for NMVTIS issues
@@ -389,7 +415,11 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       }
 
       // Send MV2459 email if buyer email is provided
-      if (formData.buyerEmail && formData.buyerEmail.trim() && formData.sendEmailMV2459) {
+      if (
+        formData.buyerEmail &&
+        formData.buyerEmail.trim() &&
+        formData.sendEmailMV2459
+      ) {
         setEmailSending(true);
         try {
           // Get yard info from settings (mock for now)
@@ -401,11 +431,15 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             zip: "53201",
             phone: "(414) 555-0123",
             email: "office@demojunkyard.com",
-            licenseNumber: "WI-JUNK-2024-001"
+            licenseNumber: "WI-JUNK-2024-001",
           };
 
-          const emailResult = await sendMV2459Email(saleRecord, yardInfo, formData.buyerEmail);
-          
+          const emailResult = await sendMV2459Email(
+            saleRecord,
+            yardInfo,
+            formData.buyerEmail,
+          );
+
           if (emailResult.success) {
             setSuccess(true);
             setError("");
@@ -414,7 +448,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           }
         } catch (emailError) {
           console.error("Failed to send email:", emailError);
-          setError("Sale recorded but failed to send MV2459 email. You can download it manually.");
+          setError(
+            "Sale recorded but failed to send MV2459 email. You can download it manually.",
+          );
         } finally {
           setEmailSending(false);
         }
@@ -439,13 +475,18 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         Vehicle Sales & Disposition
       </Typography>
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
-        Sell vehicles from inventory to scrap yards and update NMVTIS dispositions
+        Sell vehicles from inventory to scrap yards and update NMVTIS
+        dispositions
       </Typography>
 
       {/* Driver Cash Balance - Only show for drivers */}
       {user.role === "driver" && (
         <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: "info.light" }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
             <Typography variant="h6">
               💰 Cash on Hand: <strong>${driverCashBalance.toFixed(2)}</strong>
             </Typography>
@@ -458,7 +499,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Vehicle sale recorded successfully! {formData.buyerEmail && "MV2459 form sent to buyer."} NMVTIS sale report submitted immediately.
+          Vehicle sale recorded successfully!{" "}
+          {formData.buyerEmail && "MV2459 form sent to buyer."} NMVTIS sale
+          report submitted immediately.
         </Alert>
       )}
 
@@ -512,17 +555,25 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         </Stack>
 
         {selectedVehicle && (
-          <Card sx={{ mt: 2, bgcolor: "success.light", color: "success.contrastText" }}>
+          <Card
+            sx={{
+              mt: 2,
+              bgcolor: "success.light",
+              color: "success.contrastText",
+            }}
+          >
             <CardContent>
               <Typography variant="h6">Vehicle Found!</Typography>
               <Typography>
                 <strong>VIN:</strong> {selectedVehicle.vehicleVIN}
               </Typography>
               <Typography>
-                <strong>Vehicle:</strong> {selectedVehicle.vehicleYear} {selectedVehicle.vehicleMake}
+                <strong>Vehicle:</strong> {selectedVehicle.vehicleYear}{" "}
+                {selectedVehicle.vehicleMake}
               </Typography>
               <Typography>
-                <strong>Purchase Date:</strong> {new Date(selectedVehicle.saleDate).toLocaleDateString()}
+                <strong>Purchase Date:</strong>{" "}
+                {new Date(selectedVehicle.saleDate).toLocaleDateString()}
               </Typography>
               <Typography>
                 <strong>Purchase Price:</strong> ${selectedVehicle.salePrice}
@@ -637,7 +688,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                   <FormControl fullWidth>
                     <InputLabel>Select Buyer Profile</InputLabel>
                     <Select
-                      value={selectedBuyerProfile ? selectedBuyerProfile.id : ""}
+                      value={
+                        selectedBuyerProfile ? selectedBuyerProfile.id : ""
+                      }
                       onChange={(e) => handleBuyerProfileSelect(e.target.value)}
                     >
                       <MenuItem value="">
@@ -646,9 +699,15 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                       {buyerProfiles.map((profile) => (
                         <MenuItem key={profile.id} value={profile.id}>
                           <Stack>
-                            <Typography variant="body1">{profile.companyName}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {profile.contactName} • {profile.city}, {profile.state}
+                            <Typography variant="body1">
+                              {profile.companyName}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {profile.contactName} • {profile.city},{" "}
+                              {profile.state}
                             </Typography>
                           </Stack>
                         </MenuItem>
@@ -658,13 +717,20 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                 )}
 
                 {selectedBuyerProfile && !useCustomBuyer && (
-                  <Paper sx={{ p: 2, bgcolor: "success.light", color: "success.contrastText" }}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      bgcolor: "success.light",
+                      color: "success.contrastText",
+                    }}
+                  >
                     <Typography variant="h6" gutterBottom>
                       Selected Buyer: {selectedBuyerProfile.companyName}
                     </Typography>
                     <Stack spacing={1}>
                       <Typography variant="body2">
-                        <strong>Contact:</strong> {selectedBuyerProfile.contactName}
+                        <strong>Contact:</strong>{" "}
+                        {selectedBuyerProfile.contactName}
                       </Typography>
                       <Typography variant="body2">
                         <strong>Phone:</strong> {selectedBuyerProfile.phone}
@@ -673,7 +739,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                         <strong>Email:</strong> {selectedBuyerProfile.email}
                       </Typography>
                       <Typography variant="body2">
-                        <strong>Address:</strong> {selectedBuyerProfile.address}, {selectedBuyerProfile.city}, {selectedBuyerProfile.state} {selectedBuyerProfile.zip}
+                        <strong>Address:</strong> {selectedBuyerProfile.address}
+                        , {selectedBuyerProfile.city},{" "}
+                        {selectedBuyerProfile.state} {selectedBuyerProfile.zip}
                       </Typography>
                       {selectedBuyerProfile.notes && (
                         <Typography variant="body2">
@@ -815,8 +883,8 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
               />
 
               <Box>
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   fullWidth
                   onClick={() => setShowSignaturePad(true)}
                 >
@@ -836,7 +904,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                 control={
                   <Switch
                     checked={formData.sendEmailMV2459}
-                    onChange={(e) => setFormData(prev => ({ ...prev, sendEmailMV2459: e.target.checked }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        sendEmailMV2459: e.target.checked,
+                      }))
+                    }
                   />
                 }
                 label="Email MV2459 Junk Bill to Buyer"
@@ -864,10 +937,10 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       />
 
       {/* Vehicle Details Dialog */}
-      <Dialog 
-        open={showVehicleDetails} 
-        onClose={() => setShowVehicleDetails(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={showVehicleDetails}
+        onClose={() => setShowVehicleDetails(false)}
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Vehicle Purchase Details</DialogTitle>
@@ -876,19 +949,35 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Typography variant="h6">Vehicle Information</Typography>
               <Typography>VIN: {selectedVehicle.vehicleVIN}</Typography>
-              <Typography>Vehicle: {selectedVehicle.vehicleYear} {selectedVehicle.vehicleMake}</Typography>
-              <Typography>Purchase Price: ${selectedVehicle.salePrice}</Typography>
-              <Typography>Purchase Date: {new Date(selectedVehicle.saleDate).toLocaleDateString()}</Typography>
-              
-              <Typography variant="h6" sx={{ mt: 2 }}>Original Seller Information</Typography>
+              <Typography>
+                Vehicle: {selectedVehicle.vehicleYear}{" "}
+                {selectedVehicle.vehicleMake}
+              </Typography>
+              <Typography>
+                Purchase Price: ${selectedVehicle.salePrice}
+              </Typography>
+              <Typography>
+                Purchase Date:{" "}
+                {new Date(selectedVehicle.saleDate).toLocaleDateString()}
+              </Typography>
+
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Original Seller Information
+              </Typography>
               <Typography>Name: {selectedVehicle.sellerName}</Typography>
               <Typography>Address: {selectedVehicle.sellerAddress}</Typography>
               <Typography>Phone: {selectedVehicle.sellerPhone}</Typography>
-              
-              <Typography variant="h6" sx={{ mt: 2 }}>Transaction Information</Typography>
-              <Typography>Purchased By: {selectedVehicle.driverName}</Typography>
+
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Transaction Information
+              </Typography>
+              <Typography>
+                Purchased By: {selectedVehicle.driverName}
+              </Typography>
               <Typography>Transaction ID: {selectedVehicle.id}</Typography>
-              <Typography>Current Status: {selectedVehicle.vehicleDisposition}</Typography>
+              <Typography>
+                Current Status: {selectedVehicle.vehicleDisposition}
+              </Typography>
             </Stack>
           )}
         </DialogContent>
@@ -909,4 +998,4 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
   );
 };
 
-export default VehicleSell; 
+export default VehicleSell;

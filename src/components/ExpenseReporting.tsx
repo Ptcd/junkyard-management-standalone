@@ -88,14 +88,16 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
     setExpenseStats(stats);
   };
 
-  const handleInputChange = (field: string) => (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value,
-    }));
-  };
+  const handleInputChange =
+    (field: string) =>
+    (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any,
+    ) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
   const handleReceiptPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -124,18 +126,27 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
     }
 
     const expenseAmount = parseFloat(formData.amount);
-    
+
     // Check if driver has sufficient cash
     if (cashBalance < expenseAmount) {
-      setError(`Insufficient cash! You have $${cashBalance.toFixed(2)} but expense is $${expenseAmount.toFixed(2)}`);
+      setError(
+        `Insufficient cash! You have $${cashBalance.toFixed(2)} but expense is $${expenseAmount.toFixed(2)}`,
+      );
       return;
     }
 
-    const selectedCategory = EXPENSE_CATEGORIES.find(cat => cat.id === formData.category);
-    
+    const selectedCategory = EXPENSE_CATEGORIES.find(
+      (cat) => cat.id === formData.category,
+    );
+
     // Check max amount if specified
-    if (selectedCategory?.maxAmount && expenseAmount > selectedCategory.maxAmount) {
-      setError(`Maximum amount for ${selectedCategory.name} is $${selectedCategory.maxAmount}`);
+    if (
+      selectedCategory?.maxAmount &&
+      expenseAmount > selectedCategory.maxAmount
+    ) {
+      setError(
+        `Maximum amount for ${selectedCategory.name} is $${selectedCategory.maxAmount}`,
+      );
       return;
     }
 
@@ -155,11 +166,13 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         formData.description,
         receiptPhoto,
         new Date().toISOString().split("T")[0],
-        formData.notes
+        formData.notes,
       );
 
-      setSuccess(`Expense approved! $${expenseAmount.toFixed(2)} deducted from your cash drawer.`);
-      
+      setSuccess(
+        `Expense approved! $${expenseAmount.toFixed(2)} deducted from your cash drawer.`,
+      );
+
       // Reset form
       setFormData({
         category: "",
@@ -168,14 +181,13 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         notes: "",
       });
       setReceiptPhoto(null);
-      
+
       // Reload data and cash balance
       loadExpenses();
       if (user.role === "driver") {
         const balance = getDriverCashBalance(user.id);
         setCashBalance(balance);
       }
-      
     } catch (err) {
       setError("Failed to submit expense report");
     }
@@ -198,7 +210,7 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         </Typography>
 
         <Alert severity="info" sx={{ mb: 2 }}>
-          As an admin, you don't have a cash drawer and cannot submit expenses. 
+          As an admin, you don't have a cash drawer and cannot submit expenses.
           Use the Accounting Dashboard to view and manage all driver expenses.
         </Alert>
 
@@ -268,11 +280,7 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                     <TableCell>${expense.amount.toFixed(2)}</TableCell>
                     <TableCell>{expense.description}</TableCell>
                     <TableCell>
-                      <Chip
-                        label="APPROVED"
-                        color="success"
-                        size="small"
-                      />
+                      <Chip label="APPROVED" color="success" size="small" />
                     </TableCell>
                     <TableCell>
                       {expense.receiptPhoto && (
@@ -331,7 +339,8 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         Expense Reporting
       </Typography>
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
-        Submit expense reports with receipt photos - amounts are automatically deducted from your cash drawer
+        Submit expense reports with receipt photos - amounts are automatically
+        deducted from your cash drawer
       </Typography>
 
       {success && (
@@ -351,14 +360,12 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         <Card sx={{ minWidth: 200 }}>
           <CardContent>
             <Stack direction="row" alignItems="center" spacing={2}>
-              <AttachMoney 
-                color={cashBalance >= 0 ? "primary" : "error"} 
-              />
+              <AttachMoney color={cashBalance >= 0 ? "primary" : "error"} />
               <Box>
                 <Typography color="textSecondary" gutterBottom>
                   Cash on Hand
                 </Typography>
-                <Typography 
+                <Typography
                   variant="h5"
                   color={cashBalance >= 0 ? "text.primary" : "error.main"}
                 >
@@ -393,7 +400,9 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                 <Typography color="textSecondary" gutterBottom>
                   Total Reports
                 </Typography>
-                <Typography variant="h5">{expenseStats.totalCount || 0}</Typography>
+                <Typography variant="h5">
+                  {expenseStats.totalCount || 0}
+                </Typography>
               </Box>
             </Stack>
           </CardContent>
@@ -408,9 +417,15 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                   This Month
                 </Typography>
                 <Typography variant="h5">
-                  ${expenses.filter(e => 
-                    new Date(e.expenseDate).getMonth() === new Date().getMonth()
-                  ).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                  $
+                  {expenses
+                    .filter(
+                      (e) =>
+                        new Date(e.expenseDate).getMonth() ===
+                        new Date().getMonth(),
+                    )
+                    .reduce((sum, e) => sum + e.amount, 0)
+                    .toFixed(2)}
                 </Typography>
               </Box>
             </Stack>
@@ -423,19 +438,21 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         <Typography variant="h6" gutterBottom>
           Submit New Expense
         </Typography>
-        
+
         {cashBalance < 100 && cashBalance > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Low cash warning: You only have ${cashBalance.toFixed(2)} remaining in your cash drawer.
+            Low cash warning: You only have ${cashBalance.toFixed(2)} remaining
+            in your cash drawer.
           </Alert>
         )}
-        
+
         {cashBalance <= 0 && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            No cash available: You have ${cashBalance.toFixed(2)} in your cash drawer. Contact admin for cash deposit.
+            No cash available: You have ${cashBalance.toFixed(2)} in your cash
+            drawer. Contact admin for cash deposit.
           </Alert>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <FormControl fullWidth>
@@ -518,10 +535,12 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                   startIcon={<PhotoCamera />}
                   fullWidth
                 >
-                  {receiptPhoto ? "Receipt Photo Uploaded ✓" : "Upload Receipt Photo *"}
+                  {receiptPhoto
+                    ? "Receipt Photo Uploaded ✓"
+                    : "Upload Receipt Photo *"}
                 </Button>
               </label>
-              
+
               {receiptPhoto && (
                 <Box sx={{ mt: 2, textAlign: "center" }}>
                   <img
@@ -531,7 +550,7 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                       maxWidth: "200px",
                       maxHeight: "200px",
                       border: "1px solid #ddd",
-                      borderRadius: "4px"
+                      borderRadius: "4px",
                     }}
                   />
                 </Box>
@@ -555,7 +574,7 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
         <Typography variant="h6" gutterBottom>
           My Expense Reports ({expenses.length})
         </Typography>
-        
+
         <TableContainer>
           <Table>
             <TableHead>
@@ -584,10 +603,18 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
                     <TableCell>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <span>
-                          {EXPENSE_CATEGORIES.find(cat => cat.id === expense.category)?.icon}
+                          {
+                            EXPENSE_CATEGORIES.find(
+                              (cat) => cat.id === expense.category,
+                            )?.icon
+                          }
                         </span>
                         <span>
-                          {EXPENSE_CATEGORIES.find(cat => cat.id === expense.category)?.name}
+                          {
+                            EXPENSE_CATEGORIES.find(
+                              (cat) => cat.id === expense.category,
+                            )?.name
+                          }
                         </span>
                       </Stack>
                     </TableCell>
@@ -653,4 +680,4 @@ const ExpenseReporting: React.FC<ExpenseReportingProps> = ({ user }) => {
   );
 };
 
-export default ExpenseReporting; 
+export default ExpenseReporting;

@@ -80,7 +80,7 @@ interface NMVTISRecord {
 export const convertToNMVTISRecord = (
   transaction: VehicleTransaction,
   settings: NMVTISSettings,
-  saleRecord?: any
+  saleRecord?: any,
 ): NMVTISRecord => {
   // Parse seller name into first and last name
   const sellerNameParts = transaction.sellerName.trim().split(" ");
@@ -91,7 +91,7 @@ export const convertToNMVTISRecord = (
   let buyerFirstName = "";
   let buyerLastName = "";
   let buyerCompanyName = "";
-  
+
   if (saleRecord) {
     const buyerNameParts = saleRecord.buyerName.trim().split(" ");
     if (buyerNameParts.length === 1) {
@@ -125,7 +125,8 @@ export const convertToNMVTISRecord = (
     vehicleSalvageObtainDate: transaction.saleDate,
     vehicleDisposition: transaction.vehicleDisposition, // Now reflects actual disposition
     reasonForDisposition: saleRecord?.notes || "", // Use sale notes if available
-    vehicleIntendedForExport: transaction.vehicleDisposition === "EXPORTED" ? "Y" : "N",
+    vehicleIntendedForExport:
+      transaction.vehicleDisposition === "EXPORTED" ? "Y" : "N",
     reserved: "",
     insuranceOwnerBusinessName: "",
     insuranceOwnerFirstName: "",
@@ -135,7 +136,9 @@ export const convertToNMVTISRecord = (
     insuranceOwnerCity: "",
     insuranceOwnerState: "",
     insuranceOwnerZip: "",
-    vehicleTransferredToCompany: saleRecord ? (buyerCompanyName || settings.entityName) : settings.entityName,
+    vehicleTransferredToCompany: saleRecord
+      ? buyerCompanyName || settings.entityName
+      : settings.entityName,
     vehicleTransferredToFirstName: saleRecord ? buyerFirstName : "",
     vehicleTransferredToLastName: saleRecord ? buyerLastName : "",
     vehicleTransferredToMI: "",
@@ -198,15 +201,15 @@ export const exportNMVTISCSV = (
 
   // Load sale records to match with transactions
   const saleRecords = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
-  
+
   const records = transactions
     .filter((t) => !t.isImpoundOrLien) // Only include non-impound/lien transactions
     .map((transaction) => {
       // Find matching sale record for this transaction
-      const matchingSale = saleRecords.find((sale: any) => 
-        sale.originalTransactionId === transaction.id
+      const matchingSale = saleRecords.find(
+        (sale: any) => sale.originalTransactionId === transaction.id,
       );
-      
+
       return convertToNMVTISRecord(transaction, settings, matchingSale);
     });
 

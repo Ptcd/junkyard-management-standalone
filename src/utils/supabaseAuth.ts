@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
+import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
 
 // Create Supabase client with standard settings (no custom CORS headers)
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -7,9 +7,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: "pkce",
     storage: window.localStorage,
-    storageKey: 'junkyard-auth-token',
+    storageKey: "junkyard-auth-token",
   },
 });
 
@@ -32,10 +32,14 @@ export interface AuthUser {
 }
 
 // Sign up a new user
-export const signUp = async (email: string, password: string, userData: Partial<User>) => {
+export const signUp = async (
+  email: string,
+  password: string,
+  userData: Partial<User>,
+) => {
   try {
-    console.log('Starting signUp with:', { email, userData });
-    
+    console.log("Starting signUp with:", { email, userData });
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -43,47 +47,50 @@ export const signUp = async (email: string, password: string, userData: Partial<
         data: {
           first_name: userData.firstName,
           last_name: userData.lastName,
-          role: userData.role || 'driver'
-        }
-      }
+          role: userData.role || "driver",
+        },
+      },
     });
 
-    console.log('Auth signUp result:', { data, error });
+    console.log("Auth signUp result:", { data, error });
 
     if (error) throw error;
 
     // If signup succeeds, try to update the profile
     if (data.user) {
       // Wait for trigger to create profile
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // Try to update the profile with correct data
       const { error: updateError } = await supabase
-        .from('user_profiles')
+        .from("user_profiles")
         .update({
-          role: userData.role || 'driver',
-          yard_id: userData.yardId || 'default-yard',
+          role: userData.role || "driver",
+          yard_id: userData.yardId || "default-yard",
           first_name: userData.firstName,
           last_name: userData.lastName,
           phone: userData.phone,
-          license_number: userData.licenseNumber || '',
-          hire_date: new Date().toISOString().split('T')[0],
-          status: 'active',
+          license_number: userData.licenseNumber || "",
+          hire_date: new Date().toISOString().split("T")[0],
+          status: "active",
           updated_at: new Date().toISOString(),
         })
-        .eq('id', data.user.id);
+        .eq("id", data.user.id);
 
-      console.log('Profile update result:', { updateError });
-      
+      console.log("Profile update result:", { updateError });
+
       // Don't fail if profile update fails - the trigger should handle basic creation
       if (updateError) {
-        console.warn('Profile update failed, but user was created:', updateError);
+        console.warn(
+          "Profile update failed, but user was created:",
+          updateError,
+        );
       }
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('SignUp error:', error);
+    console.error("SignUp error:", error);
     return { data: null, error };
   }
 };
@@ -93,14 +100,14 @@ export const signIn = async (email: string, password: string) => {
   try {
     // Clear any existing session first
     await supabase.auth.signOut();
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error('Sign in error:', error);
+      console.error("Sign in error:", error);
       throw error;
     }
 
@@ -113,9 +120,9 @@ export const signIn = async (email: string, password: string) => {
       while (retries > 0 && !profile) {
         try {
           const { data: profileData, error: pError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', data.user.id)
+            .from("user_profiles")
+            .select("*")
+            .eq("id", data.user.id)
             .single();
 
           if (pError) throw pError;
@@ -125,7 +132,7 @@ export const signIn = async (email: string, password: string) => {
           profileError = e;
           retries--;
           if (retries > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
           }
         }
       }
@@ -135,22 +142,22 @@ export const signIn = async (email: string, password: string) => {
       const user: User = {
         id: profile.id,
         role: profile.role,
-        yardId: profile.yard_id || 'default-yard',
+        yardId: profile.yard_id || "default-yard",
         firstName: profile.first_name,
         lastName: profile.last_name,
         email: profile.email,
         phone: profile.phone,
-        licenseNumber: profile.license_number || '',
-        status: profile.status || 'active',
+        licenseNumber: profile.license_number || "",
+        status: profile.status || "active",
         createdAt: profile.created_at,
       };
 
       return { user, session: data.session, error: null };
     }
 
-    return { user: null, session: null, error: 'No user data' };
+    return { user: null, session: null, error: "No user data" };
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error("Authentication error:", error);
     return { user: null, session: null, error };
   }
 };
@@ -164,14 +171,16 @@ export const signOut = async () => {
 // Get current user
 export const getCurrentUser = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) return { user: null, error: 'No authenticated user' };
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { user: null, error: "No authenticated user" };
 
     const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
+      .from("user_profiles")
+      .select("*")
+      .eq("id", user.id)
       .single();
 
     if (profileError) throw profileError;
@@ -179,13 +188,13 @@ export const getCurrentUser = async () => {
     const userData: User = {
       id: profile.id,
       role: profile.role,
-      yardId: profile.yard_id || 'default-yard',
+      yardId: profile.yard_id || "default-yard",
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: profile.license_number || '',
-      status: profile.status || 'active',
+      licenseNumber: profile.license_number || "",
+      status: profile.status || "active",
       createdAt: profile.created_at,
     };
 
@@ -202,10 +211,13 @@ export const resetPassword = async (email: string) => {
 };
 
 // Update user profile
-export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
+export const updateUserProfile = async (
+  userId: string,
+  updates: Partial<User>,
+) => {
   try {
     const { error } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .update({
         first_name: updates.firstName,
         last_name: updates.lastName,
@@ -215,7 +227,7 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
         status: updates.status,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', userId);
+      .eq("id", userId);
 
     if (error) throw error;
     return { error: null };
@@ -228,22 +240,22 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
 export const getAllUsers = async () => {
   try {
     const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("user_profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
     const users: User[] = data.map((profile: any) => ({
       id: profile.id,
       role: profile.role,
-      yardId: profile.yard_id || 'default-yard',
+      yardId: profile.yard_id || "default-yard",
       firstName: profile.first_name,
       lastName: profile.last_name,
       email: profile.email,
       phone: profile.phone,
-      licenseNumber: profile.license_number || '',
-      status: profile.status || 'active',
+      licenseNumber: profile.license_number || "",
+      status: profile.status || "active",
       createdAt: profile.created_at,
     }));
 
@@ -256,27 +268,29 @@ export const getAllUsers = async () => {
 // Delete current user account
 export const deleteAccount = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
-      return { error: 'No authenticated user' };
+      return { error: "No authenticated user" };
     }
 
     // First delete the user profile (the auth user will be handled by RLS/triggers)
     const { error: profileError } = await supabase
-      .from('user_profiles')
+      .from("user_profiles")
       .delete()
-      .eq('id', user.id);
+      .eq("id", user.id);
 
     if (profileError) throw profileError;
 
     // Sign out the user
     const { error: signOutError } = await supabase.auth.signOut();
-    
+
     if (signOutError) throw signOutError;
 
     return { error: null };
   } catch (error) {
     return { error };
   }
-}; 
+};

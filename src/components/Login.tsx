@@ -47,10 +47,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { user, error: authError } = await signIn(email, password);
 
     if (authError) {
-      setError(typeof authError === 'string' ? authError : (authError as any)?.message || "Failed to sign in");
+      setError(
+        typeof authError === "string"
+          ? authError
+          : (authError as any)?.message || "Failed to sign in",
+      );
     } else if (user) {
       if (user.status === "inactive") {
-        setError("Your account has been deactivated. Please contact an administrator.");
+        setError(
+          "Your account has been deactivated. Please contact an administrator.",
+        );
       } else {
         onLogin(user);
       }
@@ -91,9 +97,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { data, error: authError } = await signUp(email, password, userData);
 
     if (authError) {
-      setError(typeof authError === 'string' ? authError : (authError as any)?.message || "Failed to create account");
+      setError(
+        typeof authError === "string"
+          ? authError
+          : (authError as any)?.message || "Failed to create account",
+      );
     } else if (data?.user) {
-      setSuccess("Account created successfully! Please check your email to verify your account.");
+      setSuccess(
+        "Account created successfully! Please check your email to verify your account.",
+      );
       setTabValue(0); // Switch to sign-in tab
       setEmail("");
       setPassword("");
@@ -117,7 +129,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { error: resetError } = await resetPassword(email);
 
     if (resetError) {
-      setError(typeof resetError === 'string' ? resetError : (resetError as any)?.message || "Failed to send password reset email");
+      setError(
+        typeof resetError === "string"
+          ? resetError
+          : (resetError as any)?.message ||
+              "Failed to send password reset email",
+      );
     } else {
       setSuccess("Password reset email sent! Check your inbox.");
       setShowPasswordReset(false);
@@ -158,7 +175,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </Box>
 
           {/* Tabs */}
-          <Tabs value={tabValue} onChange={handleTabChange} centered sx={{ mb: 3 }}>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            centered
+            sx={{ mb: 3 }}
+          >
             <Tab label="Sign In" />
             <Tab label="Sign Up" />
           </Tabs>
@@ -299,7 +321,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <Select
                     value={role}
                     label="Role"
-                    onChange={(e) => setRole(e.target.value as "admin" | "driver")}
+                    onChange={(e) =>
+                      setRole(e.target.value as "admin" | "driver")
+                    }
                   >
                     <MenuItem value="driver">Driver</MenuItem>
                     <MenuItem value="admin">Admin</MenuItem>

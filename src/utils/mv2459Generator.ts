@@ -50,9 +50,12 @@ interface YardInfo {
 }
 
 // Generate MV2459 form HTML content
-export const generateMV2459HTML = (saleRecord: VehicleSale, yardInfo: YardInfo): string => {
+export const generateMV2459HTML = (
+  saleRecord: VehicleSale,
+  yardInfo: YardInfo,
+): string => {
   const vehicle = saleRecord.originalVehicle;
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -251,12 +254,16 @@ export const generateMV2459HTML = (saleRecord: VehicleSale, yardInfo: YardInfo):
             <span class="field-label">Sold By:</span>
             <span class="field-value">${saleRecord.soldBy}</span>
         </div>
-        ${saleRecord.notes ? `
+        ${
+          saleRecord.notes
+            ? `
         <div class="field-row">
             <span class="field-label">Notes:</span>
             <span class="field-value">${saleRecord.notes}</span>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
     </div>
 
     <div class="signature-section">
@@ -289,9 +296,12 @@ export const generateMV2459HTML = (saleRecord: VehicleSale, yardInfo: YardInfo):
 };
 
 // Generate simplified email-friendly version
-export const generateEmailHTML = (saleRecord: VehicleSale, yardInfo: YardInfo): string => {
+export const generateEmailHTML = (
+  saleRecord: VehicleSale,
+  yardInfo: YardInfo,
+): string => {
   const vehicle = saleRecord.originalVehicle;
-  
+
   return `
 <!DOCTYPE html>
 <html>
@@ -355,18 +365,19 @@ export const generateEmailHTML = (saleRecord: VehicleSale, yardInfo: YardInfo): 
 
 // Replace the mock email sender with Brevo integration
 export const sendMV2459Email = async (
-  saleRecord: VehicleSale, 
-  yardInfo: YardInfo, 
-  recipientEmail: string
+  saleRecord: VehicleSale,
+  yardInfo: YardInfo,
+  recipientEmail: string,
 ): Promise<{ success: boolean; message: string }> => {
   try {
     // Use the new Brevo email service
     return await sendMV2459ViaBevo(saleRecord, yardInfo, recipientEmail);
   } catch (error) {
-    console.error('Failed to send MV2459 email via Brevo:', error);
+    console.error("Failed to send MV2459 email via Brevo:", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to send MV2459 email'
+      message:
+        error instanceof Error ? error.message : "Failed to send MV2459 email",
     };
   }
 };
@@ -374,15 +385,15 @@ export const sendMV2459Email = async (
 // Download MV2459 as PDF-ready HTML
 export const downloadMV2459 = (saleRecord: VehicleSale, yardInfo: YardInfo) => {
   const htmlContent = generateMV2459HTML(saleRecord, yardInfo);
-  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const blob = new Blob([htmlContent], { type: "text/html" });
   const url = URL.createObjectURL(blob);
-  
-  const link = document.createElement('a');
+
+  const link = document.createElement("a");
   link.href = url;
   link.download = `MV2459_${saleRecord.originalVehicle.vehicleVIN}_${saleRecord.saleDate}.html`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   URL.revokeObjectURL(url);
-}; 
+};

@@ -47,7 +47,6 @@ class NMVTISReporter {
     exportIntended?: boolean;
     odometer?: number;
   }): Promise<{ success: boolean; message: string; reportId?: string }> {
-    
     const report: NMVTISReport = {
       reportingEntityId: this.config.reportingEntityId,
       ...vehicleData,
@@ -69,14 +68,16 @@ class NMVTISReporter {
   }
 
   // Auto Data Direct API Integration (they offer free API)
-  private async reportToAutoDataDirect(report: NMVTISReport): Promise<{ success: boolean; message: string; reportId?: string }> {
+  private async reportToAutoDataDirect(
+    report: NMVTISReport,
+  ): Promise<{ success: boolean; message: string; reportId?: string }> {
     try {
       // Auto Data Direct API endpoint (example)
-      const response = await fetch('https://api.add123.com/nmvtis/report', {
-        method: 'POST',
+      const response = await fetch("https://api.add123.com/nmvtis/report", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.apiKey}`,
         },
         body: JSON.stringify({
           reporting_entity_id: report.reportingEntityId,
@@ -94,8 +95,8 @@ class NMVTISReporter {
             state: report.entityState,
             zip: report.entityZip,
             phone: report.entityPhone,
-          }
-        })
+          },
+        }),
       });
 
       if (response.ok) {
@@ -103,67 +104,86 @@ class NMVTISReporter {
         return {
           success: true,
           message: "Vehicle successfully reported to NMVTIS",
-          reportId: result.report_id
+          reportId: result.report_id,
         };
       } else {
         return {
           success: false,
-          message: `NMVTIS reporting failed: ${response.statusText}`
+          message: `NMVTIS reporting failed: ${response.statusText}`,
         };
       }
     } catch (error) {
       return {
         success: false,
-        message: `NMVTIS reporting error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `NMVTIS reporting error: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
 
   // AAMVA SVRS Integration (manual redirect for now, could be automated)
-  private async reportToAAMVA(report: NMVTISReport): Promise<{ success: boolean; message: string; reportId?: string }> {
+  private async reportToAAMVA(
+    report: NMVTISReport,
+  ): Promise<{ success: boolean; message: string; reportId?: string }> {
     // For AAMVA SVRS, we'll store locally and provide manual reporting option
     // This is because AAMVA SVRS is web-based, not API-based
-    
-    const pendingReports = JSON.parse(localStorage.getItem('nmvtisPendingReports') || '[]');
+
+    const pendingReports = JSON.parse(
+      localStorage.getItem("nmvtisPendingReports") || "[]",
+    );
     const reportWithId = {
       ...report,
       id: `NMVTIS-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      status: 'pending'
+      status: "pending",
     };
-    
+
     pendingReports.push(reportWithId);
-    localStorage.setItem('nmvtisPendingReports', JSON.stringify(pendingReports));
+    localStorage.setItem(
+      "nmvtisPendingReports",
+      JSON.stringify(pendingReports),
+    );
 
     return {
       success: true,
-      message: "Vehicle queued for NMVTIS reporting. Use 'Report to NMVTIS' button to submit via AAMVA SVRS.",
-      reportId: reportWithId.id
+      message:
+        "Vehicle queued for NMVTIS reporting. Use 'Report to NMVTIS' button to submit via AAMVA SVRS.",
+      reportId: reportWithId.id,
     };
   }
 
   // Get pending reports for manual submission
   getPendingReports(): any[] {
-    return JSON.parse(localStorage.getItem('nmvtisPendingReports') || '[]');
+    return JSON.parse(localStorage.getItem("nmvtisPendingReports") || "[]");
   }
 
   // Mark report as submitted manually
   markReportSubmitted(reportId: string): void {
-    const pendingReports = JSON.parse(localStorage.getItem('nmvtisPendingReports') || '[]');
-    const updatedReports = pendingReports.map((report: any) => 
-      report.id === reportId ? { ...report, status: 'submitted', submittedDate: new Date().toISOString() } : report
+    const pendingReports = JSON.parse(
+      localStorage.getItem("nmvtisPendingReports") || "[]",
     );
-    localStorage.setItem('nmvtisPendingReports', JSON.stringify(updatedReports));
+    const updatedReports = pendingReports.map((report: any) =>
+      report.id === reportId
+        ? {
+            ...report,
+            status: "submitted",
+            submittedDate: new Date().toISOString(),
+          }
+        : report,
+    );
+    localStorage.setItem(
+      "nmvtisPendingReports",
+      JSON.stringify(updatedReports),
+    );
   }
 
   // Open AAMVA SVRS in new tab with pre-filled data
   openAAMVAReporting(reportId?: string): void {
     const url = "https://nmvtisreporting.aamva.org/";
-    const reportWindow = window.open(url, '_blank');
-    
+    const reportWindow = window.open(url, "_blank");
+
     if (reportId) {
       const reports = this.getPendingReports();
-      const report = reports.find(r => r.id === reportId);
+      const report = reports.find((r) => r.id === reportId);
       if (report) {
         // Show alert with data to copy/paste
         setTimeout(() => {
@@ -173,8 +193,8 @@ VIN: ${report.vin}
 Obtain Date: ${report.obtainDate}
 Obtained From: ${report.obtainedFrom}
 Disposition: ${report.disposition}
-Export Intended: ${report.exportIntended ? 'Yes' : 'No'}
-Odometer: ${report.odometer || 'N/A'}
+Export Intended: ${report.exportIntended ? "Yes" : "No"}
+Odometer: ${report.odometer || "N/A"}
 
 Copy this information to the AAMVA SVRS form.`);
         }, 2000);
@@ -192,7 +212,9 @@ export const initializeNMVTIS = (config: NMVTISConfig) => {
 
 export const getNMVTISReporter = (): NMVTISReporter => {
   if (!nmvtisReporter) {
-    throw new Error('NMVTIS Reporter not initialized. Call initializeNMVTIS first.');
+    throw new Error(
+      "NMVTIS Reporter not initialized. Call initializeNMVTIS first.",
+    );
   }
   return nmvtisReporter;
 };
@@ -241,4 +263,4 @@ export const reportVehicleCrushed = async (vehicleData: {
     obtainedFrom: vehicleData.sellerName,
     disposition: "CRUSH",
   });
-}; 
+};

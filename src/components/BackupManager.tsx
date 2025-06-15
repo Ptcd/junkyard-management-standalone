@@ -42,22 +42,25 @@ const BackupManager: React.FC = () => {
   const [emailSending, setEmailSending] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [backupStatus, setBackupStatus] = useState({ isDue: false, daysUntilNext: 0 });
+  const [backupStatus, setBackupStatus] = useState({
+    isDue: false,
+    daysUntilNext: 0,
+  });
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
 
   useEffect(() => {
     // Load backup settings
-    const savedEmail = localStorage.getItem('backupEmail');
-    const autoBackup = localStorage.getItem('autoBackupEnabled') === 'true';
-    
+    const savedEmail = localStorage.getItem("backupEmail");
+    const autoBackup = localStorage.getItem("autoBackupEnabled") === "true";
+
     if (savedEmail) setBackupEmail(savedEmail);
     setAutoBackupEnabled(autoBackup);
-    
+
     // Check backup status
     const status = isBackupDue();
     setBackupStatus(status);
-    
+
     // Auto-schedule if enabled and due
     if (autoBackup && savedEmail && status.isDue) {
       scheduleMonthlyBackup(savedEmail);
@@ -84,7 +87,7 @@ const BackupManager: React.FC = () => {
     setEmailSending(true);
     try {
       const result = await sendBackupEmail(backupEmail);
-      
+
       if (result.success) {
         setSuccess(result.message);
         // Update backup status
@@ -105,8 +108,8 @@ const BackupManager: React.FC = () => {
   };
 
   const handleSaveSettings = () => {
-    localStorage.setItem('backupEmail', backupEmail);
-    localStorage.setItem('autoBackupEnabled', autoBackupEnabled.toString());
+    localStorage.setItem("backupEmail", backupEmail);
+    localStorage.setItem("autoBackupEnabled", autoBackupEnabled.toString());
     setSuccess("Backup settings saved!");
     setTimeout(() => setSuccess(""), 3000);
   };
@@ -119,7 +122,7 @@ const BackupManager: React.FC = () => {
       try {
         const backupData = JSON.parse(e.target?.result as string);
         const success = restoreFromBackup(backupData);
-        
+
         if (success) {
           setSuccess("Data restored successfully! Please refresh the page.");
           setShowRestoreDialog(false);
@@ -129,13 +132,13 @@ const BackupManager: React.FC = () => {
       } catch (err) {
         setError("Invalid backup file format");
       }
-      
+
       setTimeout(() => {
         setSuccess("");
         setError("");
       }, 5000);
     };
-    
+
     reader.readAsText(restoreFile);
   };
 
@@ -145,7 +148,10 @@ const BackupManager: React.FC = () => {
       vehiclePurchases: data.vehicleTransactions.length,
       vehicleSales: data.vehicleSales.length,
       cashTransactions: data.cashTransactions.length,
-      totalRecords: Object.values(data).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0),
+      totalRecords: Object.values(data).reduce(
+        (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+        0,
+      ),
     };
   };
 
@@ -157,7 +163,8 @@ const BackupManager: React.FC = () => {
         Data Backup & Recovery
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Protect your junkyard data with automated backups and easy recovery options
+        Protect your junkyard data with automated backups and easy recovery
+        options
       </Typography>
 
       {success && (
@@ -181,9 +188,9 @@ const BackupManager: React.FC = () => {
             {backupStatus.isDue ? (
               <Chip label="Backup Due" color="warning" />
             ) : (
-              <Chip 
-                label={`${backupStatus.daysUntilNext} days until next backup`} 
-                color="success" 
+              <Chip
+                label={`${backupStatus.daysUntilNext} days until next backup`}
+                color="success"
               />
             )}
           </Stack>
@@ -303,8 +310,8 @@ const BackupManager: React.FC = () => {
         </Typography>
         <Stack spacing={2}>
           <Alert severity="warning">
-            <strong>Warning:</strong> Restoring from backup will overwrite all current data. 
-            Make sure to download a current backup first!
+            <strong>Warning:</strong> Restoring from backup will overwrite all
+            current data. Make sure to download a current backup first!
           </Alert>
 
           <Button
@@ -319,7 +326,12 @@ const BackupManager: React.FC = () => {
       </Paper>
 
       {/* Restore Dialog */}
-      <Dialog open={showRestoreDialog} onClose={() => setShowRestoreDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showRestoreDialog}
+        onClose={() => setShowRestoreDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Warning color="warning" />
@@ -343,7 +355,9 @@ const BackupManager: React.FC = () => {
             />
             <label htmlFor="restore-file-upload">
               <Button variant="outlined" component="span" fullWidth>
-                {restoreFile ? `Selected: ${restoreFile.name}` : "Choose Backup File (.json)"}
+                {restoreFile
+                  ? `Selected: ${restoreFile.name}`
+                  : "Choose Backup File (.json)"}
               </Button>
             </label>
           </Stack>
@@ -364,4 +378,4 @@ const BackupManager: React.FC = () => {
   );
 };
 
-export default BackupManager; 
+export default BackupManager;

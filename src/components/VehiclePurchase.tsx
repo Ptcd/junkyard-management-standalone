@@ -22,7 +22,10 @@ import {
 import { Save as SaveIcon, QrCodeScanner } from "@mui/icons-material";
 import VINScanner from "./VINScanner";
 import OfflineManager from "../utils/offlineManager";
-import { recordVehiclePurchase, getDriverCashBalance } from "../utils/cashTracker";
+import {
+  recordVehiclePurchase,
+  getDriverCashBalance,
+} from "../utils/cashTracker";
 import { scheduleVehiclePurchaseReport } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
@@ -167,7 +170,11 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       (field) => !formData[field as keyof VehiclePurchaseData],
     );
 
-    if (missingFields.length > 0 || !formData.sellerDriverLicensePhoto || !formData.sellerSignature) {
+    if (
+      missingFields.length > 0 ||
+      !formData.sellerDriverLicensePhoto ||
+      !formData.sellerSignature
+    ) {
       const missing = missingFields.join(", ");
       const photoMissing = !formData.sellerDriverLicensePhoto
         ? "Driver License Photo"
@@ -175,7 +182,9 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       const signatureMissing = !formData.sellerSignature
         ? "Seller Signature"
         : "";
-      const allMissing = [missing, photoMissing, signatureMissing].filter(Boolean).join(", ");
+      const allMissing = [missing, photoMissing, signatureMissing]
+        .filter(Boolean)
+        .join(", ");
       setError(`Please fill in all required fields: ${allMissing}`);
       return;
     }
@@ -211,8 +220,11 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
         );
       } else {
         // Use offline manager for regular vehicle transactions
-        await offlineManager.saveTransaction(transaction, "vehicleTransactions");
-        
+        await offlineManager.saveTransaction(
+          transaction,
+          "vehicleTransactions",
+        );
+
         // Record cash transaction for vehicle purchase
         try {
           recordVehiclePurchase(
@@ -221,9 +233,9 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             user.yardId,
             parseFloat(formData.salePrice),
             formData.vehicleVIN,
-            transactionId
+            transactionId,
           );
-          
+
           // Update driver's cash balance display
           const newBalance = getDriverCashBalance(user.id);
           setDriverCashBalance(newBalance);
@@ -238,7 +250,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             transactionId,
             formData.vehicleVIN,
             formData.saleDate,
-            formData.sellerName
+            formData.sellerName,
           );
         } catch (nmvtisError) {
           console.error("Failed to schedule NMVTIS report:", nmvtisError);
@@ -267,23 +279,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
         Wisconsin Junked Vehicle Bill of Sale
       </Typography>
-
-      {/* Driver Cash Balance - Only show for drivers */}
-      {user.role === "driver" && (
-        <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: driverCashBalance >= 0 ? "success.light" : "error.light" }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="h6">
-              💰 Cash on Hand: <strong>${driverCashBalance.toFixed(2)}</strong>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {driverCashBalance >= 0 
-                ? "Ready to purchase vehicles" 
-                : "⚠️ Negative balance - contact admin"
-              }
-            </Typography>
-          </Stack>
-        </Paper>
-      )}
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
@@ -402,8 +397,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             </Box>
 
             <Box>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 fullWidth
                 onClick={() => setShowSignaturePad(true)}
               >

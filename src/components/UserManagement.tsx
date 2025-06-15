@@ -37,9 +37,17 @@ import {
   AttachMoney,
   TrendingUp,
 } from "@mui/icons-material";
-import { getDriverCashBalance, getDriverCashHistory } from "../utils/cashTracker";
+import {
+  getDriverCashBalance,
+  getDriverCashHistory,
+} from "../utils/cashTracker";
 import { getDriverExpenses, getExpenseStats } from "../utils/expenseManager";
-import { User, getAllUsers, signUp, updateUserProfile } from "../utils/supabaseAuth";
+import {
+  User,
+  getAllUsers,
+  signUp,
+  updateUserProfile,
+} from "../utils/supabaseAuth";
 
 interface UserManagementProps {
   currentUser: User;
@@ -80,7 +88,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   };
 
   const handleAddUser = async () => {
-    if (!newUser.password || !newUser.firstName || !newUser.lastName || !newUser.email) {
+    if (
+      !newUser.password ||
+      !newUser.firstName ||
+      !newUser.lastName ||
+      !newUser.email
+    ) {
       setError("Please fill in all required fields");
       return;
     }
@@ -95,10 +108,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       licenseNumber: newUser.licenseNumber,
     };
 
-    const { data, error: createError } = await signUp(newUser.email, newUser.password, userData);
+    const { data, error: createError } = await signUp(
+      newUser.email,
+      newUser.password,
+      userData,
+    );
 
     if (createError) {
-      setError(typeof createError === 'string' ? createError : (createError as any)?.message || "Failed to create user");
+      setError(
+        typeof createError === "string"
+          ? createError
+          : (createError as any)?.message || "Failed to create user",
+      );
     } else if (data?.user) {
       setSuccess("User added successfully!");
       setShowAddUserDialog(false);
@@ -121,9 +142,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     }, 3000);
   };
 
-  const handleUpdateUserStatus = async (userId: string, newStatus: "active" | "inactive") => {
+  const handleUpdateUserStatus = async (
+    userId: string,
+    newStatus: "active" | "inactive",
+  ) => {
     setLoading(true);
-    const { error: updateError } = await updateUserProfile(userId, { status: newStatus });
+    const { error: updateError } = await updateUserProfile(userId, {
+      status: newStatus,
+    });
 
     if (updateError) {
       setError("Failed to update user status");
@@ -153,7 +179,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     };
   };
 
-  const drivers = users.filter(user => user.role === "driver");
+  const drivers = users.filter((user) => user.role === "driver");
 
   return (
     <Box>
@@ -178,14 +204,25 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         <Typography variant="h6" gutterBottom>
           Driver Overview ({drivers.length} drivers)
         </Typography>
-        
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 2 }}>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 2,
+          }}
+        >
           {drivers.map((driver) => {
             const stats = getUserStats(driver);
             return (
               <Card key={driver.id} variant="outlined">
                 <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{ mb: 2 }}
+                  >
                     <AccountCircle color="primary" />
                     <Box>
                       <Typography variant="h6">
@@ -242,7 +279,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       </Paper>
 
       {/* Add User Button */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
         <Typography variant="h6">All Users ({users.length})</Typography>
         <Button
           variant="contained"
@@ -271,7 +313,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.firstName} {user.lastName}</TableCell>
+                  <TableCell>
+                    {user.firstName} {user.lastName}
+                  </TableCell>
                   <TableCell>
                     <Chip
                       label={user.role}
@@ -286,9 +330,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
-                    {user.phone}
-                  </TableCell>
+                  <TableCell>{user.phone}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1}>
                       <IconButton
@@ -304,7 +346,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                         size="small"
                         variant="outlined"
                         color={user.status === "active" ? "warning" : "success"}
-                        onClick={() => handleUpdateUserStatus(user.id, user.status === "active" ? "inactive" : "active")}
+                        onClick={() =>
+                          handleUpdateUserStatus(
+                            user.id,
+                            user.status === "active" ? "inactive" : "active",
+                          )
+                        }
                         disabled={loading}
                       >
                         {user.status === "active" ? "Deactivate" : "Activate"}
@@ -319,7 +366,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       </Paper>
 
       {/* Add User Dialog */}
-      <Dialog open={showAddUserDialog} onClose={() => setShowAddUserDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showAddUserDialog}
+        onClose={() => setShowAddUserDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add New User</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
@@ -327,13 +379,17 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               <TextField
                 label="First Name *"
                 value={newUser.firstName}
-                onChange={(e) => setNewUser(prev => ({ ...prev, firstName: e.target.value }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({ ...prev, firstName: e.target.value }))
+                }
                 fullWidth
               />
               <TextField
                 label="Last Name *"
                 value={newUser.lastName}
-                onChange={(e) => setNewUser(prev => ({ ...prev, lastName: e.target.value }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({ ...prev, lastName: e.target.value }))
+                }
                 fullWidth
               />
             </Stack>
@@ -342,7 +398,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               label="Email *"
               type="email"
               value={newUser.email}
-              onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) =>
+                setNewUser((prev) => ({ ...prev, email: e.target.value }))
+              }
               fullWidth
             />
 
@@ -350,7 +408,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               label="Password *"
               type={showPassword ? "text" : "password"}
               value={newUser.password}
-              onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+              onChange={(e) =>
+                setNewUser((prev) => ({ ...prev, password: e.target.value }))
+              }
               fullWidth
               helperText="Password must be at least 6 characters"
               InputProps={{
@@ -366,7 +426,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
               <InputLabel>Role</InputLabel>
               <Select
                 value={newUser.role}
-                onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value as "admin" | "driver" }))}
+                onChange={(e) =>
+                  setNewUser((prev) => ({
+                    ...prev,
+                    role: e.target.value as "admin" | "driver",
+                  }))
+                }
               >
                 <MenuItem value="driver">Driver</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
@@ -376,56 +441,98 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
             <TextField
               label="Phone"
               value={newUser.phone}
-              onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) =>
+                setNewUser((prev) => ({ ...prev, phone: e.target.value }))
+              }
               fullWidth
             />
 
             <TextField
               label="License Number"
               value={newUser.licenseNumber}
-              onChange={(e) => setNewUser(prev => ({ ...prev, licenseNumber: e.target.value }))}
+              onChange={(e) =>
+                setNewUser((prev) => ({
+                  ...prev,
+                  licenseNumber: e.target.value,
+                }))
+              }
               fullWidth
             />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAddUserDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddUser} variant="contained" disabled={loading}>
+          <Button
+            onClick={handleAddUser}
+            variant="contained"
+            disabled={loading}
+          >
             {loading ? "Adding..." : "Add User"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* User Details Dialog */}
-      <Dialog open={showUserDetailsDialog} onClose={() => setShowUserDetailsDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={showUserDetailsDialog}
+        onClose={() => setShowUserDetailsDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
-          {selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName} - Details` : "User Details"}
+          {selectedUser
+            ? `${selectedUser.firstName} ${selectedUser.lastName} - Details`
+            : "User Details"}
         </DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Stack spacing={3} sx={{ mt: 1 }}>
               {/* User Info */}
               <Box>
-                <Typography variant="h6" gutterBottom>User Information</Typography>
+                <Typography variant="h6" gutterBottom>
+                  User Information
+                </Typography>
                 <Stack spacing={1}>
-                  <Typography><strong>Email:</strong> {selectedUser.email || "Not provided"}</Typography>
-                  <Typography><strong>Phone:</strong> {selectedUser.phone || "Not provided"}</Typography>
-                  <Typography><strong>Role:</strong> {selectedUser.role}</Typography>
+                  <Typography>
+                    <strong>Email:</strong>{" "}
+                    {selectedUser.email || "Not provided"}
+                  </Typography>
+                  <Typography>
+                    <strong>Phone:</strong>{" "}
+                    {selectedUser.phone || "Not provided"}
+                  </Typography>
+                  <Typography>
+                    <strong>Role:</strong> {selectedUser.role}
+                  </Typography>
                 </Stack>
               </Box>
 
               {/* Financial Summary for drivers */}
               {selectedUser.role === "driver" && (
                 <Box>
-                  <Typography variant="h6" gutterBottom>Financial Summary</Typography>
+                  <Typography variant="h6" gutterBottom>
+                    Financial Summary
+                  </Typography>
                   {(() => {
                     const stats = getUserStats(selectedUser);
                     return (
                       <Stack spacing={1}>
-                        <Typography><strong>Cash Balance:</strong> ${stats.cashBalance.toFixed(2)}</Typography>
-                        <Typography><strong>Total Transactions:</strong> {stats.totalTransactions}</Typography>
-                        <Typography><strong>Total Expenses:</strong> ${stats.totalExpenses.toFixed(2)}</Typography>
-                        <Typography><strong>Expense Reports:</strong> {stats.totalExpenseReports}</Typography>
+                        <Typography>
+                          <strong>Cash Balance:</strong> $
+                          {stats.cashBalance.toFixed(2)}
+                        </Typography>
+                        <Typography>
+                          <strong>Total Transactions:</strong>{" "}
+                          {stats.totalTransactions}
+                        </Typography>
+                        <Typography>
+                          <strong>Total Expenses:</strong> $
+                          {stats.totalExpenses.toFixed(2)}
+                        </Typography>
+                        <Typography>
+                          <strong>Expense Reports:</strong>{" "}
+                          {stats.totalExpenseReports}
+                        </Typography>
                       </Stack>
                     );
                   })()}
@@ -442,4 +549,4 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   );
 };
 
-export default UserManagement; 
+export default UserManagement;

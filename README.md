@@ -5,29 +5,34 @@ A comprehensive web application for managing junkyard operations, including vehi
 ## Features
 
 ### 🚗 Vehicle Management
+
 - **Purchase Tracking**: Record vehicle acquisitions with seller information, pricing, and documentation
 - **Sales Management**: Track parts sales and whole vehicle sales with buyer details
 - **VIN Scanning**: Built-in VIN scanner for quick data entry
 - **Digital Signatures**: Capture signatures for transactions
 
 ### 💰 Financial Management
+
 - **Cash Tracking**: Real-time cash balance tracking for drivers
 - **Expense Reporting**: Detailed expense tracking with categories and receipts
 - **Transaction History**: Complete audit trail of all financial activities
 - **Accounting Dashboard**: Financial overview and reporting for administrators
 
 ### 📋 Compliance & Reporting
+
 - **NMVTIS Integration**: Automated reporting to National Motor Vehicle Title Information System
 - **State Compliance**: Tools for meeting state-specific junkyard regulations
 - **Logbook Management**: Digital logbook for all vehicle transactions
 - **Backup & Recovery**: Automated data backup with email delivery
 
 ### 👥 User Management
+
 - **Role-Based Access**: Admin and Driver roles with appropriate permissions
 - **User Profiles**: Detailed user information with licensing and contact details
 - **Real Authentication**: Secure email-based user authentication with password reset
 
 ### 🔧 Additional Features
+
 - **Impound/Lien Management**: Track impounded vehicles and lien processes
 - **Offline Support**: Works offline with automatic sync when connected
 - **Mobile Responsive**: Optimized for tablets and mobile devices
@@ -54,23 +59,27 @@ A comprehensive web application for managing junkyard operations, including vehi
 ### Local Development
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd junkyard-management-standalone
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your Supabase credentials
    ```
 
 4. **Start development server**
+
    ```bash
    npm start
    ```
@@ -90,6 +99,7 @@ A comprehensive web application for managing junkyard operations, including vehi
 This application is production-ready and can be deployed to various platforms. See [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) for detailed instructions.
 
 ### Recommended Deployment Stack
+
 - **Frontend**: Vercel or Netlify
 - **Database**: Supabase
 - **Domain**: Custom domain with SSL
@@ -124,6 +134,7 @@ Run the SQL schema in your Supabase dashboard:
 ## User Roles
 
 ### Admin Users
+
 - Full access to all features
 - User management capabilities
 - System settings configuration
@@ -131,6 +142,7 @@ Run the SQL schema in your Supabase dashboard:
 - NMVTIS compliance management
 
 ### Driver Users
+
 - Vehicle purchase and sale recording
 - Personal cash tracking
 - Expense reporting
@@ -181,6 +193,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Changelog
 
 ### v2.0.0 - Production Ready
+
 - ✅ Real Supabase authentication
 - ✅ Database persistence
 - ✅ User management system
@@ -188,6 +201,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - ✅ Comprehensive documentation
 
 ### v1.0.0 - Initial Release
+
 - Basic vehicle management
 - Mock authentication
 - Local storage only

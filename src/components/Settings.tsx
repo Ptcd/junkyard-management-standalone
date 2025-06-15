@@ -22,7 +22,15 @@ import {
   DialogActions,
   DialogContentText,
 } from "@mui/material";
-import { Save as SaveIcon, Settings as SettingsIcon, Backup, People, Business, AccountCircle, Delete } from "@mui/icons-material";
+import {
+  Save as SaveIcon,
+  Settings as SettingsIcon,
+  Backup,
+  People,
+  Business,
+  AccountCircle,
+  Delete,
+} from "@mui/icons-material";
 import BackupManager from "./BackupManager";
 import UserManagement from "./UserManagement";
 import BuyerProfilesManager from "./BuyerProfilesManager";
@@ -153,7 +161,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const { error: updateError } = await updateUserProfile(user.id, {
       firstName: profileForm.firstName,
       lastName: profileForm.lastName,
@@ -161,7 +169,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     });
 
     if (updateError) {
-      setError(typeof updateError === 'string' ? updateError : 'Failed to update profile');
+      setError(
+        typeof updateError === "string"
+          ? updateError
+          : "Failed to update profile",
+      );
     } else {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -169,18 +181,22 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') {
-      setError('Please type DELETE to confirm account deletion');
+    if (deleteConfirmText !== "DELETE") {
+      setError("Please type DELETE to confirm account deletion");
       return;
     }
 
     const { error: deleteError } = await deleteAccount();
-    
+
     if (deleteError) {
-      setError(typeof deleteError === 'string' ? deleteError : 'Failed to delete account');
+      setError(
+        typeof deleteError === "string"
+          ? deleteError
+          : "Failed to delete account",
+      );
     } else {
       // User will be signed out automatically
-      window.location.href = '/';
+      window.location.href = "/";
     }
   };
 
@@ -196,11 +212,27 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab icon={<SettingsIcon />} label="General Settings" iconPosition="start" />
-          <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
+          <Tab
+            icon={<SettingsIcon />}
+            label="General Settings"
+            iconPosition="start"
+          />
+          <Tab
+            icon={<Backup />}
+            label="Backup & Recovery"
+            iconPosition="start"
+          />
           <Tab icon={<People />} label="User Management" iconPosition="start" />
-          <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
-          <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+          <Tab
+            icon={<Business />}
+            label="Buyer Profiles"
+            iconPosition="start"
+          />
+          <Tab
+            icon={<AccountCircle />}
+            label="Account Management"
+            iconPosition="start"
+          />
         </Tabs>
       </Paper>
 
@@ -234,33 +266,58 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   fullWidth
                   label="Business Name"
                   value={yardSettings.name}
-                  onChange={(e) => setYardSettings(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setYardSettings((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                 />
 
                 <TextField
                   fullWidth
                   label="Address"
                   value={yardSettings.address}
-                  onChange={(e) => setYardSettings(prev => ({ ...prev, address: e.target.value }))}
+                  onChange={(e) =>
+                    setYardSettings((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
                 />
 
                 <Stack direction="row" spacing={2}>
                   <TextField
                     label="City"
                     value={yardSettings.city}
-                    onChange={(e) => setYardSettings(prev => ({ ...prev, city: e.target.value }))}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        city: e.target.value,
+                      }))
+                    }
                     sx={{ flex: 1 }}
                   />
                   <TextField
                     label="State"
                     value={yardSettings.state}
-                    onChange={(e) => setYardSettings(prev => ({ ...prev, state: e.target.value }))}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        state: e.target.value,
+                      }))
+                    }
                     sx={{ width: 100 }}
                   />
                   <TextField
                     label="ZIP Code"
                     value={yardSettings.zip}
-                    onChange={(e) => setYardSettings(prev => ({ ...prev, zip: e.target.value }))}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        zip: e.target.value,
+                      }))
+                    }
                     sx={{ width: 120 }}
                   />
                 </Stack>
@@ -269,13 +326,23 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   <TextField
                     label="Phone Number"
                     value={yardSettings.phone}
-                    onChange={(e) => setYardSettings(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
                     sx={{ flex: 1 }}
                   />
                   <TextField
                     label="Email"
                     value={yardSettings.email}
-                    onChange={(e) => setYardSettings(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
                     sx={{ flex: 1 }}
                   />
                 </Stack>
@@ -284,7 +351,12 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   fullWidth
                   label="License Number"
                   value={yardSettings.licenseNumber}
-                  onChange={(e) => setYardSettings(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setYardSettings((prev) => ({
+                      ...prev,
+                      licenseNumber: e.target.value,
+                    }))
+                  }
                 />
 
                 {/* NMVTIS Settings Section */}
@@ -335,17 +407,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         </Box>
       )}
 
-      {tabValue === 1 && (
-        <BackupManager />
-      )}
+      {tabValue === 1 && <BackupManager />}
 
-      {tabValue === 2 && (
-        <UserManagement currentUser={user} />
-      )}
+      {tabValue === 2 && <UserManagement currentUser={user} />}
 
-      {tabValue === 3 && (
-        <BuyerProfilesManager user={user} />
-      )}
+      {tabValue === 3 && <BuyerProfilesManager user={user} />}
 
       {tabValue === 4 && (
         <Box>
@@ -367,7 +433,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               Profile Information
             </Typography>
             <Divider sx={{ mb: 3 }} />
-            
+
             <form onSubmit={handleProfileUpdate}>
               <Stack spacing={3}>
                 <Stack direction="row" spacing={2}>
@@ -375,14 +441,24 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     fullWidth
                     label="First Name"
                     value={profileForm.firstName}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, firstName: e.target.value }))}
+                    onChange={(e) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        firstName: e.target.value,
+                      }))
+                    }
                     required
                   />
                   <TextField
                     fullWidth
                     label="Last Name"
                     value={profileForm.lastName}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, lastName: e.target.value }))}
+                    onChange={(e) =>
+                      setProfileForm((prev) => ({
+                        ...prev,
+                        lastName: e.target.value,
+                      }))
+                    }
                     required
                   />
                 </Stack>
@@ -399,7 +475,12 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   fullWidth
                   label="Phone Number"
                   value={profileForm.phone}
-                  onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) =>
+                    setProfileForm((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
                 />
 
                 <Typography variant="body2" color="text.secondary">
@@ -410,7 +491,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   type="submit"
                   variant="contained"
                   startIcon={<SaveIcon />}
-                  sx={{ alignSelf: 'flex-start' }}
+                  sx={{ alignSelf: "flex-start" }}
                 >
                   Update Profile
                 </Button>
@@ -419,20 +500,22 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           </Paper>
 
           {/* Account Deletion */}
-          <Paper elevation={2} sx={{ p: 3, border: '1px solid', borderColor: 'error.main' }}>
+          <Paper
+            elevation={2}
+            sx={{ p: 3, border: "1px solid", borderColor: "error.main" }}
+          >
             <Typography variant="h6" gutterBottom color="error">
               Danger Zone
             </Typography>
             <Divider sx={{ mb: 3 }} />
-            
+
             <Typography variant="body1" gutterBottom>
               Delete your account permanently. This action cannot be undone.
             </Typography>
-            
+
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              • All your data will be permanently deleted
-              • You will be immediately signed out
-              • This action cannot be reversed
+              • All your data will be permanently deleted • You will be
+              immediately signed out • This action cannot be reversed
             </Typography>
 
             <Button
@@ -461,23 +544,24 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         <DialogTitle color="error">Delete Account</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            This will permanently delete your account and all associated data. This action cannot be undone.
+            This will permanently delete your account and all associated data.
+            This action cannot be undone.
           </DialogContentText>
-          
+
           <DialogContentText sx={{ mb: 2 }}>
             Type <strong>DELETE</strong> to confirm:
           </DialogContentText>
-          
+
           <TextField
             fullWidth
             value={deleteConfirmText}
             onChange={(e) => setDeleteConfirmText(e.target.value)}
             placeholder="Type DELETE here"
-            error={error.includes('DELETE')}
+            error={error.includes("DELETE")}
           />
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => {
               setShowDeleteDialog(false);
               setDeleteConfirmText("");
@@ -486,11 +570,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleDeleteAccount}
             color="error"
             variant="contained"
-            disabled={deleteConfirmText !== 'DELETE'}
+            disabled={deleteConfirmText !== "DELETE"}
           >
             Delete Account
           </Button>

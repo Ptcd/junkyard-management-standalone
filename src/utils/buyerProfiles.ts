@@ -13,7 +13,12 @@ export interface BuyerProfile {
   email: string;
   secondaryEmail?: string;
   licenseNumber?: string;
-  buyerType: 'scrap_yard' | 'parts_dealer' | 'export_company' | 'individual' | 'other';
+  buyerType:
+    | "scrap_yard"
+    | "parts_dealer"
+    | "export_company"
+    | "individual"
+    | "other";
   notes?: string;
   isActive: boolean;
   createdAt: string;
@@ -23,24 +28,30 @@ export interface BuyerProfile {
 
 // Get all buyer profiles for a yard
 export const getBuyerProfiles = (yardId: string): BuyerProfile[] => {
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
-  return profiles.filter((profile: BuyerProfile) => profile.yardId === yardId && profile.isActive);
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+  return profiles.filter(
+    (profile: BuyerProfile) => profile.yardId === yardId && profile.isActive,
+  );
 };
 
 // Get all buyer profiles (admin view)
 export const getAllBuyerProfiles = (yardId: string): BuyerProfile[] => {
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
   return profiles.filter((profile: BuyerProfile) => profile.yardId === yardId);
 };
 
 // Get buyer profile by ID
 export const getBuyerProfile = (profileId: string): BuyerProfile | null => {
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
-  return profiles.find((profile: BuyerProfile) => profile.id === profileId) || null;
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+  return (
+    profiles.find((profile: BuyerProfile) => profile.id === profileId) || null
+  );
 };
 
 // Create new buyer profile
-export const createBuyerProfile = (profileData: Omit<BuyerProfile, 'id' | 'createdAt' | 'updatedAt'>): BuyerProfile => {
+export const createBuyerProfile = (
+  profileData: Omit<BuyerProfile, "id" | "createdAt" | "updatedAt">,
+): BuyerProfile => {
   const newProfile: BuyerProfile = {
     ...profileData,
     id: `BUYER-${Date.now()}`,
@@ -48,17 +59,22 @@ export const createBuyerProfile = (profileData: Omit<BuyerProfile, 'id' | 'creat
     updatedAt: new Date().toISOString(),
   };
 
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
   profiles.push(newProfile);
-  localStorage.setItem('buyerProfiles', JSON.stringify(profiles));
+  localStorage.setItem("buyerProfiles", JSON.stringify(profiles));
 
   return newProfile;
 };
 
 // Update buyer profile
-export const updateBuyerProfile = (profileId: string, updates: Partial<BuyerProfile>): BuyerProfile | null => {
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
-  const profileIndex = profiles.findIndex((profile: BuyerProfile) => profile.id === profileId);
+export const updateBuyerProfile = (
+  profileId: string,
+  updates: Partial<BuyerProfile>,
+): BuyerProfile | null => {
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+  const profileIndex = profiles.findIndex(
+    (profile: BuyerProfile) => profile.id === profileId,
+  );
 
   if (profileIndex === -1) return null;
 
@@ -68,58 +84,70 @@ export const updateBuyerProfile = (profileId: string, updates: Partial<BuyerProf
     updatedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem('buyerProfiles', JSON.stringify(profiles));
+  localStorage.setItem("buyerProfiles", JSON.stringify(profiles));
   return profiles[profileIndex];
 };
 
 // Delete buyer profile (soft delete - set inactive)
 export const deleteBuyerProfile = (profileId: string): boolean => {
-  const profiles = JSON.parse(localStorage.getItem('buyerProfiles') || '[]');
-  const profileIndex = profiles.findIndex((profile: BuyerProfile) => profile.id === profileId);
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+  const profileIndex = profiles.findIndex(
+    (profile: BuyerProfile) => profile.id === profileId,
+  );
 
   if (profileIndex === -1) return false;
 
   profiles[profileIndex].isActive = false;
   profiles[profileIndex].updatedAt = new Date().toISOString();
 
-  localStorage.setItem('buyerProfiles', JSON.stringify(profiles));
+  localStorage.setItem("buyerProfiles", JSON.stringify(profiles));
   return true;
 };
 
 // Get buyer profiles by type
-export const getBuyerProfilesByType = (yardId: string, buyerType: BuyerProfile['buyerType']): BuyerProfile[] => {
+export const getBuyerProfilesByType = (
+  yardId: string,
+  buyerType: BuyerProfile["buyerType"],
+): BuyerProfile[] => {
   const profiles = getBuyerProfiles(yardId);
-  return profiles.filter(profile => profile.buyerType === buyerType);
+  return profiles.filter((profile) => profile.buyerType === buyerType);
 };
 
 // Search buyer profiles
-export const searchBuyerProfiles = (yardId: string, searchTerm: string): BuyerProfile[] => {
+export const searchBuyerProfiles = (
+  yardId: string,
+  searchTerm: string,
+): BuyerProfile[] => {
   const profiles = getBuyerProfiles(yardId);
   const term = searchTerm.toLowerCase();
-  
-  return profiles.filter(profile => 
-    profile.companyName.toLowerCase().includes(term) ||
-    profile.contactName.toLowerCase().includes(term) ||
-    profile.phone.includes(term) ||
-    profile.email.toLowerCase().includes(term)
+
+  return profiles.filter(
+    (profile) =>
+      profile.companyName.toLowerCase().includes(term) ||
+      profile.contactName.toLowerCase().includes(term) ||
+      profile.phone.includes(term) ||
+      profile.email.toLowerCase().includes(term),
   );
 };
 
 // Get buyer profile statistics
 export const getBuyerProfileStats = (yardId: string) => {
   const profiles = getAllBuyerProfiles(yardId);
-  const activeProfiles = profiles.filter(p => p.isActive);
-  
-  const typeStats = activeProfiles.reduce((acc, profile) => {
-    acc[profile.buyerType] = (acc[profile.buyerType] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const activeProfiles = profiles.filter((p) => p.isActive);
+
+  const typeStats = activeProfiles.reduce(
+    (acc, profile) => {
+      acc[profile.buyerType] = (acc[profile.buyerType] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   return {
     total: profiles.length,
     active: activeProfiles.length,
     inactive: profiles.length - activeProfiles.length,
-    byType: typeStats
+    byType: typeStats,
   };
 };
 
@@ -143,7 +171,7 @@ export const createDefaultBuyerProfiles = (yardId: string): void => {
       buyerType: "scrap_yard" as const,
       notes: "Pays cash, picks up same day. Prefers complete vehicles.",
       isActive: true,
-      yardId
+      yardId,
     },
     {
       companyName: "Auto Parts Plus",
@@ -156,9 +184,10 @@ export const createDefaultBuyerProfiles = (yardId: string): void => {
       email: "buyers@autopartsplus.com",
       licenseNumber: "WI-PARTS-2024-002",
       buyerType: "parts_dealer" as const,
-      notes: "Specializes in engines and transmissions. Good prices for newer vehicles.",
+      notes:
+        "Specializes in engines and transmissions. Good prices for newer vehicles.",
       isActive: true,
-      yardId
+      yardId,
     },
     {
       companyName: "Global Auto Export LLC",
@@ -172,9 +201,10 @@ export const createDefaultBuyerProfiles = (yardId: string): void => {
       secondaryEmail: "operations@globalautoexport.com",
       licenseNumber: "WI-EXPORT-2024-003",
       buyerType: "export_company" as const,
-      notes: "Exports to overseas markets. Interested in luxury and foreign vehicles.",
+      notes:
+        "Exports to overseas markets. Interested in luxury and foreign vehicles.",
       isActive: true,
-      yardId
+      yardId,
     },
     {
       companyName: "Badger State Recycling",
@@ -186,13 +216,14 @@ export const createDefaultBuyerProfiles = (yardId: string): void => {
       phone: "(920) 555-0500",
       email: "lisa@badgerstaterecycling.com",
       buyerType: "scrap_yard" as const,
-      notes: "Environmental focus, proper disposal certifications. Bulk pricing available.",
+      notes:
+        "Environmental focus, proper disposal certifications. Bulk pricing available.",
       isActive: true,
-      yardId
-    }
+      yardId,
+    },
   ];
 
-  defaultProfiles.forEach(profileData => {
+  defaultProfiles.forEach((profileData) => {
     createBuyerProfile(profileData);
   });
-}; 
+};

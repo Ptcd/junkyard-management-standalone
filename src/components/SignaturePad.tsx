@@ -39,17 +39,17 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
         // Set canvas size
         canvas.width = 600;
         canvas.height = 200;
-        
+
         // Set drawing styles
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        
+
         // Clear canvas
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+
         setIsEmpty(true);
       }
     }
@@ -65,27 +65,27 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
 
     setIsDrawing(true);
     setIsEmpty(false);
-    
+
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     ctx.beginPath();
     ctx.moveTo(x, y);
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    
+
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     ctx.lineTo(x, y);
     ctx.stroke();
   };
@@ -106,11 +106,11 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
 
     setIsDrawing(true);
     setIsEmpty(false);
-    
+
     const touch = e.touches[0];
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
-    
+
     ctx.beginPath();
     ctx.moveTo(x, y);
   };
@@ -118,18 +118,18 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
   const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDrawing) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    
+
     const touch = e.touches[0];
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
-    
+
     ctx.lineTo(x, y);
     ctx.stroke();
   };
@@ -166,14 +166,14 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        <Paper 
-          elevation={2} 
-          sx={{ 
-            p: 2, 
-            display: "flex", 
-            flexDirection: "column", 
+        <Paper
+          elevation={2}
+          sx={{
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            bgcolor: "#f9f9f9"
+            bgcolor: "#f9f9f9",
           }}
         >
           <Box
@@ -202,9 +202,9 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
             />
           </Box>
 
-          <Typography 
-            variant="caption" 
-            color="text.secondary" 
+          <Typography
+            variant="caption"
+            color="text.secondary"
             sx={{ mt: 1, textAlign: "center" }}
           >
             Sign above using your mouse or finger
@@ -238,4 +238,4 @@ const SignaturePad: React.FC<SignaturePadProps> = ({
   );
 };
 
-export default SignaturePad; 
+export default SignaturePad;

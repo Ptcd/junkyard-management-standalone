@@ -70,6 +70,7 @@ npm start
 ```
 
 Test the authentication system:
+
 1. Try creating a new account
 2. Verify email confirmation works
 3. Test login/logout
@@ -82,11 +83,13 @@ Test the authentication system:
 Vercel offers the best experience for React apps with automatic deployments.
 
 #### 3.1 Install Vercel CLI
+
 ```bash
 npm install -g vercel
 ```
 
 #### 3.2 Deploy
+
 ```bash
 # Build the project
 npm run build
@@ -112,6 +115,7 @@ vercel
    - `REACT_APP_SUPABASE_ANON_KEY` = your Supabase anon key
 
 #### 3.4 Redeploy
+
 ```bash
 vercel --prod
 ```
@@ -119,6 +123,7 @@ vercel --prod
 ### Option B: Deploy to Netlify
 
 #### 3.1 Build Your Project
+
 ```bash
 npm run build
 ```
@@ -137,17 +142,20 @@ npm run build
 ### Option C: Deploy to Firebase Hosting
 
 #### 3.1 Install Firebase CLI
+
 ```bash
 npm install -g firebase-tools
 firebase login
 ```
 
 #### 3.2 Initialize Firebase
+
 ```bash
 firebase init hosting
 ```
 
 #### 3.3 Build and Deploy
+
 ```bash
 npm run build
 firebase deploy
@@ -172,6 +180,7 @@ Since you can't create admin users through the UI, you'll need to:
 ### 4.3 Test Everything
 
 Test all major features:
+
 - [ ] User registration and login
 - [ ] Password reset
 - [ ] Vehicle purchase recording
@@ -189,11 +198,13 @@ Test all major features:
 Most hosting platforms allow you to add a custom domain:
 
 **Vercel:**
+
 1. Go to your project settings
 2. Add your domain under "Domains"
 3. Configure your DNS records
 
 **Netlify:**
+
 1. Go to Domain Management
 2. Add custom domain
 3. Configure DNS
@@ -201,6 +212,7 @@ Most hosting platforms allow you to add a custom domain:
 ### 5.2 SSL Certificate
 
 SSL certificates are automatically provided by:
+
 - Vercel
 - Netlify
 - Firebase Hosting
@@ -210,6 +222,7 @@ SSL certificates are automatically provided by:
 ### 6.1 Set Up Monitoring
 
 Consider adding:
+
 - Google Analytics for usage tracking
 - Sentry for error monitoring
 - Uptime monitoring (UptimeRobot, Pingdom)
@@ -217,6 +230,7 @@ Consider adding:
 ### 6.2 Regular Backups
 
 Supabase provides automatic backups, but you should also:
+
 1. Export data regularly using the backup features in your app
 2. Keep copies of your database schema
 3. Document any custom configurations
@@ -230,16 +244,19 @@ Supabase provides automatic backups, but you should also:
 ## Security Considerations
 
 ### 6.1 Environment Variables
+
 - Never commit `.env` files to version control
 - Use platform-specific environment variable settings
 - Rotate keys regularly
 
 ### 6.2 Database Security
+
 - Supabase RLS (Row Level Security) is already configured
 - Review and update policies as needed
 - Monitor access logs
 
 ### 6.3 Application Security
+
 - Keep dependencies updated
 - Use HTTPS everywhere
 - Implement proper input validation
@@ -249,16 +266,19 @@ Supabase provides automatic backups, but you should also:
 ### Common Issues
 
 **Authentication not working:**
+
 - Check environment variables are set correctly
 - Verify Supabase URL and redirect URLs
 - Check browser console for errors
 
 **Database connection issues:**
+
 - Verify Supabase credentials
 - Check RLS policies
 - Ensure user has proper permissions
 
 **Build failures:**
+
 - Check for TypeScript errors
 - Verify all dependencies are installed
 - Check for missing environment variables
@@ -282,4 +302,4 @@ Your Junkyard Management System should now be live and accessible to users. User
 6. **Generate NMVTIS reports** for compliance
 7. **Manage users** (admin functionality)
 
-The system now uses real authentication and database storage instead of mock data, making it production-ready for actual junkyard operations. 
+The system now uses real authentication and database storage instead of mock data, making it production-ready for actual junkyard operations.

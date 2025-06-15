@@ -91,7 +91,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
     try {
       // Use NHTSA DecodeVinValues API (flat format - easier to parse)
       const response = await fetch(
-        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`,
       );
 
       if (!response.ok) {
@@ -119,23 +119,27 @@ const VINScanner: React.FC<VINScannerProps> = ({
 
       // Check if VIN decode was successful
       const errorCode = result.ErrorCode || "";
-      const isValid = errorCode === "0" || errorCode === "" || result.Make !== "";
+      const isValid =
+        errorCode === "0" || errorCode === "" || result.Make !== "";
 
       return {
         vin,
         year: year && year !== "" ? year : undefined,
         make: make && make !== "" ? make : undefined,
         model: model && model !== "" ? model : undefined,
-        vehicleType: vehicleType && vehicleType !== "" ? vehicleType : undefined,
+        vehicleType:
+          vehicleType && vehicleType !== "" ? vehicleType : undefined,
         engineSize: engineSize && engineSize !== "" ? engineSize : undefined,
         fuelType: fuelType && fuelType !== "" ? fuelType : undefined,
-        manufacturer: manufacturer && manufacturer !== "" ? manufacturer : undefined,
-        plantCountry: plantCountry && plantCountry !== "" ? plantCountry : undefined,
+        manufacturer:
+          manufacturer && manufacturer !== "" ? manufacturer : undefined,
+        plantCountry:
+          plantCountry && plantCountry !== "" ? plantCountry : undefined,
         valid: isValid,
       };
     } catch (error) {
       console.error("NHTSA API failed, using fallback decoder:", error);
-      
+
       // Fallback to improved local decoder
       return fallbackDecodeVIN(vin);
     }
@@ -152,74 +156,156 @@ const VINScanner: React.FC<VINScannerProps> = ({
     // Comprehensive manufacturer lookup based on WMI
     const manufacturers: { [key: string]: string } = {
       // GM brands
-      "1G1": "Chevrolet", "1G4": "Buick", "1G6": "Cadillac", "1GC": "Chevrolet Truck",
-      "1GT": "GMC", "1GY": "Cadillac", "3G7": "Pontiac", "2G1": "Chevrolet",
-      
-      // Ford brands  
-      "1FA": "Ford", "1FB": "Ford", "1FC": "Ford", "1FD": "Ford", "1FE": "Ford",
-      "1FF": "Ford", "1FG": "Ford", "1FH": "Ford", "1FJ": "Ford", "1FK": "Ford",
-      "1FL": "Ford", "1FM": "Ford", "1FN": "Ford", "1FP": "Ford", "1FR": "Ford",
-      "1FS": "Ford", "1FT": "Ford", "1FU": "Ford", "1FV": "Ford", "1FW": "Ford",
-      "1FX": "Ford", "1FY": "Ford", "1FZ": "Ford",
-      
+      "1G1": "Chevrolet",
+      "1G4": "Buick",
+      "1G6": "Cadillac",
+      "1GC": "Chevrolet Truck",
+      "1GT": "GMC",
+      "1GY": "Cadillac",
+      "3G7": "Pontiac",
+      "2G1": "Chevrolet",
+
+      // Ford brands
+      "1FA": "Ford",
+      "1FB": "Ford",
+      "1FC": "Ford",
+      "1FD": "Ford",
+      "1FE": "Ford",
+      "1FF": "Ford",
+      "1FG": "Ford",
+      "1FH": "Ford",
+      "1FJ": "Ford",
+      "1FK": "Ford",
+      "1FL": "Ford",
+      "1FM": "Ford",
+      "1FN": "Ford",
+      "1FP": "Ford",
+      "1FR": "Ford",
+      "1FS": "Ford",
+      "1FT": "Ford",
+      "1FU": "Ford",
+      "1FV": "Ford",
+      "1FW": "Ford",
+      "1FX": "Ford",
+      "1FY": "Ford",
+      "1FZ": "Ford",
+
       // Chrysler brands
-      "1C3": "Chrysler", "1C4": "Jeep", "1C6": "Chrysler", "1D3": "Dodge",
-      "1D4": "Dodge", "1D7": "Dodge", "2C3": "Chrysler", "2D4": "Dodge",
-      
+      "1C3": "Chrysler",
+      "1C4": "Jeep",
+      "1C6": "Chrysler",
+      "1D3": "Dodge",
+      "1D4": "Dodge",
+      "1D7": "Dodge",
+      "2C3": "Chrysler",
+      "2D4": "Dodge",
+
       // Japanese brands
-      "1N4": "Nissan", "1N6": "Nissan", "2T1": "Toyota", "2T2": "Toyota", "2T3": "Toyota",
-      "4T1": "Toyota", "4T3": "Toyota", "5N1": "Nissan", "5N3": "Nissan",
-      "JH4": "Acura", "JHM": "Honda", "JM1": "Mazda", "JM3": "Mazda",
-      "JF1": "Subaru", "JF2": "Subaru", "19U": "Acura", "1HG": "Honda",
-      
+      "1N4": "Nissan",
+      "1N6": "Nissan",
+      "2T1": "Toyota",
+      "2T2": "Toyota",
+      "2T3": "Toyota",
+      "4T1": "Toyota",
+      "4T3": "Toyota",
+      "5N1": "Nissan",
+      "5N3": "Nissan",
+      JH4: "Acura",
+      JHM: "Honda",
+      JM1: "Mazda",
+      JM3: "Mazda",
+      JF1: "Subaru",
+      JF2: "Subaru",
+      "19U": "Acura",
+      "1HG": "Honda",
+
       // Korean brands
-      "KM8": "Hyundai", "KNM": "Hyundai", "KNA": "Kia", "KNB": "Kia", "KND": "Kia",
-      
+      KM8: "Hyundai",
+      KNM: "Hyundai",
+      KNA: "Kia",
+      KNB: "Kia",
+      KND: "Kia",
+
       // European brands
-      "WBA": "BMW", "WBS": "BMW", "WBY": "BMW", "WDB": "Mercedes-Benz", "WDC": "Mercedes-Benz",
-      "WDD": "Mercedes-Benz", "WDF": "Mercedes-Benz", "WDG": "Mercedes-Benz",
-      "3VW": "Volkswagen", "WVW": "Volkswagen", "WAU": "Audi", "WA1": "Audi",
-      "YV1": "Volvo", "YV4": "Volvo", "SAL": "Land Rover", "SAJ": "Jaguar",
-      
+      WBA: "BMW",
+      WBS: "BMW",
+      WBY: "BMW",
+      WDB: "Mercedes-Benz",
+      WDC: "Mercedes-Benz",
+      WDD: "Mercedes-Benz",
+      WDF: "Mercedes-Benz",
+      WDG: "Mercedes-Benz",
+      "3VW": "Volkswagen",
+      WVW: "Volkswagen",
+      WAU: "Audi",
+      WA1: "Audi",
+      YV1: "Volvo",
+      YV4: "Volvo",
+      SAL: "Land Rover",
+      SAJ: "Jaguar",
+
       // Others
-      "5YJ": "Tesla", "7SA": "Tesla",
+      "5YJ": "Tesla",
+      "7SA": "Tesla",
     };
 
     // Decode year character - handle the 30-year cycle properly
     const decodeYear = (yearChar: string): string => {
       const char = yearChar.toUpperCase();
-      
+
       // Numbers are straightforward (2001-2009)
       const numberYears: { [key: string]: string } = {
-        "1": "2001", "2": "2002", "3": "2003", "4": "2004",
-        "5": "2005", "6": "2006", "7": "2007", "8": "2008", "9": "2009"
+        "1": "2001",
+        "2": "2002",
+        "3": "2003",
+        "4": "2004",
+        "5": "2005",
+        "6": "2006",
+        "7": "2007",
+        "8": "2008",
+        "9": "2009",
       };
-      
+
       if (numberYears[char]) {
         return numberYears[char];
       }
-      
+
       // For letters, we need to determine if it's 1980s, 2010s, or beyond
       // Since this is fallback, we'll make reasonable assumptions based on current date
       const currentYear = new Date().getFullYear();
-      
+
       const letterMappings = {
-        "A": [1980, 2010], "B": [1981, 2011], "C": [1982, 2012], "D": [1983, 2013], 
-        "E": [1984, 2014], "F": [1985, 2015], "G": [1986, 2016], "H": [1987, 2017], 
-        "J": [1988, 2018], "K": [1989, 2019], "L": [1990, 2020], "M": [1991, 2021], 
-        "N": [1992, 2022], "P": [1993, 2023], "R": [1994, 2024], "S": [1995, 2025], 
-        "T": [1996, 2026], "V": [1997, 2027], "W": [1998, 2028], "X": [1999, 2029],
-        "Y": [2000, 2030]
+        A: [1980, 2010],
+        B: [1981, 2011],
+        C: [1982, 2012],
+        D: [1983, 2013],
+        E: [1984, 2014],
+        F: [1985, 2015],
+        G: [1986, 2016],
+        H: [1987, 2017],
+        J: [1988, 2018],
+        K: [1989, 2019],
+        L: [1990, 2020],
+        M: [1991, 2021],
+        N: [1992, 2022],
+        P: [1993, 2023],
+        R: [1994, 2024],
+        S: [1995, 2025],
+        T: [1996, 2026],
+        V: [1997, 2027],
+        W: [1998, 2028],
+        X: [1999, 2029],
+        Y: [2000, 2030],
       };
-      
+
       const years = letterMappings[char as keyof typeof letterMappings];
       if (years) {
         // Choose the most reasonable year based on current date
         // If we're closer to the newer cycle, choose that
         const [older, newer] = years;
-        return (currentYear >= 2010) ? newer.toString() : older.toString();
+        return currentYear >= 2010 ? newer.toString() : older.toString();
       }
-      
+
       return "Unknown";
     };
 

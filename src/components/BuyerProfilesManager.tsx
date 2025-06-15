@@ -54,11 +54,15 @@ interface BuyerProfilesManagerProps {
   user: User;
 }
 
-const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => {
+const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
+  user,
+}) => {
   const [profiles, setProfiles] = useState<BuyerProfile[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<BuyerProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<BuyerProfile | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -66,7 +70,7 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
     total: 0,
     active: 0,
     inactive: 0,
-    byType: {} as Record<string, number>
+    byType: {} as Record<string, number>,
   });
 
   const [formData, setFormData] = useState({
@@ -80,7 +84,7 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
     email: "",
     secondaryEmail: "",
     licenseNumber: "",
-    buyerType: "scrap_yard" as BuyerProfile['buyerType'],
+    buyerType: "scrap_yard" as BuyerProfile["buyerType"],
     notes: "",
   });
 
@@ -172,7 +176,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
   };
 
   const handleDeleteProfile = (profileId: string) => {
-    if (window.confirm("Are you sure you want to deactivate this buyer profile?")) {
+    if (
+      window.confirm("Are you sure you want to deactivate this buyer profile?")
+    ) {
       try {
         deleteBuyerProfile(profileId);
         setSuccess("Buyer profile deactivated successfully!");
@@ -214,7 +220,7 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
       parts_dealer: "Parts Dealer",
       export_company: "Export Company",
       individual: "Individual",
-      other: "Other"
+      other: "Other",
     };
     return labels[type as keyof typeof labels] || type;
   };
@@ -225,7 +231,7 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
       parts_dealer: "success",
       export_company: "info",
       individual: "warning",
-      other: "default"
+      other: "default",
     };
     return colors[type as keyof typeof colors] || "default";
   };
@@ -266,7 +272,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
             <Typography color="textSecondary" gutterBottom>
               Active Profiles
             </Typography>
-            <Typography variant="h4" color="success.main">{stats.active}</Typography>
+            <Typography variant="h4" color="success.main">
+              {stats.active}
+            </Typography>
           </CardContent>
         </Card>
         <Card sx={{ minWidth: 200, flex: 1 }}>
@@ -282,7 +290,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
             <Typography color="textSecondary" gutterBottom>
               Parts Dealers
             </Typography>
-            <Typography variant="h4">{stats.byType.parts_dealer || 0}</Typography>
+            <Typography variant="h4">
+              {stats.byType.parts_dealer || 0}
+            </Typography>
           </CardContent>
         </Card>
       </Stack>
@@ -294,7 +304,7 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
             label="Search Buyers"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             sx={{ flexGrow: 1 }}
           />
           <Button
@@ -334,7 +344,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
                 <TableRow key={profile.id}>
                   <TableCell>
                     <Stack>
-                      <Typography variant="subtitle2">{profile.companyName}</Typography>
+                      <Typography variant="subtitle2">
+                        {profile.companyName}
+                      </Typography>
                       {profile.licenseNumber && (
                         <Typography variant="caption" color="text.secondary">
                           License: {profile.licenseNumber}
@@ -352,7 +364,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
                   </TableCell>
                   <TableCell>
                     <Stack>
-                      <Typography variant="body2">{profile.city}, {profile.state}</Typography>
+                      <Typography variant="body2">
+                        {profile.city}, {profile.state}
+                      </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {profile.address}
                       </Typography>
@@ -416,15 +430,15 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
       </Paper>
 
       {/* Add/Edit Dialog */}
-      <Dialog 
-        open={showAddDialog || showEditDialog} 
+      <Dialog
+        open={showAddDialog || showEditDialog}
         onClose={() => {
           setShowAddDialog(false);
           setShowEditDialog(false);
           setSelectedProfile(null);
           resetForm();
         }}
-        maxWidth="md" 
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
@@ -436,14 +450,24 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
               <TextField
                 label="Company Name *"
                 value={formData.companyName}
-                onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    companyName: e.target.value,
+                  }))
+                }
                 fullWidth
                 required
               />
               <TextField
                 label="Contact Name *"
                 value={formData.contactName}
-                onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contactName: e.target.value,
+                  }))
+                }
                 fullWidth
                 required
               />
@@ -453,7 +477,12 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
               <InputLabel>Buyer Type</InputLabel>
               <Select
                 value={formData.buyerType}
-                onChange={(e) => setFormData(prev => ({ ...prev, buyerType: e.target.value as BuyerProfile['buyerType'] }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    buyerType: e.target.value as BuyerProfile["buyerType"],
+                  }))
+                }
               >
                 <MenuItem value="scrap_yard">Scrap Yard</MenuItem>
                 <MenuItem value="parts_dealer">Parts Dealer</MenuItem>
@@ -466,7 +495,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
             <TextField
               label="Address *"
               value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, address: e.target.value }))
+              }
               fullWidth
               required
             />
@@ -475,20 +506,26 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
               <TextField
                 label="City *"
                 value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, city: e.target.value }))
+                }
                 fullWidth
                 required
               />
               <TextField
                 label="State"
                 value={formData.state}
-                onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, state: e.target.value }))
+                }
                 sx={{ width: 100 }}
               />
               <TextField
                 label="ZIP Code"
                 value={formData.zip}
-                onChange={(e) => setFormData(prev => ({ ...prev, zip: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, zip: e.target.value }))
+                }
                 sx={{ width: 120 }}
               />
             </Stack>
@@ -497,14 +534,21 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
               <TextField
                 label="Phone *"
                 value={formData.phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 fullWidth
                 required
               />
               <TextField
                 label="License Number"
                 value={formData.licenseNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    licenseNumber: e.target.value,
+                  }))
+                }
                 fullWidth
               />
             </Stack>
@@ -514,7 +558,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
                 label="Primary Email *"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, email: e.target.value }))
+                }
                 fullWidth
                 required
               />
@@ -522,7 +568,12 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
                 label="Secondary Email"
                 type="email"
                 value={formData.secondaryEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, secondaryEmail: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    secondaryEmail: e.target.value,
+                  }))
+                }
                 fullWidth
               />
             </Stack>
@@ -530,7 +581,9 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
             <TextField
               label="Notes"
               value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
               multiline
               rows={3}
               fullWidth
@@ -539,18 +592,26 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setShowAddDialog(false);
-            setShowEditDialog(false);
-            setSelectedProfile(null);
-            resetForm();
-          }}>
+          <Button
+            onClick={() => {
+              setShowAddDialog(false);
+              setShowEditDialog(false);
+              setSelectedProfile(null);
+              resetForm();
+            }}
+          >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={showAddDialog ? handleAddProfile : handleEditProfile}
             variant="contained"
-            disabled={!formData.companyName || !formData.contactName || !formData.address || !formData.phone || !formData.email}
+            disabled={
+              !formData.companyName ||
+              !formData.contactName ||
+              !formData.address ||
+              !formData.phone ||
+              !formData.email
+            }
           >
             {showAddDialog ? "Add Profile" : "Update Profile"}
           </Button>
@@ -560,4 +621,4 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({ user }) => 
   );
 };
 
-export default BuyerProfilesManager; 
+export default BuyerProfilesManager;

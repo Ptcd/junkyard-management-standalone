@@ -76,7 +76,11 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
   const [cashAdjustment, setCashAdjustment] = useState({
     amount: "",
     reason: "",
-    type: "adjustment" as "adjustment" | "deposit" | "withdrawal" | "setBalance",
+    type: "adjustment" as
+      | "adjustment"
+      | "deposit"
+      | "withdrawal"
+      | "setBalance",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -87,13 +91,20 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
 
   const loadData = () => {
     // Load driver cash records
-    const cashRecords = getAllDriversCash(user.role === "admin" ? undefined : user.yardId);
+    const cashRecords = getAllDriversCash(
+      user.role === "admin" ? undefined : user.yardId,
+    );
     setDriverCashRecords(cashRecords);
 
     // Load expense data
-    const expenses = getAllExpenses(user.role === "admin" ? undefined : user.yardId);
-    const stats = getExpenseStats(undefined, user.role === "admin" ? undefined : user.yardId);
-    
+    const expenses = getAllExpenses(
+      user.role === "admin" ? undefined : user.yardId,
+    );
+    const stats = getExpenseStats(
+      undefined,
+      user.role === "admin" ? undefined : user.yardId,
+    );
+
     setAllExpenses(expenses);
     setExpenseStats(stats);
 
@@ -110,7 +121,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
 
     try {
       const amount = parseFloat(cashAdjustment.amount);
-      
+
       if (cashAdjustment.type === "setBalance") {
         setDriverCashBalance(
           selectedDriver.driverId,
@@ -118,7 +129,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
           selectedDriver.yardId,
           amount,
           cashAdjustment.reason,
-          `${user.firstName} ${user.lastName}`
+          `${user.firstName} ${user.lastName}`,
         );
       } else if (cashAdjustment.type === "adjustment") {
         adjustDriverCash(
@@ -127,7 +138,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
           selectedDriver.yardId,
           amount,
           cashAdjustment.reason,
-          `${user.firstName} ${user.lastName}`
+          `${user.firstName} ${user.lastName}`,
         );
       } else if (cashAdjustment.type === "deposit") {
         recordCashDeposit(
@@ -135,7 +146,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
           selectedDriver.driverName,
           selectedDriver.yardId,
           amount,
-          `${user.firstName} ${user.lastName}`
+          `${user.firstName} ${user.lastName}`,
         );
       } else if (cashAdjustment.type === "withdrawal") {
         recordCashWithdrawal(
@@ -143,7 +154,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
           selectedDriver.driverName,
           selectedDriver.yardId,
           amount,
-          `${user.firstName} ${user.lastName}`
+          `${user.firstName} ${user.lastName}`,
         );
       }
 
@@ -293,7 +304,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
           <Typography variant="h6" gutterBottom>
             All Expense Reports ({allExpenses.length})
           </Typography>
-          
+
           <TableContainer>
             <Table>
               <TableHead>
@@ -323,10 +334,18 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <span>
-                            {EXPENSE_CATEGORIES.find(cat => cat.id === expense.category)?.icon}
+                            {
+                              EXPENSE_CATEGORIES.find(
+                                (cat) => cat.id === expense.category,
+                              )?.icon
+                            }
                           </span>
                           <span>
-                            {EXPENSE_CATEGORIES.find(cat => cat.id === expense.category)?.name}
+                            {
+                              EXPENSE_CATEGORIES.find(
+                                (cat) => cat.id === expense.category,
+                              )?.name
+                            }
                           </span>
                         </Stack>
                       </TableCell>
@@ -338,7 +357,7 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
                             size="small"
                             startIcon={<Receipt />}
                             onClick={() => {
-                              window.open(expense.receiptPhoto, '_blank');
+                              window.open(expense.receiptPhoto, "_blank");
                             }}
                           >
                             View
@@ -371,21 +390,32 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
       )}
 
       {/* Cash Adjustment Dialog */}
-      <Dialog open={showCashDialog} onClose={() => setShowCashDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={showCashDialog}
+        onClose={() => setShowCashDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Adjust Driver Cash</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Typography variant="body2">
               Driver: <strong>{selectedDriver?.driverName}</strong>
               <br />
-              Current Balance: <strong>${selectedDriver?.currentCash?.toFixed(2)}</strong>
+              Current Balance:{" "}
+              <strong>${selectedDriver?.currentCash?.toFixed(2)}</strong>
             </Typography>
 
             <FormControl fullWidth>
               <InputLabel>Transaction Type</InputLabel>
               <Select
                 value={cashAdjustment.type}
-                onChange={(e) => setCashAdjustment(prev => ({ ...prev, type: e.target.value as any }))}
+                onChange={(e) =>
+                  setCashAdjustment((prev) => ({
+                    ...prev,
+                    type: e.target.value as any,
+                  }))
+                }
               >
                 <MenuItem value="setBalance">Set Balance (Direct)</MenuItem>
                 <MenuItem value="adjustment">Manual Adjustment</MenuItem>
@@ -396,13 +426,20 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
 
             <TextField
               fullWidth
-              label={cashAdjustment.type === "setBalance" ? "New Balance" : "Amount"}
+              label={
+                cashAdjustment.type === "setBalance" ? "New Balance" : "Amount"
+              }
               value={cashAdjustment.amount}
-              onChange={(e) => setCashAdjustment(prev => ({ ...prev, amount: e.target.value }))}
+              onChange={(e) =>
+                setCashAdjustment((prev) => ({
+                  ...prev,
+                  amount: e.target.value,
+                }))
+              }
               type="number"
               InputProps={{ startAdornment: "$" }}
               helperText={
-                cashAdjustment.type === "setBalance" 
+                cashAdjustment.type === "setBalance"
                   ? "Enter the exact amount the driver should have in their cash drawer"
                   : ""
               }
@@ -412,7 +449,12 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
               fullWidth
               label="Reason"
               value={cashAdjustment.reason}
-              onChange={(e) => setCashAdjustment(prev => ({ ...prev, reason: e.target.value }))}
+              onChange={(e) =>
+                setCashAdjustment((prev) => ({
+                  ...prev,
+                  reason: e.target.value,
+                }))
+              }
               multiline
               rows={2}
             />
@@ -429,4 +471,4 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
   );
 };
 
-export default AccountingDashboard; 
+export default AccountingDashboard;

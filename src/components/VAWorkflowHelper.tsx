@@ -57,7 +57,13 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
   const [completedReports, setCompletedReports] = useState<string[]>([]);
   const [showReportData, setShowReportData] = useState(false);
   const [currentReportData, setCurrentReportData] = useState("");
-  const [stats, setStats] = useState({ pending: 0, submitted: 0, failed: 0, scheduled: 0, total: 0 });
+  const [stats, setStats] = useState({
+    pending: 0,
+    submitted: 0,
+    failed: 0,
+    scheduled: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     loadData();
@@ -90,7 +96,7 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
   ];
 
   const handleOpenAAMVA = () => {
-    window.open('https://nmvtisreporting.aamva.org/', '_blank');
+    window.open("https://nmvtisreporting.aamva.org/", "_blank");
     setActiveStep(2);
   };
 
@@ -118,12 +124,14 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
       alert("Please mark at least one report as complete first.");
       return;
     }
-    
+
     markAAMVAReportsSubmitted(completedReports);
     setCompletedReports([]);
     setActiveStep(0);
     loadData();
-    alert(`${completedReports.length} reports marked as submitted successfully!`);
+    alert(
+      `${completedReports.length} reports marked as submitted successfully!`,
+    );
   };
 
   const handleBatchDownload = () => {
@@ -147,16 +155,20 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
             <Typography color="textSecondary" variant="body2">
               Reports Due Today
             </Typography>
-            <Typography variant="h4" color="warning.main">{stats.pending}</Typography>
+            <Typography variant="h4" color="warning.main">
+              {stats.pending}
+            </Typography>
           </CardContent>
         </Card>
-        
+
         <Card sx={{ minWidth: 200 }}>
           <CardContent>
             <Typography color="textSecondary" variant="body2">
               Completed This Session
             </Typography>
-            <Typography variant="h4" color="success.main">{completedReports.length}</Typography>
+            <Typography variant="h4" color="success.main">
+              {completedReports.length}
+            </Typography>
           </CardContent>
         </Card>
       </Stack>
@@ -172,7 +184,7 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
             <Typography variant="h6" gutterBottom>
               Today's NMVTIS Workflow ({stats.pending} reports)
             </Typography>
-            
+
             <Stepper activeStep={activeStep} orientation="vertical">
               {steps.map((step, index) => (
                 <Step key={step.label}>
@@ -189,7 +201,7 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
                           I see {stats.pending} reports - Continue
                         </Button>
                       )}
-                      
+
                       {index === 1 && (
                         <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
                           <Button
@@ -208,13 +220,14 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
                           </Button>
                         </Stack>
                       )}
-                      
+
                       {index === 2 && (
                         <Alert severity="info" sx={{ mt: 1 }}>
-                          Use the report list below to copy/paste data for each VIN.
+                          Use the report list below to copy/paste data for each
+                          VIN.
                         </Alert>
                       )}
-                      
+
                       {index === 3 && (
                         <Button
                           variant="contained"
@@ -223,7 +236,8 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
                           disabled={completedReports.length === 0}
                           sx={{ mt: 1 }}
                         >
-                          Finish - Mark {completedReports.length} Reports as Submitted
+                          Finish - Mark {completedReports.length} Reports as
+                          Submitted
                         </Button>
                       )}
                     </Box>
@@ -238,23 +252,35 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
             <Typography variant="h6" gutterBottom>
               Reports to Submit ({pendingReports.length})
             </Typography>
-            
+
             <List>
               {pendingReports.map((report, index) => (
-                <ListItem key={report.id} sx={{ border: 1, borderColor: 'divider', mb: 1, borderRadius: 1 }}>
+                <ListItem
+                  key={report.id}
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    mb: 1,
+                    borderRadius: 1,
+                  }}
+                >
                   <ListItemIcon>
                     <Typography variant="h6">{index + 1}</Typography>
                   </ListItemIcon>
-                  
+
                   <ListItemText
                     primary={
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Typography variant="body1" fontFamily="monospace">
                           VIN: {report.vehicleData.vin}
                         </Typography>
-                        <Chip 
-                          label={report.reportType} 
-                          color={report.reportType === 'PURCHASE' ? 'info' : 'success'}
+                        <Chip
+                          label={report.reportType}
+                          color={
+                            report.reportType === "PURCHASE"
+                              ? "info"
+                              : "success"
+                          }
                           size="small"
                         />
                         {completedReports.includes(report.id) && (
@@ -265,11 +291,12 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
                     secondary={
                       <Typography variant="body2">
                         From: {report.vehicleData.sellerName}
-                        {report.vehicleData.buyerName && ` → To: ${report.vehicleData.buyerName}`}
+                        {report.vehicleData.buyerName &&
+                          ` → To: ${report.vehicleData.buyerName}`}
                       </Typography>
                     }
                   />
-                  
+
                   <Stack direction="row" spacing={1}>
                     <Button
                       variant="outlined"
@@ -279,7 +306,7 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
                     >
                       Get Data
                     </Button>
-                    
+
                     {!completedReports.includes(report.id) ? (
                       <Button
                         variant="outlined"
@@ -309,7 +336,12 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
       )}
 
       {/* Report Data Dialog */}
-      <Dialog open={showReportData} onClose={() => setShowReportData(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={showReportData}
+        onClose={() => setShowReportData(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           Copy This Data to AAMVA Form
           <Button
@@ -332,13 +364,17 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
             variant="outlined"
             InputProps={{
               readOnly: true,
-              style: { fontFamily: 'monospace', fontSize: '0.9rem' }
+              style: { fontFamily: "monospace", fontSize: "0.9rem" },
             }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowReportData(false)}>Close</Button>
-          <Button onClick={handleCopyData} startIcon={<ContentCopy />} variant="contained">
+          <Button
+            onClick={handleCopyData}
+            startIcon={<ContentCopy />}
+            variant="contained"
+          >
             Copy to Clipboard
           </Button>
         </DialogActions>
@@ -347,4 +383,4 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
   );
 };
 
-export default VAWorkflowHelper; 
+export default VAWorkflowHelper;

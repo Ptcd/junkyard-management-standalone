@@ -32,12 +32,15 @@ interface BrevoEmailRequest {
 
 // Get Brevo configuration from environment variables
 const getBrevoConfig = (): BrevoEmailConfig => {
-  const apiKey = process.env.REACT_APP_BREVO_API_KEY || '';
-  const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || '';
-  const senderName = process.env.REACT_APP_BREVO_SENDER_NAME || 'Junkyard Management System';
+  const apiKey = process.env.REACT_APP_BREVO_API_KEY || "";
+  const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || "";
+  const senderName =
+    process.env.REACT_APP_BREVO_SENDER_NAME || "Junkyard Management System";
 
   if (!apiKey || !senderEmail) {
-    throw new Error('Brevo API key and sender email are required. Please check your environment variables.');
+    throw new Error(
+      "Brevo API key and sender email are required. Please check your environment variables.",
+    );
   }
 
   return { apiKey, senderEmail, senderName };
@@ -50,7 +53,7 @@ export const sendBrevoEmail = async (
   subject: string,
   htmlContent: string,
   textContent?: string,
-  attachments?: EmailAttachment[]
+  attachments?: EmailAttachment[],
 ): Promise<{ success: boolean; message: string; messageId?: string }> => {
   try {
     const config = getBrevoConfig();
@@ -58,33 +61,35 @@ export const sendBrevoEmail = async (
     const emailData: BrevoEmailRequest = {
       sender: {
         name: config.senderName,
-        email: config.senderEmail
+        email: config.senderEmail,
       },
       to: [
         {
           email: recipientEmail,
-          name: recipientName
-        }
+          name: recipientName,
+        },
       ],
       subject,
       htmlContent,
       textContent,
-      attachment: attachments
+      attachment: attachments,
     };
 
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'api-key': config.apiKey
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "api-key": config.apiKey,
       },
-      body: JSON.stringify(emailData)
+      body: JSON.stringify(emailData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Brevo API error: ${errorData.message || response.statusText}`);
+      throw new Error(
+        `Brevo API error: ${errorData.message || response.statusText}`,
+      );
     }
 
     const result = await response.json();
@@ -96,26 +101,30 @@ export const sendBrevoEmail = async (
       recipientName,
       subject,
       sentAt: new Date().toISOString(),
-      status: 'sent',
+      status: "sent",
       messageId: result.messageId,
-      service: 'brevo'
+      service: "brevo",
     };
 
-    const existingEmails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
+    const existingEmails = JSON.parse(
+      localStorage.getItem("sentEmails") || "[]",
+    );
     existingEmails.push(emailRecord);
-    localStorage.setItem('sentEmails', JSON.stringify(existingEmails));
+    localStorage.setItem("sentEmails", JSON.stringify(existingEmails));
 
     return {
       success: true,
       message: `Email sent successfully to ${recipientEmail}`,
-      messageId: result.messageId
+      messageId: result.messageId,
     };
-
   } catch (error) {
-    console.error('Brevo email error:', error);
+    console.error("Brevo email error:", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to send email via Brevo'
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to send email via Brevo",
     };
   }
 };
@@ -125,12 +134,12 @@ export const sendMV2459ViaBevo = async (
   saleRecord: any,
   yardInfo: any,
   recipientEmail: string,
-  recipientName?: string
+  recipientName?: string,
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const vehicle = saleRecord.originalVehicle;
     const subject = `MV2459 Vehicle Sale Documentation - VIN: ${vehicle.vehicleVIN}`;
-    
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
@@ -228,7 +237,7 @@ export const sendMV2459ViaBevo = async (
             <div class="field"><span class="label">Address:</span> ${saleRecord.buyerAddress}</div>
             <div class="field"><span class="label">City, State ZIP:</span> ${saleRecord.buyerCity}, ${saleRecord.buyerState} ${saleRecord.buyerZip}</div>
             <div class="field"><span class="label">Phone:</span> ${saleRecord.buyerPhone}</div>
-            ${saleRecord.buyerLicenseNumber ? `<div class="field"><span class="label">License Number:</span> ${saleRecord.buyerLicenseNumber}</div>` : ''}
+            ${saleRecord.buyerLicenseNumber ? `<div class="field"><span class="label">License Number:</span> ${saleRecord.buyerLicenseNumber}</div>` : ""}
         </div>
 
         <div class="section">
@@ -237,7 +246,7 @@ export const sendMV2459ViaBevo = async (
             <div class="field"><span class="label">Sold By:</span> ${saleRecord.soldBy}</div>
             <div class="field"><span class="label">Payment Status:</span> ${saleRecord.paymentStatus}</div>
             <div class="field"><span class="label">Date Processed:</span> ${new Date(saleRecord.timestamp).toLocaleString()}</div>
-            ${saleRecord.notes ? `<div class="field"><span class="label">Notes:</span> ${saleRecord.notes}</div>` : ''}
+            ${saleRecord.notes ? `<div class="field"><span class="label">Notes:</span> ${saleRecord.notes}</div>` : ""}
         </div>
 
         <div class="footer">
@@ -276,14 +285,14 @@ Generated: ${new Date().toLocaleString()}
       recipientName || saleRecord.buyerName,
       subject,
       htmlContent,
-      textContent
+      textContent,
     );
-
   } catch (error) {
-    console.error('Failed to send MV2459 via Brevo:', error);
+    console.error("Failed to send MV2459 via Brevo:", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to send MV2459 form'
+      message:
+        error instanceof Error ? error.message : "Failed to send MV2459 form",
     };
   }
 };
@@ -292,10 +301,10 @@ Generated: ${new Date().toLocaleString()}
 export const sendBackupViaBevo = async (
   recipientEmail: string,
   recipientName: string,
-  backupData: any
+  backupData: any,
 ): Promise<{ success: boolean; message: string }> => {
   try {
-    const timestamp = new Date().toISOString().split('T')[0];
+    const timestamp = new Date().toISOString().split("T")[0];
     const subject = `Junkyard Management Backup - ${timestamp}`;
 
     const htmlContent = `
@@ -378,7 +387,7 @@ export const sendBackupViaBevo = async (
     const jsonAttachment: EmailAttachment = {
       content: btoa(JSON.stringify(backupData, null, 2)),
       name: `junkyard-backup-${timestamp}.json`,
-      type: 'application/json'
+      type: "application/json",
     };
 
     return await sendBrevoEmail(
@@ -387,14 +396,14 @@ export const sendBackupViaBevo = async (
       subject,
       htmlContent,
       undefined,
-      [jsonAttachment]
+      [jsonAttachment],
     );
-
   } catch (error) {
-    console.error('Failed to send backup via Brevo:', error);
+    console.error("Failed to send backup via Brevo:", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to send backup email'
+      message:
+        error instanceof Error ? error.message : "Failed to send backup email",
     };
   }
 };
@@ -402,5 +411,5 @@ export const sendBackupViaBevo = async (
 export default {
   sendBrevoEmail,
   sendMV2459ViaBevo,
-  sendBackupViaBevo
-}; 
+  sendBackupViaBevo,
+};

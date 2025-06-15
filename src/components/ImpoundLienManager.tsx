@@ -52,7 +52,12 @@ interface ImpoundLienVehicle {
   vehicleDisposition: string;
   purchaserName: string;
   // Additional fields for impound/lien processing
-  impoundStatus?: "pending" | "processed" | "released" | "auctioned" | "auto-transferred";
+  impoundStatus?:
+    | "pending"
+    | "processed"
+    | "released"
+    | "auctioned"
+    | "auto-transferred";
   impoundReason?: string;
   impoundDate?: string;
   releaseDate?: string;
@@ -130,19 +135,22 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
         // Check if vehicle is processed and past 21-day release date
         if (vehicle.impoundStatus === "processed" && vehicle.releaseDate) {
           const releaseDate = new Date(vehicle.releaseDate);
-          
+
           // If past release date and not already auto-transferred
           if (today >= releaseDate && !vehicle.autoTransferDate) {
             // Create automatic sale transaction
-            const transferTransactionId = createAutoTransferTransaction(vehicle);
-            
+            const transferTransactionId =
+              createAutoTransferTransaction(vehicle);
+
             hasUpdates = true;
             return {
               ...vehicle,
               impoundStatus: "auto-transferred" as const,
-              autoTransferDate: today.toISOString().split('T')[0],
+              autoTransferDate: today.toISOString().split("T")[0],
               autoTransferTransactionId: transferTransactionId,
-              notes: (vehicle.notes || "") + "\nAuto-transferred to On Kaul Auto Salvage after 21-day hold period."
+              notes:
+                (vehicle.notes || "") +
+                "\nAuto-transferred to On Kaul Auto Salvage after 21-day hold period.",
             };
           }
         }
@@ -150,9 +158,14 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
       });
 
       if (hasUpdates) {
-        localStorage.setItem("impoundLienVehicles", JSON.stringify(updatedVehicles));
+        localStorage.setItem(
+          "impoundLienVehicles",
+          JSON.stringify(updatedVehicles),
+        );
         loadVehicles(); // Reload to show updates
-        setSuccess("Vehicles past 21-day hold period have been automatically transferred to On Kaul Auto Salvage");
+        setSuccess(
+          "Vehicles past 21-day hold period have been automatically transferred to On Kaul Auto Salvage",
+        );
         setTimeout(() => setSuccess(""), 7000);
       }
     } catch (error) {
@@ -160,9 +173,11 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
     }
   };
 
-  const createAutoTransferTransaction = (vehicle: ImpoundLienVehicle): string => {
+  const createAutoTransferTransaction = (
+    vehicle: ImpoundLienVehicle,
+  ): string => {
     const transferTransactionId = `AUTO-TRANSFER-${Date.now()}`;
-    
+
     // Create sale record for the automatic transfer
     const saleRecord = {
       id: transferTransactionId,
@@ -177,9 +192,10 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
       buyerEmail: "",
       buyerLicenseNumber: "",
       salePrice: vehicle.salePrice, // Use original purchase amount
-      saleDate: new Date().toISOString().split('T')[0],
+      saleDate: new Date().toISOString().split("T")[0],
       disposition: "SOLD",
-      notes: "Automatic transfer from Nunu's Towing after 21-day impound hold period",
+      notes:
+        "Automatic transfer from Nunu's Towing after 21-day impound hold period",
       paymentStatus: "completed",
       actualReceivedAmount: vehicle.salePrice,
       timestamp: new Date().toISOString(),
@@ -191,33 +207,40 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
         address: "12401 W Custer Ave",
         city: "Butler",
         state: "WI",
-        zip: "53007"
-      }
+        zip: "53007",
+      },
     };
 
     // Store sale record
-    const existingSales = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
+    const existingSales = JSON.parse(
+      localStorage.getItem("vehicleSales") || "[]",
+    );
     existingSales.push(saleRecord);
     localStorage.setItem("vehicleSales", JSON.stringify(existingSales));
 
     // Update the original vehicle transaction with new disposition
-    const existingTransactions = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+    const existingTransactions = JSON.parse(
+      localStorage.getItem("vehicleTransactions") || "[]",
+    );
     const updatedTransactions = existingTransactions.map((t: any) =>
       t.id === vehicle.id
-        ? { 
-            ...t, 
+        ? {
+            ...t,
             vehicleDisposition: "SOLD",
             saleRecordId: transferTransactionId,
             autoTransferInfo: {
-              transferDate: new Date().toISOString().split('T')[0],
+              transferDate: new Date().toISOString().split("T")[0],
               fromCompany: "Nunu's Towing and Salvage",
               toCompany: "On Kaul Auto Salvage",
-              transferAmount: vehicle.salePrice
-            }
+              transferAmount: vehicle.salePrice,
+            },
           }
-        : t
+        : t,
     );
-    localStorage.setItem("vehicleTransactions", JSON.stringify(updatedTransactions));
+    localStorage.setItem(
+      "vehicleTransactions",
+      JSON.stringify(updatedTransactions),
+    );
 
     return transferTransactionId;
   };
@@ -251,11 +274,16 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
 
     // Auto-set release date to 21 days after impound date when status is changed to processed
     let updatedEditForm = { ...editForm };
-    if (updatedEditForm.impoundStatus === "processed" && !updatedEditForm.releaseDate) {
-      const impoundDate = new Date(updatedEditForm.impoundDate || selectedVehicle.saleDate);
+    if (
+      updatedEditForm.impoundStatus === "processed" &&
+      !updatedEditForm.releaseDate
+    ) {
+      const impoundDate = new Date(
+        updatedEditForm.impoundDate || selectedVehicle.saleDate,
+      );
       const releaseDate = new Date(impoundDate);
       releaseDate.setDate(releaseDate.getDate() + 21); // Add 21 days
-      updatedEditForm.releaseDate = releaseDate.toISOString().split('T')[0];
+      updatedEditForm.releaseDate = releaseDate.toISOString().split("T")[0];
     }
 
     const updatedVehicles = vehicles.map((v) =>
@@ -276,9 +304,12 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
     );
     setVehicles(updatedVehicles);
     setShowEdit(false);
-    setSuccess("Vehicle updated successfully" + 
-      (updatedEditForm.releaseDate && !editForm.releaseDate ? 
-        " - Release date set to 21 days after impound" : ""));
+    setSuccess(
+      "Vehicle updated successfully" +
+        (updatedEditForm.releaseDate && !editForm.releaseDate
+          ? " - Release date set to 21 days after impound"
+          : ""),
+    );
 
     setTimeout(() => setSuccess(""), 5000);
   };
@@ -329,10 +360,12 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
     // Open Wisconsin DOT Lien Holder Search in new tab
     // User will need to manually enter VIN on their site
     const url = "https://trust.dot.state.wi.us/linq/linqservlet?whoami=linqp1";
-    window.open(url, '_blank');
-    
+    window.open(url, "_blank");
+
     // Could show a dialog with instructions
-    alert(`VIN to search: ${vin}\n\nThe Wisconsin DOT Lien Holder Search will open in a new tab. Please enter this VIN to check for liens.`);
+    alert(
+      `VIN to search: ${vin}\n\nThe Wisconsin DOT Lien Holder Search will open in a new tab. Please enter this VIN to check for liens.`,
+    );
   };
 
   return (
@@ -341,17 +374,19 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
         Impound & Lien Vehicle Management
       </Typography>
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
-        Manage vehicles marked as impound or lien cases. Vehicles automatically transfer to On Kaul Auto Salvage after 21 days.
+        Manage vehicles marked as impound or lien cases. Vehicles automatically
+        transfer to On Kaul Auto Salvage after 21 days.
       </Typography>
 
       {/* Add manual check button */}
       <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: "grey.100" }}>
         <Stack direction="row" spacing={2} alignItems="center">
           <Typography variant="body2">
-            System automatically checks for vehicles past their 21-day hold period and transfers them to On Kaul Auto Salvage.
+            System automatically checks for vehicles past their 21-day hold
+            period and transfers them to On Kaul Auto Salvage.
           </Typography>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             size="small"
             onClick={checkForAutoTransfers}
           >
@@ -421,20 +456,28 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
                       />
                     </TableCell>
                     <TableCell>
-                      {vehicle.impoundDate 
+                      {vehicle.impoundDate
                         ? new Date(vehicle.impoundDate).toLocaleDateString()
-                        : new Date(vehicle.saleDate).toLocaleDateString()
-                      }
+                        : new Date(vehicle.saleDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {vehicle.releaseDate
-                        ? new Date(vehicle.releaseDate).toLocaleDateString()
-                        : vehicle.impoundStatus === "processed"
-                        ? <Chip label="21 days from impound" color="info" size="small" />
-                        : vehicle.impoundStatus === "auto-transferred"
-                        ? <Chip label="Auto-transferred" color="primary" size="small" />
-                        : "-"
-                      }
+                      {vehicle.releaseDate ? (
+                        new Date(vehicle.releaseDate).toLocaleDateString()
+                      ) : vehicle.impoundStatus === "processed" ? (
+                        <Chip
+                          label="21 days from impound"
+                          color="info"
+                          size="small"
+                        />
+                      ) : vehicle.impoundStatus === "auto-transferred" ? (
+                        <Chip
+                          label="Auto-transferred"
+                          color="primary"
+                          size="small"
+                        />
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
@@ -497,8 +540,12 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
                 Vehicle: {selectedVehicle.vehicleYear}{" "}
                 {selectedVehicle.vehicleMake}
               </Typography>
-              <Typography>License Plate: {selectedVehicle.licensePlate || "Not recorded"}</Typography>
-              <Typography>Color: {selectedVehicle.vehicleColor || "Not recorded"}</Typography>
+              <Typography>
+                License Plate: {selectedVehicle.licensePlate || "Not recorded"}
+              </Typography>
+              <Typography>
+                Color: {selectedVehicle.vehicleColor || "Not recorded"}
+              </Typography>
               <Typography>Price: ${selectedVehicle.salePrice}</Typography>
 
               <Typography variant="h6" sx={{ mt: 2 }}>
@@ -515,50 +562,62 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
                 Status: {selectedVehicle.impoundStatus || "pending"}
               </Typography>
               <Typography>
-                Impound Date: {selectedVehicle.impoundDate 
+                Impound Date:{" "}
+                {selectedVehicle.impoundDate
                   ? new Date(selectedVehicle.impoundDate).toLocaleDateString()
-                  : new Date(selectedVehicle.saleDate).toLocaleDateString()
-                }
+                  : new Date(selectedVehicle.saleDate).toLocaleDateString()}
               </Typography>
               <Typography>
                 Authority: {selectedVehicle.impoundAuthority || "Not specified"}
               </Typography>
               <Typography>
-                Storage Location: {selectedVehicle.storageLocation || "Not specified"}
+                Storage Location:{" "}
+                {selectedVehicle.storageLocation || "Not specified"}
               </Typography>
               {selectedVehicle.releaseDate && (
                 <Typography>
-                  Release Date: {new Date(selectedVehicle.releaseDate).toLocaleDateString()}
+                  Release Date:{" "}
+                  {new Date(selectedVehicle.releaseDate).toLocaleDateString()}
                 </Typography>
               )}
               {selectedVehicle.releasedTo && (
-                <Typography>Released To: {selectedVehicle.releasedTo}</Typography>
-              )}
-              {selectedVehicle.feesCollected && (
-                <Typography>Fees Collected: ${selectedVehicle.feesCollected}</Typography>
-              )}
-              {selectedVehicle.impoundStatus === "auctioned" && selectedVehicle.auctionDate && (
                 <Typography>
-                  Auction Date: {new Date(selectedVehicle.auctionDate).toLocaleDateString()}
+                  Released To: {selectedVehicle.releasedTo}
                 </Typography>
               )}
+              {selectedVehicle.feesCollected && (
+                <Typography>
+                  Fees Collected: ${selectedVehicle.feesCollected}
+                </Typography>
+              )}
+              {selectedVehicle.impoundStatus === "auctioned" &&
+                selectedVehicle.auctionDate && (
+                  <Typography>
+                    Auction Date:{" "}
+                    {new Date(selectedVehicle.auctionDate).toLocaleDateString()}
+                  </Typography>
+                )}
               {selectedVehicle.impoundStatus === "auto-transferred" && (
                 <>
                   <Typography>
-                    Auto-Transfer Date: {selectedVehicle.autoTransferDate ? new Date(selectedVehicle.autoTransferDate).toLocaleDateString() : "N/A"}
+                    Auto-Transfer Date:{" "}
+                    {selectedVehicle.autoTransferDate
+                      ? new Date(
+                          selectedVehicle.autoTransferDate,
+                        ).toLocaleDateString()
+                      : "N/A"}
                   </Typography>
                   <Typography>
                     Transferred From: Nunu's Towing and Salvage
                   </Typography>
-                  <Typography>
-                    Transferred To: On Kaul Auto Salvage
-                  </Typography>
+                  <Typography>Transferred To: On Kaul Auto Salvage</Typography>
                   <Typography>
                     Transfer Amount: ${selectedVehicle.salePrice}
                   </Typography>
                   {selectedVehicle.autoTransferTransactionId && (
                     <Typography>
-                      Transfer Transaction ID: {selectedVehicle.autoTransferTransactionId}
+                      Transfer Transaction ID:{" "}
+                      {selectedVehicle.autoTransferTransactionId}
                     </Typography>
                   )}
                 </>
@@ -680,7 +739,10 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
               label="Impound Authority"
               value={editForm.impoundAuthority || ""}
               onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, impoundAuthority: e.target.value }))
+                setEditForm((prev) => ({
+                  ...prev,
+                  impoundAuthority: e.target.value,
+                }))
               }
               helperText="Police dept, towing company, court order, etc."
             />
@@ -690,7 +752,10 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
               label="Storage Location"
               value={editForm.storageLocation || ""}
               onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, storageLocation: e.target.value }))
+                setEditForm((prev) => ({
+                  ...prev,
+                  storageLocation: e.target.value,
+                }))
               }
               helperText="Where on the lot is this vehicle stored?"
             />
@@ -700,7 +765,10 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
               label="License Plate"
               value={editForm.licensePlate || ""}
               onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, licensePlate: e.target.value }))
+                setEditForm((prev) => ({
+                  ...prev,
+                  licensePlate: e.target.value,
+                }))
               }
             />
 
@@ -709,18 +777,25 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
               label="Vehicle Color"
               value={editForm.vehicleColor || ""}
               onChange={(e) =>
-                setEditForm((prev) => ({ ...prev, vehicleColor: e.target.value }))
+                setEditForm((prev) => ({
+                  ...prev,
+                  vehicleColor: e.target.value,
+                }))
               }
             />
 
-            {(editForm.impoundStatus === "released" || editForm.impoundStatus === "auctioned") && (
+            {(editForm.impoundStatus === "released" ||
+              editForm.impoundStatus === "auctioned") && (
               <>
                 <TextField
                   fullWidth
                   label="Released To"
                   value={editForm.releasedTo || ""}
                   onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, releasedTo: e.target.value }))
+                    setEditForm((prev) => ({
+                      ...prev,
+                      releasedTo: e.target.value,
+                    }))
                   }
                   helperText="Name of person who picked up vehicle"
                 />
@@ -730,7 +805,10 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
                   label="Fees Collected"
                   value={editForm.feesCollected || ""}
                   onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, feesCollected: e.target.value }))
+                    setEditForm((prev) => ({
+                      ...prev,
+                      feesCollected: e.target.value,
+                    }))
                   }
                   type="number"
                   InputProps={{

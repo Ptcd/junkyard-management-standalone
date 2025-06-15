@@ -81,7 +81,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
   const loadData = () => {
     const pending = getPendingAAMVAReports();
     const statsData = getAAMVASubmissionStats();
-    
+
     setPendingReports(pending);
     setStats(statsData);
   };
@@ -90,13 +90,13 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
     if (checked) {
       setSelectedReports([...selectedReports, reportId]);
     } else {
-      setSelectedReports(selectedReports.filter(id => id !== reportId));
+      setSelectedReports(selectedReports.filter((id) => id !== reportId));
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedReports(pendingReports.map(r => r.id));
+      setSelectedReports(pendingReports.map((r) => r.id));
     } else {
       setSelectedReports([]);
     }
@@ -223,7 +223,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
         <Typography variant="h6" gutterBottom>
           Quick Actions
         </Typography>
-        
+
         <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
           <Button
             variant="contained"
@@ -234,7 +234,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
           >
             Open AAMVA SVRS
           </Button>
-          
+
           <Button
             variant="outlined"
             startIcon={<Download />}
@@ -243,7 +243,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
           >
             Download Batch CSV
           </Button>
-          
+
           <Button
             variant="outlined"
             startIcon={<CheckCircle />}
@@ -253,20 +253,17 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
           >
             Mark Selected as Submitted ({selectedReports.length})
           </Button>
-          
-          <Button
-            variant="text"
-            startIcon={<Refresh />}
-            onClick={loadData}
-          >
+
+          <Button variant="text" startIcon={<Refresh />} onClick={loadData}>
             Refresh
           </Button>
         </Stack>
 
         {stats.pending > 0 && (
           <Alert severity="info" sx={{ mt: 2 }}>
-            You have {stats.pending} reports ready for submission to AAMVA SVRS. 
-            Use the buttons above for batch processing or view individual reports below.
+            You have {stats.pending} reports ready for submission to AAMVA SVRS.
+            Use the buttons above for batch processing or view individual
+            reports below.
           </Alert>
         )}
       </Paper>
@@ -277,7 +274,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
           <Typography variant="h6" gutterBottom>
             Pending Reports ({pendingReports.length})
           </Typography>
-          
+
           {pendingReports.length === 0 ? (
             <Alert severity="success">
               No pending NMVTIS reports! All reports are up to date.
@@ -290,8 +287,14 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
                     <TableRow>
                       <TableCell padding="checkbox">
                         <Checkbox
-                          checked={selectedReports.length === pendingReports.length && pendingReports.length > 0}
-                          indeterminate={selectedReports.length > 0 && selectedReports.length < pendingReports.length}
+                          checked={
+                            selectedReports.length === pendingReports.length &&
+                            pendingReports.length > 0
+                          }
+                          indeterminate={
+                            selectedReports.length > 0 &&
+                            selectedReports.length < pendingReports.length
+                          }
                           onChange={(e) => handleSelectAll(e.target.checked)}
                         />
                       </TableCell>
@@ -308,7 +311,9 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
                         <TableCell padding="checkbox">
                           <Checkbox
                             checked={selectedReports.includes(report.id)}
-                            onChange={(e) => handleSelectReport(report.id, e.target.checked)}
+                            onChange={(e) =>
+                              handleSelectReport(report.id, e.target.checked)
+                            }
                           />
                         </TableCell>
                         <TableCell>
@@ -319,7 +324,11 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
                         <TableCell>
                           <Chip
                             label={report.reportType}
-                            color={report.reportType === 'PURCHASE' ? 'info' : 'success'}
+                            color={
+                              report.reportType === "PURCHASE"
+                                ? "info"
+                                : "success"
+                            }
                             size="small"
                           />
                         </TableCell>
@@ -357,7 +366,12 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
       </Paper>
 
       {/* Report Details Dialog */}
-      <Dialog open={showReportDialog} onClose={() => setShowReportDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={showReportDialog}
+        onClose={() => setShowReportDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>
           NMVTIS Report Details
           <Tooltip title="Copy to clipboard">
@@ -375,7 +389,7 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
             variant="outlined"
             InputProps={{
               readOnly: true,
-              style: { fontFamily: 'monospace', fontSize: '0.9rem' }
+              style: { fontFamily: "monospace", fontSize: "0.9rem" },
             }}
           />
         </DialogContent>
@@ -388,19 +402,27 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
       </Dialog>
 
       {/* Submit Confirmation Dialog */}
-      <Dialog open={showSubmitDialog} onClose={() => setShowSubmitDialog(false)}>
+      <Dialog
+        open={showSubmitDialog}
+        onClose={() => setShowSubmitDialog(false)}
+      >
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <Typography>
             Mark {selectedReports.length} reports as submitted to AAMVA SVRS?
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
-            Only confirm this after you have successfully submitted the reports to AAMVA SVRS.
+            Only confirm this after you have successfully submitted the reports
+            to AAMVA SVRS.
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
-          <Button onClick={confirmMarkSubmitted} variant="contained" color="success">
+          <Button
+            onClick={confirmMarkSubmitted}
+            variant="contained"
+            color="success"
+          >
             Confirm Submitted
           </Button>
         </DialogActions>
@@ -409,4 +431,4 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
   );
 };
 
-export default NMVTISManager; 
+export default NMVTISManager;

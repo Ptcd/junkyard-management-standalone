@@ -37,7 +37,10 @@ import {
   Receipt,
 } from "@mui/icons-material";
 import { exportNMVTISCSV, downloadCSV } from "../utils/nmvtisExport";
-import { getScheduledNMVTISReports, getPendingNMVTISReportsCount } from "../utils/nmvtisScheduler";
+import {
+  getScheduledNMVTISReports,
+  getPendingNMVTISReportsCount,
+} from "../utils/nmvtisScheduler";
 import { User } from "../utils/supabaseAuth";
 
 interface AdminDashboardProps {
@@ -70,7 +73,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       (sum: number, t: any) => sum + parseFloat(t.salePrice || 0),
       0,
     );
-    
+
     const salesRevenue = salesData.reduce(
       (sum: number, s: any) => sum + parseFloat(s.salePrice || 0),
       0,
@@ -88,7 +91,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     // Get NMVTIS report statistics
     const scheduledReports = getScheduledNMVTISReports();
     const pendingReportsCount = getPendingNMVTISReportsCount();
-    const failedReportsCount = scheduledReports.filter(r => r.status === 'failed').length;
+    const failedReportsCount = scheduledReports.filter(
+      (r) => r.status === "failed",
+    ).length;
 
     setStats({
       totalVehicles: stored.length,
@@ -222,7 +227,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   <Typography color="textSecondary" gutterBottom>
                     Scheduled Reports
                   </Typography>
-                  <Typography variant="h4">{stats.scheduledNMVTISReports}</Typography>
+                  <Typography variant="h4">
+                    {stats.scheduledNMVTISReports}
+                  </Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -239,7 +246,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     <Typography color="textSecondary" gutterBottom>
                       Failed Reports
                     </Typography>
-                    <Typography variant="h4">{stats.failedNMVTISReports}</Typography>
+                    <Typography variant="h4">
+                      {stats.failedNMVTISReports}
+                    </Typography>
                   </Box>
                 </Box>
               </CardContent>
@@ -336,8 +345,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     variant="contained"
                     fullWidth
                     startIcon={<Schedule />}
-                    onClick={() => window.location.href = '/nmvtis'}
-                    disabled={stats.scheduledNMVTISReports === 0 && stats.pendingNMVTIS === 0}
+                    onClick={() => (window.location.href = "/nmvtis")}
+                    disabled={
+                      stats.scheduledNMVTISReports === 0 &&
+                      stats.pendingNMVTIS === 0
+                    }
                     color="primary"
                   >
                     Manage NMVTIS Reports
@@ -366,13 +378,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
               {stats.scheduledNMVTISReports > 0 && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  {stats.scheduledNMVTISReports} NMVTIS reports are scheduled for automatic submission.
+                  {stats.scheduledNMVTISReports} NMVTIS reports are scheduled
+                  for automatic submission.
                 </Alert>
               )}
 
               {stats.failedNMVTISReports > 0 && (
                 <Alert severity="error" sx={{ mt: 1 }}>
-                  {stats.failedNMVTISReports} NMVTIS reports failed and need attention.
+                  {stats.failedNMVTISReports} NMVTIS reports failed and need
+                  attention.
                 </Alert>
               )}
             </CardContent>
