@@ -381,8 +381,8 @@ const VINScanner: React.FC<VINScannerProps> = ({
 
     try {
       const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
-      // Display OCR result in the UI for debugging
-      setError("OCR Result: " + text);
+      // Display full OCR result in the UI for debugging
+      setError("Full OCR Result: " + text);
       // Find a 17-character VIN-like string in the OCR result
       const vinMatch = text.match(/[A-HJ-NPR-Z0-9]{17}/);
       if (vinMatch) {
