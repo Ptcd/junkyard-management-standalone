@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { CameraAlt, Close, Search, CheckCircle } from "@mui/icons-material";
 import OfflineManager from "../utils/offlineManager";
-import { BarcodeReader } from "@zxing/browser";
+import { BrowserCodeReader } from '@zxing/browser';
 
 interface VINScannerProps {
   open: boolean;
@@ -46,7 +46,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const [decodedData, setDecodedData] = useState<VINDecodeResult | null>(null);
   const [barcodeScanning, setBarcodeScanning] = useState(false);
   const barcodeRef = useRef<HTMLDivElement>(null);
-  const barcodeReaderRef = useRef<BarcodeReader | null>(null);
+  const barcodeReaderRef = useRef<BrowserCodeReader | null>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
 
   const handleVINSubmit = async (vin: string) => {
@@ -73,23 +73,19 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const startBarcodeScanner = async () => {
     setBarcodeScanning(true);
     if (!videoElementRef.current) return;
-    barcodeReaderRef.current = new BarcodeReader();
+    barcodeReaderRef.current = new BrowserCodeReader();
     try {
-      const result = await barcodeReaderRef.current.decodeOnceFromVideoDevice(
-        undefined,
-        videoElementRef.current,
-      );
-      if (result && result.text && result.text.length === 17) {
-        handleVINSubmit(result.text.trim());
-        setBarcodeScanning(false);
-      } else {
-        alert("No valid 17-character VIN barcode found.");
-        setBarcodeScanning(false);
-      }
+      await barcodeReaderRef.current.decodeFromVideoDevice(undefined, videoElementRef.current, (result) => {
+        if (result && result.getText() && result.getText().length === 17) {
+          handleVINSubmit(result.getText().trim());
+          setBarcodeScanning(false);
+        } else {
+          alert("No valid 17-character VIN barcode found.");
+          setBarcodeScanning(false);
+        }
+      });
     } catch (err) {
-      alert(
-        "Barcode scan failed: " + (err instanceof Error ? err.message : err),
-      );
+      alert("Barcode scan failed: " + (err instanceof Error ? err.message : err));
       setBarcodeScanning(false);
     }
   };
