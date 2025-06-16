@@ -16,6 +16,9 @@ import {
 } from "@mui/material";
 import { CameraAlt, Close, Search, CheckCircle } from "@mui/icons-material";
 import OfflineManager from "../utils/offlineManager";
+// @ts-ignore
+import Quagga from 'quagga';
+import Tesseract from 'tesseract.js';
 
 interface VINScannerProps {
   open: boolean;
@@ -48,6 +51,8 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const [decodedData, setDecodedData] = useState<VINDecodeResult | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [barcodeScanning, setBarcodeScanning] = useState(false);
+  const barcodeRef = useRef<HTMLDivElement>(null);
 
   const startCamera = async () => {
     try {
@@ -357,7 +362,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
     onClose();
   }, [onClose]);
 
-  const captureFrame = () => {
+  const captureFrame = async () => {
     if (!videoRef.current) return;
 
     const canvas = document.createElement("canvas");
@@ -369,20 +374,73 @@ const VINScanner: React.FC<VINScannerProps> = ({
     canvas.height = videoRef.current.videoHeight;
     context.drawImage(videoRef.current, 0, 0);
 
-    // In a real implementation, you would use OCR here
-    // For demo purposes, we'll simulate finding a VIN
-    const mockVINs = [
-      "1HGBH41JXMN109186",
-      "2T1BURHE0JC123456",
-      "1G1JC5SH4C4123456",
-      "5NPE34AF0JH123456",
-    ];
+    setDecoding(true);
+    setError("");
 
-    const randomVIN = mockVINs[Math.floor(Math.random() * mockVINs.length)];
-    setTimeout(() => {
-      handleVINSubmit(randomVIN);
-      stopCamera();
-    }, 1000);
+    try {
+      const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+      // Display OCR result in the UI for debugging
+      setError("OCR Result: " + text);
+      // Find a 17-character VIN-like string in the OCR result
+      const vinMatch = text.match(/[A-HJ-NPR-Z0-9]{17}/);
+      if (vinMatch) {
+        const vin = vinMatch[0];
+        setError("Matched VIN: " + vin);
+        await handleVINSubmit(vin);
+        stopCamera();
+      } else {
+        setError("No valid 17-character VIN found in the image. Try again or use manual entry.");
+      }
+    } catch (err: any) {
+      setError("OCR failed: " + (err instanceof Error ? err.message : err));
+    } finally {
+      setDecoding(false);
+    }
+  };
+
+  // Start Quagga barcode scanning
+  const startBarcodeScanner = () => {
+    setBarcodeScanning(true);
+    setError("");
+    Quagga.init({
+      inputStream: {
+        type: "LiveStream",
+        target: barcodeRef.current!,
+        constraints: {
+          facingMode: "environment",
+        },
+      },
+      decoder: {
+        readers: ["code_128_reader", "code_39_reader"],
+      },
+      locate: true,
+    }, (err: any) => {
+      if (err) {
+        setError("Failed to start barcode scanner: " + err.message);
+        setBarcodeScanning(false);
+        return;
+      }
+      Quagga.start();
+    });
+    Quagga.onDetected(handleBarcodeDetected);
+  };
+
+  // Stop Quagga barcode scanning
+  const stopBarcodeScanner = () => {
+    Quagga.stop();
+    Quagga.offDetected(handleBarcodeDetected);
+    setBarcodeScanning(false);
+  };
+
+  // Handle detected barcode
+  const handleBarcodeDetected = (result: any) => {
+    if (result && result.codeResult && result.codeResult.code) {
+      const vin = result.codeResult.code.trim();
+      if (vin.length === 17) {
+        stopBarcodeScanner();
+        handleVINSubmit(vin);
+      }
+    }
   };
 
   return (
@@ -411,6 +469,48 @@ const VINScanner: React.FC<VINScannerProps> = ({
 
         {!decodedData && (
           <Stack spacing={3}>
+            {/* Barcode Scanner */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  <CameraAlt sx={{ mr: 1 }} />
+                  Barcode Scanner
+                </Typography>
+                {!barcodeScanning ? (
+                  <Box sx={{ textAlign: "center", py: 3 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      Use your camera to scan the VIN barcode (usually under the windshield or on the door jamb)
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={startBarcodeScanner}
+                      startIcon={<CameraAlt />}
+                      sx={{ mt: 2 }}
+                    >
+                      Start Barcode Scanner
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box>
+                    <div ref={barcodeRef} style={{ width: "100%", height: 240, background: "#222" }} />
+                    <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        onClick={stopBarcodeScanner}
+                        fullWidth
+                      >
+                        Stop
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Camera Scanner */}
             <Card>
               <CardContent>
