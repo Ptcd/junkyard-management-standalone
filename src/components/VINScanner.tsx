@@ -373,6 +373,8 @@ const VINScanner: React.FC<VINScannerProps> = ({
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     context.drawImage(videoRef.current, 0, 0);
+    // Display canvas image data in the UI for debugging
+    setError("Canvas image data: " + canvas.toDataURL());
 
     setDecoding(true);
     setError("");
@@ -416,7 +418,8 @@ const VINScanner: React.FC<VINScannerProps> = ({
       locate: true,
     }, (err: any) => {
       if (err) {
-        setError("Failed to start barcode scanner: " + err.message);
+        // Display Quagga initialization error in the UI for debugging
+        setError("Quagga initialization error: " + err.message);
         setBarcodeScanning(false);
         return;
       }
