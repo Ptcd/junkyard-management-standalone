@@ -14,7 +14,7 @@ import {
   Stack,
   Chip,
 } from "@mui/material";
-import { CameraAlt, Close, Search, CheckCircle } from "@mui/icons-material";
+import { CameraAlt, Close, Search, CheckCircle, PhotoCamera } from "@mui/icons-material";
 import OfflineManager from "../utils/offlineManager";
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { BarcodeFormat } from '@zxing/library';
@@ -51,6 +51,8 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const barcodeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleVINSubmit = async (vin: string) => {
     if (!vin || vin.length !== 17) {
@@ -122,6 +124,37 @@ const VINScanner: React.FC<VINScannerProps> = ({
       videoStream.getTracks().forEach((track) => track.stop());
       setVideoStream(null);
     }
+  };
+
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPhotoPreview(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScanPhoto = async () => {
+    if (!photoPreview) return;
+    const reader = new BrowserMultiFormatReader();
+    try {
+      const result = await reader.decodeFromImageUrl(photoPreview);
+      if (result && result.getText && result.getText().length === 17) {
+        handleVINSubmit(result.getText().trim());
+        setPhotoPreview(null);
+      } else {
+        alert('No valid 17-character VIN barcode found in the photo.');
+      }
+    } catch (err) {
+      alert('Barcode scan failed: ' + (err instanceof Error ? err.message : err));
+    }
+  };
+
+  const handleCancelPhoto = () => {
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -265,6 +298,51 @@ const VINScanner: React.FC<VINScannerProps> = ({
                     Stop
                   </Button>
                 </Box>
+              </CardContent>
+            </Card>
+
+            {/* Take Photo and Scan */}
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  <PhotoCamera sx={{ mr: 1 }} />
+                  Take Photo and Scan
+                </Typography>
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+                  Take a clear photo of the VIN barcode or upload an image, then scan for a VIN.
+                </Typography>
+                {!photoPreview ? (
+                  <Box sx={{ textAlign: 'center', py: 2 }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'none' }}
+                      onChange={handlePhotoCapture}
+                    />
+                    <Button
+                      variant="contained"
+                      startIcon={<PhotoCamera />}
+                      onClick={() => fileInputRef.current?.click()}
+                      sx={{ fontWeight: 600, fontSize: 18 }}
+                    >
+                      Take Photo / Upload
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 2 }}>
+                    <img src={photoPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 8, marginBottom: 12 }} />
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Button variant="contained" onClick={handleScanPhoto} sx={{ fontWeight: 600, fontSize: 18 }}>
+                        Scan Photo
+                      </Button>
+                      <Button variant="outlined" onClick={handleCancelPhoto} sx={{ fontWeight: 600, fontSize: 18 }}>
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Stack>
