@@ -54,15 +54,55 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const decodeVIN = async (vin: string): Promise<VINDecodeResult> => {
+    if (vin.length !== 17) {
+      return { vin, valid: false };
+    }
+    try {
+      const response = await fetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`
+      );
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      if (!data.Results || !data.Results[0]) throw new Error('Invalid API response');
+      const result = data.Results[0];
+      const make = result.Make || '';
+      const model = result.Model || '';
+      const year = result.ModelYear || '';
+      const vehicleType = result.VehicleType || '';
+      const engineSize = result.DisplacementL || '';
+      const fuelType = result.FuelTypePrimary || '';
+      const manufacturer = result.Manufacturer || '';
+      const plantCountry = result.PlantCountry || '';
+      const errorCode = result.ErrorCode || '';
+      const isValid = errorCode === '0' || errorCode === '' || result.Make !== '';
+      return {
+        vin,
+        year: year && year !== '' ? year : undefined,
+        make: make && make !== '' ? make : undefined,
+        model: model && model !== '' ? model : undefined,
+        vehicleType: vehicleType && vehicleType !== '' ? vehicleType : undefined,
+        engineSize: engineSize && engineSize !== '' ? engineSize : undefined,
+        fuelType: fuelType && fuelType !== '' ? fuelType : undefined,
+        manufacturer: manufacturer && manufacturer !== '' ? manufacturer : undefined,
+        plantCountry: plantCountry && plantCountry !== '' ? plantCountry : undefined,
+        valid: isValid,
+      };
+    } catch (error) {
+      // Fallback: just return the VIN as valid
+      return { vin, valid: true };
+    }
+  };
+
   const handleVINSubmit = async (vin: string) => {
     if (!vin || vin.length !== 17) {
       return;
     }
-    setDecodedData({ vin, valid: true });
-    // Auto-close scanner and autofill VIN
+    const decoded = await decodeVIN(vin);
+    setDecodedData(decoded);
     stopBarcodeScanner();
     setPhotoPreview(null);
-    onVINDetected({ vin, valid: true });
+    onVINDetected(decoded);
     handleClose();
   };
 
