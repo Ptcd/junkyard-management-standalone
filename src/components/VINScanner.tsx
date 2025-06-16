@@ -16,7 +16,8 @@ import {
 } from "@mui/material";
 import { CameraAlt, Close, Search, CheckCircle } from "@mui/icons-material";
 import OfflineManager from "../utils/offlineManager";
-import { BrowserCodeReader } from '@zxing/browser';
+import { BrowserMultiFormatReader } from '@zxing/browser';
+import { BarcodeFormat } from '@zxing/library';
 
 interface VINScannerProps {
   open: boolean;
@@ -46,7 +47,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const [decodedData, setDecodedData] = useState<VINDecodeResult | null>(null);
   const [barcodeScanning, setBarcodeScanning] = useState(false);
   const barcodeRef = useRef<HTMLDivElement>(null);
-  const barcodeReaderRef = useRef<BrowserCodeReader | null>(null);
+  const barcodeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
 
   const handleVINSubmit = async (vin: string) => {
@@ -73,9 +74,9 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const startBarcodeScanner = async () => {
     setBarcodeScanning(true);
     if (!videoElementRef.current) return;
-    barcodeReaderRef.current = new BrowserCodeReader();
+    barcodeReaderRef.current = new BrowserMultiFormatReader();
     try {
-      await barcodeReaderRef.current.decodeFromVideoDevice(undefined, videoElementRef.current, (result) => {
+      await barcodeReaderRef.current.decodeFromVideoDevice(undefined, videoElementRef.current, (result: any) => {
         if (result && result.getText() && result.getText().length === 17) {
           handleVINSubmit(result.getText().trim());
           setBarcodeScanning(false);
@@ -92,9 +93,6 @@ const VINScanner: React.FC<VINScannerProps> = ({
 
   const stopBarcodeScanner = () => {
     setBarcodeScanning(false);
-    if (barcodeReaderRef.current) {
-      barcodeReaderRef.current.reset();
-    }
   };
 
   return (
