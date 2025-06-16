@@ -219,37 +219,52 @@ const VINScanner: React.FC<VINScannerProps> = ({
                     </Button>
                   </Box>
                 ) : (
-                  <Box>
+                  <Box sx={{ position: 'relative', width: '100%', maxWidth: 420, margin: '0 auto' }}>
                     <video
                       ref={videoElementRef}
                       autoPlay
                       playsInline
-                      style={{
-                        width: "100%",
-                        height: 240,
-                        background: "#222",
-                        borderRadius: 8,
+                      style={{ width: '100%', height: 320, background: '#222', borderRadius: 8 }}
+                    />
+                    {/* Horizontal guideline overlay */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: '50%',
+                        height: 0,
+                        borderTop: '3px solid #00e676',
+                        zIndex: 2,
+                        pointerEvents: 'none',
                       }}
                     />
-                    <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        onClick={handleScanFrame}
-                        fullWidth
-                        disabled={!readyToScan}
-                      >
-                        Scan Frame
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={stopBarcodeScanner}
-                        fullWidth
-                      >
-                        Stop
-                      </Button>
-                    </Box>
                   </Box>
                 )}
+                <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1, mb: 2 }}>
+                  Align the VIN barcode with the green line and tap 'Scan Frame'.
+                </Typography>
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleScanFrame}
+                    fullWidth
+                    size="large"
+                    disabled={!readyToScan}
+                    sx={{ fontWeight: 600, fontSize: 18 }}
+                  >
+                    Scan Frame
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={stopBarcodeScanner}
+                    fullWidth
+                    size="large"
+                    sx={{ fontWeight: 600, fontSize: 18 }}
+                  >
+                    Stop
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Stack>
