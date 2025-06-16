@@ -50,6 +50,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const barcodeRef = useRef<HTMLDivElement>(null);
   const barcodeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
 
   const handleVINSubmit = async (vin: string) => {
     if (!vin || vin.length !== 17) {
@@ -75,33 +76,52 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const startBarcodeScanner = async () => {
     setBarcodeScanning(true);
     setReadyToScan(false);
-  };
-
-  const handleStartScan = async () => {
-    if (!videoElementRef.current) return;
-    barcodeReaderRef.current = new BrowserMultiFormatReader();
     try {
-      await barcodeReaderRef.current.decodeFromVideoDevice(
-        'environment',
-        videoElementRef.current,
-        (result: any) => {
-          if (result && result.getText && result.getText().length === 17) {
-            handleVINSubmit(result.getText().trim());
-            setBarcodeScanning(false);
-            setReadyToScan(false);
-          }
-        }
-      );
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      setVideoStream(stream);
+      if (videoElementRef.current) {
+        videoElementRef.current.srcObject = stream;
+        videoElementRef.current.onloadedmetadata = () => {
+          videoElementRef.current && videoElementRef.current.play();
+          setReadyToScan(true);
+        };
+      }
     } catch (err) {
-      alert("Barcode scan failed: " + (err instanceof Error ? err.message : err));
+      alert('Unable to access camera: ' + (err instanceof Error ? err.message : err));
       setBarcodeScanning(false);
       setReadyToScan(false);
+    }
+  };
+
+  const handleScanFrame = async () => {
+    if (!videoElementRef.current) return;
+    const reader = new BrowserMultiFormatReader();
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElementRef.current.videoWidth;
+    canvas.height = videoElementRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(videoElementRef.current, 0, 0, canvas.width, canvas.height);
+    try {
+      const result = await reader.decodeFromImageUrl(canvas.toDataURL());
+      if (result && result.getText && result.getText().length === 17) {
+        handleVINSubmit(result.getText().trim());
+        stopBarcodeScanner();
+      } else {
+        alert('No valid 17-character VIN barcode found. Try again.');
+      }
+    } catch (err) {
+      alert('Barcode scan failed: ' + (err instanceof Error ? err.message : err));
     }
   };
 
   const stopBarcodeScanner = () => {
     setBarcodeScanning(false);
     setReadyToScan(false);
+    if (videoStream) {
+      videoStream.getTracks().forEach((track) => track.stop());
+      setVideoStream(null);
+    }
   };
 
   return (
@@ -210,14 +230,16 @@ const VINScanner: React.FC<VINScannerProps> = ({
                         background: "#222",
                         borderRadius: 8,
                       }}
-                      onCanPlay={() => setReadyToScan(true)}
                     />
                     <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
-                      {!readyToScan ? (
-                        <Button variant="contained" disabled fullWidth>Loading Camera...</Button>
-                      ) : (
-                        <Button variant="contained" onClick={handleStartScan} fullWidth>Start Scanning</Button>
-                      )}
+                      <Button
+                        variant="contained"
+                        onClick={handleScanFrame}
+                        fullWidth
+                        disabled={!readyToScan}
+                      >
+                        Scan Frame
+                      </Button>
                       <Button
                         variant="outlined"
                         onClick={stopBarcodeScanner}
