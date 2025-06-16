@@ -46,6 +46,7 @@ const VINScanner: React.FC<VINScannerProps> = ({
   const [manualVIN, setManualVIN] = useState("");
   const [decodedData, setDecodedData] = useState<VINDecodeResult | null>(null);
   const [barcodeScanning, setBarcodeScanning] = useState(false);
+  const [readyToScan, setReadyToScan] = useState(false);
   const barcodeRef = useRef<HTMLDivElement>(null);
   const barcodeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null);
@@ -73,26 +74,34 @@ const VINScanner: React.FC<VINScannerProps> = ({
 
   const startBarcodeScanner = async () => {
     setBarcodeScanning(true);
+    setReadyToScan(false);
+  };
+
+  const handleStartScan = async () => {
     if (!videoElementRef.current) return;
     barcodeReaderRef.current = new BrowserMultiFormatReader();
     try {
-      await barcodeReaderRef.current.decodeFromVideoDevice(undefined, videoElementRef.current, (result: any) => {
-        if (result && result.getText() && result.getText().length === 17) {
-          handleVINSubmit(result.getText().trim());
-          setBarcodeScanning(false);
-        } else {
-          alert("No valid 17-character VIN barcode found.");
-          setBarcodeScanning(false);
+      await barcodeReaderRef.current.decodeFromVideoDevice(
+        'environment',
+        videoElementRef.current,
+        (result: any) => {
+          if (result && result.getText && result.getText().length === 17) {
+            handleVINSubmit(result.getText().trim());
+            setBarcodeScanning(false);
+            setReadyToScan(false);
+          }
         }
-      });
+      );
     } catch (err) {
       alert("Barcode scan failed: " + (err instanceof Error ? err.message : err));
       setBarcodeScanning(false);
+      setReadyToScan(false);
     }
   };
 
   const stopBarcodeScanner = () => {
     setBarcodeScanning(false);
+    setReadyToScan(false);
   };
 
   return (
@@ -201,8 +210,14 @@ const VINScanner: React.FC<VINScannerProps> = ({
                         background: "#222",
                         borderRadius: 8,
                       }}
+                      onCanPlay={() => setReadyToScan(true)}
                     />
                     <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
+                      {!readyToScan ? (
+                        <Button variant="contained" disabled fullWidth>Loading Camera...</Button>
+                      ) : (
+                        <Button variant="contained" onClick={handleStartScan} fullWidth>Start Scanning</Button>
+                      )}
                       <Button
                         variant="outlined"
                         onClick={stopBarcodeScanner}
