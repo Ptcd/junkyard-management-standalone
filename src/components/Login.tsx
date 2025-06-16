@@ -30,7 +30,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<"admin" | "driver">("driver");
   const [yardId, setYardId] = useState("");
   const [phone, setPhone] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
@@ -84,14 +83,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Use email as username since we're eliminating separate username field
     const userData = {
       firstName,
       lastName,
-      role,
-      yardId: yardId || "default-yard", // Use consistent default yard ID
+      role: "admin" as const,
+      yardId: yardId || "default-yard",
       phone,
-      licenseNumber: role === "driver" ? licenseNumber : undefined,
     };
 
     const { data, error: authError } = await signUp(email, password, userData);
@@ -316,20 +313,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
 
-                <FormControl fullWidth>
-                  <InputLabel>Role</InputLabel>
-                  <Select
-                    value={role}
-                    label="Role"
-                    onChange={(e) =>
-                      setRole(e.target.value as "admin" | "driver")
-                    }
-                  >
-                    <MenuItem value="driver">Driver</MenuItem>
-                    <MenuItem value="admin">Admin</MenuItem>
-                  </Select>
-                </FormControl>
-
                 <TextField
                   fullWidth
                   label="Yard ID (Optional)"
@@ -344,15 +327,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
-
-                {role === "driver" && (
-                  <TextField
-                    fullWidth
-                    label="License Number"
-                    value={licenseNumber}
-                    onChange={(e) => setLicenseNumber(e.target.value)}
-                  />
-                )}
 
                 <Button
                   type="submit"

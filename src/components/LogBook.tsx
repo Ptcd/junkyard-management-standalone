@@ -303,17 +303,14 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                       {transaction.vehicleColor} {transaction.vehicleBody}
                     </Typography>
                   </TableCell>
-                  <TableCell>
-                    {transaction.sellerFirstName}
-                  </TableCell>
-                  <TableCell>
-                    {transaction.sellerLastName}
-                  </TableCell>
+                  <TableCell>{transaction.sellerFirstName}</TableCell>
+                  <TableCell>{transaction.sellerLastName}</TableCell>
                   <TableCell>
                     {transaction.sellerAddress}
                     <br />
                     <Typography variant="caption" color="text.secondary">
-                      {transaction.sellerCity}, {transaction.sellerState} {transaction.sellerZip}
+                      {transaction.sellerCity}, {transaction.sellerState}{" "}
+                      {transaction.sellerZip}
                     </Typography>
                   </TableCell>
                   <TableCell>
