@@ -29,6 +29,7 @@ import {
 import { scheduleVehiclePurchaseReport } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
+import { supabase } from '../utils/supabaseAuth';
 
 interface VINDecodeResult {
   vin: string;
@@ -99,6 +100,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
   const [showVINScanner, setShowVINScanner] = useState(false);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [driverCashBalance, setDriverCashBalance] = useState(0);
+  const [decodingVIN, setDecodingVIN] = useState(false);
 
   // Load driver's cash balance on component mount
   React.useEffect(() => {
@@ -154,6 +156,30 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
     }));
   };
 
+  const handleDecodeVIN = async () => {
+    setDecodingVIN(true);
+    try {
+      const response = await fetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${formData.vehicleVIN}?format=json`
+      );
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      if (!data.Results || !data.Results[0]) throw new Error('Invalid API response');
+      const result = data.Results[0];
+      setFormData((prev) => ({
+        ...prev,
+        vehicleYear: result.ModelYear || prev.vehicleYear,
+        vehicleMake: result.Make || prev.vehicleMake,
+        // Optionally add model, type, etc.
+      }));
+      setError("");
+    } catch (err) {
+      setError("Failed to decode VIN. Please check the VIN and try again.");
+    } finally {
+      setDecodingVIN(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -203,16 +229,15 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       userId: user.id,
       yardId: user.yardId,
       status: "completed",
-      vehicleDisposition: "TBD", // Default for tracking
-      purchaserName: `${user.firstName} ${user.lastName}`, // Auto-fill from logged-in user
+      vehicleDisposition: "TBD",
+      purchaserName: `${user.firstName} ${user.lastName}`,
     };
 
     const offlineManager = OfflineManager.getInstance();
 
     try {
-      // Store in different locations based on impound/lien status
       if (formData.isImpoundOrLien) {
-        // Store impound/lien vehicles separately
+        // Store impound/lien vehicles separately (local only)
         const existingImpoundLien = JSON.parse(
           localStorage.getItem("impoundLienVehicles") || "[]",
         );
@@ -222,11 +247,37 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           JSON.stringify(existingImpoundLien),
         );
       } else {
-        // Use offline manager for regular vehicle transactions
-        await offlineManager.saveTransaction(
-          transaction,
-          "vehicleTransactions",
-        );
+        // Try to insert into Supabase
+        const { data, error } = await supabase
+          .from("vehicle_transactions")
+          .insert([
+            {
+              user_id: user.id,
+              yard_id: user.yardId,
+              vin: formData.vehicleVIN,
+              year: formData.vehicleYear,
+              make: formData.vehicleMake,
+              model: "", // Add model if available
+              purchase_price: parseFloat(formData.salePrice),
+              seller_name: `${formData.sellerFirstName} ${formData.sellerLastName}`,
+              seller_address: formData.sellerAddress,
+              seller_phone: formData.sellerPhone,
+              purchase_date: formData.saleDate,
+              status: "completed",
+              purchaser_name: `${user.firstName} ${user.lastName}`,
+              // Add other fields as needed
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ]);
+        if (error) {
+          // Fallback to offline/local if Supabase insert fails
+          await offlineManager.saveTransaction(transaction, "vehicleTransactions");
+          setError("Saved locally (offline mode): " + error.message);
+        } else {
+          setSuccess(true);
+          setError("");
+        }
 
         // Record cash transaction for vehicle purchase
         try {
@@ -238,13 +289,10 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             formData.vehicleVIN,
             transactionId,
           );
-
-          // Update driver's cash balance display
           const newBalance = getDriverCashBalance(user.id);
           setDriverCashBalance(newBalance);
         } catch (cashError) {
           console.error("Failed to record cash transaction:", cashError);
-          // Don't fail the entire transaction for cash tracking issues
         }
 
         // Schedule NMVTIS reporting for 1 week after purchase
@@ -257,14 +305,11 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           );
         } catch (nmvtisError) {
           console.error("Failed to schedule NMVTIS report:", nmvtisError);
-          // Don't fail the entire transaction for NMVTIS scheduling issues
         }
       }
 
       setSuccess(true);
       setError("");
-
-      // Navigate back to dashboard after 2 seconds to allow user to see success message
       setTimeout(() => {
         navigate("/dashboard");
       }, 2000);
@@ -435,7 +480,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
               <Divider />
             </Stack>
 
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField
                 fullWidth
                 label="Vehicle Identification Number (VIN) *"
@@ -444,20 +489,15 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
                 required
                 inputProps={{ maxLength: 17 }}
                 helperText="17-character VIN"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowVINScanner(true)}
-                        edge="end"
-                        title="Scan VIN"
-                      >
-                        <QrCodeScanner />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
               />
+              <Button
+                variant="contained"
+                onClick={handleDecodeVIN}
+                disabled={formData.vehicleVIN.length !== 17 || decodingVIN}
+                sx={{ minWidth: 120 }}
+              >
+                {decodingVIN ? "Decoding..." : "Decode VIN"}
+              </Button>
             </Box>
 
             <Box>
@@ -543,13 +583,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           </Stack>
         </form>
       </Paper>
-
-      {/* VIN Scanner Dialog */}
-      <VINScanner
-        open={showVINScanner}
-        onClose={() => setShowVINScanner(false)}
-        onVINDetected={handleVINScanned}
-      />
 
       {/* Seller Signature Pad */}
       <SignaturePad
