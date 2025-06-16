@@ -58,8 +58,12 @@ const VINScanner: React.FC<VINScannerProps> = ({
     if (!vin || vin.length !== 17) {
       return;
     }
-    // For now, just set the decodedData to a simple object with the VIN
     setDecodedData({ vin, valid: true });
+    // Auto-close scanner and autofill VIN
+    stopBarcodeScanner();
+    setPhotoPreview(null);
+    onVINDetected({ vin, valid: true });
+    handleClose();
   };
 
   const handleUseVIN = () => {
@@ -108,7 +112,6 @@ const VINScanner: React.FC<VINScannerProps> = ({
       const result = await reader.decodeFromImageUrl(canvas.toDataURL());
       if (result && result.getText && result.getText().length === 17) {
         handleVINSubmit(result.getText().trim());
-        stopBarcodeScanner();
       } else {
         alert('No valid 17-character VIN barcode found. Try again.');
       }
@@ -143,7 +146,6 @@ const VINScanner: React.FC<VINScannerProps> = ({
       const result = await reader.decodeFromImageUrl(photoPreview);
       if (result && result.getText && result.getText().length === 17) {
         handleVINSubmit(result.getText().trim());
-        setPhotoPreview(null);
       } else {
         alert('No valid 17-character VIN barcode found in the photo.');
       }
