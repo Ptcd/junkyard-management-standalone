@@ -123,7 +123,18 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   ];
 
   useEffect(() => {
-    // Load settings from localStorage
+    // Load yard settings from localStorage first
+    const savedYardSettings = localStorage.getItem("yardSettings");
+    if (savedYardSettings) {
+      try {
+        const loadedYardSettings = JSON.parse(savedYardSettings);
+        setYardSettings((prev) => ({ ...prev, ...loadedYardSettings }));
+      } catch (e) {
+        console.error("Error loading yard settings:", e);
+      }
+    }
+
+    // Load NMVTIS settings from localStorage
     const savedSettings = localStorage.getItem("nmvtisSettings");
     if (savedSettings) {
       try {
@@ -133,19 +144,21 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           ...loaded,
           entityName: loaded.entityName || yardSettings.name,
           businessAddress: loaded.businessAddress || yardSettings.address,
+          businessEmail: loaded.businessEmail || yardSettings.email,
         }));
       } catch (e) {
         console.error("Error loading settings:", e);
       }
     } else {
-      // If no saved settings, initialize entityName and businessAddress from yardSettings
+      // If no saved settings, initialize from yardSettings
       setSettings((prev) => ({
         ...prev,
         entityName: yardSettings.name,
         businessAddress: yardSettings.address,
+        businessEmail: yardSettings.email,
       }));
     }
-  }, [yardSettings.name, yardSettings.address]);
+  }, [yardSettings.name, yardSettings.address, yardSettings.email]);
 
   const handleInputChange =
     (field: keyof NMVTISSettings) =>
@@ -176,13 +189,16 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       return;
     }
 
-    // Save to localStorage
+    // Save to localStorage with automatic syncing
     localStorage.setItem("nmvtisSettings", JSON.stringify({
       ...settings,
       entityName: yardSettings.name,
       businessAddress: yardSettings.address,
-      businessEmail: yardSettings.email,
+      businessEmail: yardSettings.email, // Sync email from yard settings
     }));
+
+    // Also save yard settings
+    localStorage.setItem("yardSettings", JSON.stringify(yardSettings));
 
     setSuccess(true);
     setError("");
@@ -386,17 +402,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                       }
                       sx={{ flex: 1 }}
                     />
-                    <TextField
-                      label="Email"
-                      value={yardSettings.email}
-                      onChange={(e) =>
-                        setYardSettings((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      sx={{ flex: 1 }}
-                    />
                   </Stack>
 
                   <TextField
@@ -439,8 +444,19 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                   <TextField
                     fullWidth
                     label="Business Contact Email"
-                    value={settings.businessEmail}
-                    onChange={handleInputChange("businessEmail")}
+                    value={yardSettings.email}
+                    onChange={(e) => {
+                      const newEmail = e.target.value;
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        email: newEmail,
+                      }));
+                      // Also update NMVTIS settings email to keep them in sync
+                      setSettings((prev) => ({
+                        ...prev,
+                        businessEmail: newEmail,
+                      }));
+                    }}
                     type="email"
                     helperText="Email for compliance notifications and reports"
                   />
