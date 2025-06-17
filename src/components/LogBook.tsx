@@ -402,8 +402,15 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       console.log("Transaction deleted successfully:", transactionToDelete.id);
       setSuccess(`Transaction for VIN ${transactionToDelete.vin || transactionToDelete.vehicleVIN} deleted successfully`);
       
-      // Refresh the transactions list
-      await fetchTransactions();
+      // Immediately update the local state to reflect the deletion
+      setTransactions(prevTransactions => 
+        prevTransactions.filter(t => t.id !== transactionToDelete.id)
+      );
+      
+      // Also refresh from database to ensure consistency
+      setTimeout(() => {
+        fetchTransactions();
+      }, 500);
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
@@ -449,6 +456,20 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
         Complete record of all vehicle transactions for NMVTIS compliance
       </Typography>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Success Alert */}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
 
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
@@ -759,13 +780,6 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Success Alert */}
-      {success && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          {success}
-        </Alert>
-      )}
     </Box>
   );
 };
