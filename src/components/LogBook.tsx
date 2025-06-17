@@ -247,7 +247,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       nmvtisSettings.businessCity || yardSettings.city || "", // CITY
       nmvtisSettings.businessState || yardSettings.state || "", // ST
       nmvtisSettings.businessZip || yardSettings.zip || "", // ZIP
-      nmvtisSettings.businessPhone || yardSettings.phone || "", // PHONE
+      // Format phone number as text to prevent scientific notation
+      `'${nmvtisSettings.businessPhone || yardSettings.phone || ""}`, // PHONE - prefix with apostrophe for text format
       nmvtisSettings.businessEmail || yardSettings.email || "", // EMAIL
       t.vin || "", // VIN
       t.vin || "", // Confirm VIN
@@ -256,7 +257,9 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       t.model || "", // VEHICLE MODEL NAME
       "", // VEHICLE STYLE
       t.odometer || "", // MILEAGE
-      t.purchase_date || t.created_at || "", // VEHICLE SALVAGE OBTAIN DATE
+      // Format date properly to avoid #### display issues
+      t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('en-US') : 
+      (t.created_at ? new Date(t.created_at).toLocaleDateString('en-US') : ""), // VEHICLE SALVAGE OBTAIN DATE
       "SCRAP", // VEHICLE DISPOSITION
       "SALVAGE", // REASON FOR DISPOSITION
       "NO", // VEHICLE INTENDED FOR EXPORT
@@ -279,8 +282,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       "", // VEHICLE OBTAINED FROM MI
       nmvtisSettings.entityName || yardSettings.name || "", // DISMANTLER LOCATION
       yardSettings.licenseNumber || "", // DISMANTLER LIC NUMBER
-      "", // DISMANTLER STOCK NUMBER
-      "", // TITLING JURISDICTION
+      "", // DISMANTLER STOCK NUMBER (Column AN - left blank as requested)
+      "", // TITLING JURISDICTION (Column AO - left blank as requested)
       "" // TITLE NO
     ]);
 
