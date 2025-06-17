@@ -52,7 +52,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       const { data, error } = await supabase
         .from("vehicle_transactions")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(10000);
 
       if (error) {
         console.error("Error fetching transactions:", error);
@@ -61,10 +62,14 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
         const userTransactions = user.role === "admin" 
           ? stored 
           : stored.filter((t: any) => t.userId === user.id);
+        console.log("Using localStorage fallback, found:", userTransactions.length, "transactions");
         setTransactions(userTransactions);
         setFilteredTransactions(userTransactions);
         return;
       }
+
+      console.log("Supabase returned:", data?.length || 0, "total transactions");
+      console.log("User role:", user.role, "User ID:", user.id);
 
       // For drivers, only show their transactions; for admins, show all
       const userTransactions =
@@ -72,6 +77,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           ? data
           : data.filter((t: any) => t.user_id === user.id);
 
+      console.log("After user filtering:", userTransactions.length, "transactions for this user");
       setTransactions(userTransactions);
       setFilteredTransactions(userTransactions);
     } catch (err) {
