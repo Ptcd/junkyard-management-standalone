@@ -245,30 +245,32 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           JSON.stringify(existingImpoundLien),
         );
       } else {
+        // Format data according to Supabase schema
+        const supabaseData = {
+          user_id: user.id,
+          yard_id: user.yardId,
+          vin: formData.vehicleVIN,
+          year: parseInt(formData.vehicleYear, 10),
+          make: formData.vehicleMake,
+          model: "", // Add model if available
+          purchase_price: parseFloat(formData.salePrice),
+          seller_name: `${formData.sellerFirstName} ${formData.sellerLastName}`,
+          seller_address: formData.sellerAddress,
+          seller_phone: formData.sellerPhone,
+          purchase_date: formData.saleDate,
+          signature_data: formData.sellerSignature,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
         // Try to insert into Supabase
         const { data, error } = await supabase
           .from("vehicle_transactions")
-          .insert([
-            {
-              user_id: user.id,
-              yard_id: user.yardId,
-              vin: formData.vehicleVIN,
-              year: formData.vehicleYear,
-              make: formData.vehicleMake,
-              model: "", // Add model if available
-              purchase_price: parseFloat(formData.salePrice),
-              seller_name: `${formData.sellerFirstName} ${formData.sellerLastName}`,
-              seller_address: formData.sellerAddress,
-              seller_phone: formData.sellerPhone,
-              purchase_date: formData.saleDate,
-              status: "completed",
-              purchaser_name: `${user.firstName} ${user.lastName}`,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]);
+          .insert([supabaseData])
+          .select();
 
         if (error) {
+          console.error("Supabase insert error:", error);
           // Store in offline queue if Supabase insert fails
           const offlineTransactions = JSON.parse(
             localStorage.getItem("offlineTransactions") || "[]"
@@ -278,8 +280,9 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             "offlineTransactions",
             JSON.stringify(offlineTransactions)
           );
-          setError("Saved locally (offline mode). Will sync when online.");
+          setError(`Failed to save to database: ${error.message}. Saved locally (offline mode). Will sync when online.`);
         } else {
+          console.log("Successfully saved to Supabase:", data);
           setSuccess(true);
           setError("");
         }
@@ -310,7 +313,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           console.error("Failed to record cash transaction:", cashError);
         }
 
-        // Schedule NMVTIS reporting for 1 week after purchase
+        // Schedule NMVTIS reporting for 40 hours after purchase
         try {
           scheduleVehiclePurchaseReport(
             transactionId,
