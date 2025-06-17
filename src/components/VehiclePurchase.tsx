@@ -251,17 +251,14 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           yard_id: user.yardId,
           vin: formData.vehicleVIN,
           year: parseInt(formData.vehicleYear, 10),
-          make: formData.vehicleMake,
-          model: "", // Add model if available
-          color: "", // Add color if available
-          vehicle_type: "", // Add vehicle type if available
+          seller_first_name: formData.sellerFirstName,
+          seller_last_name: formData.sellerLastName,
+          seller_address: formData.sellerAddress,
           purchase_price: parseFloat(formData.salePrice),
-          seller_name: `${formData.sellerFirstName} ${formData.sellerLastName}`,
-          seller_address: `${formData.sellerAddress}, ${formData.sellerCity}, ${formData.sellerState} ${formData.sellerZip}`,
+          purchase_date: formData.saleDate,
           seller_phone: formData.sellerPhone,
           seller_id_type: "Driver's License", // Default to Driver's License
           seller_id_number: "", // Add if available
-          purchase_date: formData.saleDate, // Supabase will handle the date conversion
           odometer: 0, // Add if available
           condition: "Used", // Default to Used
           purchase_method: "Cash", // Default to Cash
@@ -269,7 +266,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           title_state: "", // Add if available
           notes: "",
           signature_data: formData.sellerSignature,
-          photos: [] // Add photos if available
+          seller_id_photo: formData.sellerDriverLicensePhoto, // Save the file or its URL
+          disposition: 'SCRAP',
         };
 
         // Try to insert into Supabase with retry logic
@@ -300,6 +298,12 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             
             setSuccess(true);
             setError("");
+
+            // After successful save, generate PDF and upload to Supabase Storage
+            // (Pseudo-code, actual implementation will require a PDF library and Supabase Storage API)
+            // const pdfUrl = await generateAndUploadPDF(supabaseData);
+            // await supabase.from('vehicle_transactions').update({ pdf_url: pdfUrl }).eq('id', data[0].id);
+
             break;
           } catch (error) {
             console.error(`Supabase insert attempt ${4 - retries} failed:`, error);
