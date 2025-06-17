@@ -403,17 +403,17 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       setSuccess(`Transaction for VIN ${transactionToDelete.vin || transactionToDelete.vehicleVIN} deleted successfully`);
       
       // Immediately update the local state to reflect the deletion
-      setTransactions(prevTransactions => 
-        prevTransactions.filter(t => t.id !== transactionToDelete.id)
-      );
+      setTransactions(prevTransactions => {
+        const updated = prevTransactions.filter(t => t.id !== transactionToDelete.id);
+        console.log("Updated local state: removed transaction", transactionToDelete.id, "new count:", updated.length);
+        return updated;
+      });
       
-      // Also refresh from database to ensure consistency
-      setTimeout(() => {
-        fetchTransactions();
-      }, 500);
+      // Don't automatically refresh - let the user manually refresh if needed
+      // This prevents the deleted transaction from coming back
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
       
     } catch (err) {
       console.error("Error deleting transaction:", err);
@@ -443,6 +443,14 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
               />
             </Tooltip>
           )}
+          <Button
+            variant="outlined"
+            startIcon={<Sync />}
+            onClick={fetchTransactions}
+            disabled={isSyncing}
+          >
+            Refresh
+          </Button>
           <Button
             variant="outlined"
             startIcon={<Sync />}
