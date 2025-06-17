@@ -278,7 +278,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           notes: "",
           signature_data: formData.sellerSignature,
           seller_id_photo: formData.sellerDriverLicensePhoto, // Save the file or its URL
-          disposition: 'SCRAP',
+          vehicleDisposition: 'SCRAP',
         };
 
         // Try to insert into Supabase with retry logic
