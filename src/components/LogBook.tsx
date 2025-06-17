@@ -186,42 +186,114 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
   }, [transactions, filterDate, filterDisposition, filterVIN]);
 
   const exportCSV = () => {
+    // Load NMVTIS settings for entity information
+    const nmvtisSettings = JSON.parse(localStorage.getItem("nmvtisSettings") || "{}");
+    const yardSettings = JSON.parse(localStorage.getItem("yardSettings") || "{}");
+    
     const headers = [
-      "Date of Acquisition",
+      "Reference ID",
+      "NMVTIS ID", 
+      "PIN",
+      "REPORTING ENTITY NAME",
+      "IS AN INSURANCE ENTITY?",
+      "ADDRESS",
+      "CITY",
+      "ST",
+      "ZIP",
+      "PHONE",
+      "EMAIL",
       "VIN",
-      "Year",
-      "Seller First Name",
-      "Seller Last Name",
-      "Seller Address",
-      "Sale Price",
-      "Disposition",
-      "Driver/Employee",
-      "Vehicle Transferred To"
+      "Confirm VIN",
+      "VEHICLE / VESSEL MAKE",
+      "VEHICLE MODEL YEAR",
+      "VEHICLE MODEL NAME",
+      "VEHICLE STYLE",
+      "MILEAGE",
+      "VEHICLE SALVAGE OBTAIN DATE",
+      "VEHICLE DISPOSITION",
+      "REASON FOR DISPOSITION",
+      "VEHICLE INTENDED FOR EXPORT",
+      "Reserved",
+      "INSURANCE OWNER BUSINESS NAME",
+      "INSURANCE OWNER FIRSTNM",
+      "INSURANCE OWNER LASTNM",
+      "INSURANCE OWNER MI",
+      "INSURANCE OWNER ADDR",
+      "INSURANCE OWNER CITY",
+      "INSURANCE OWNER STATE",
+      "INSURANCE OWNER ZIP",
+      "VEHICLE TRANSFERRED TO COMPANY",
+      "VEHICLE TRANSFERRED TO FIRSTNM",
+      "VEHICLE TRANSFERRED TO LASTNM",
+      "VEHICLE TRANSFERRED TO MI",
+      "VEHICLE OBTAINED FROM COMPANY",
+      "VEHICLE OBTAINED FROM FIRSTNM",
+      "VEHICLE OBTAINED FROM LASTNM",
+      "VEHICLE OBTAINED FROM MI",
+      "DISMANTLER LOCATION",
+      "DISMANTLER LIC NUMBER",
+      "DISMANTLER STOCK NUMBER",
+      "TITLING JURISDICTION",
+      "TITLE NO"
     ];
 
-    const csvData = filteredTransactions.map((t) => [
-      t.purchase_date || t.created_at || "",
-      t.vin || "",
-      t.year || "",
-      t.seller_first_name || "",
-      t.seller_last_name || "",
-      t.seller_address || "",
-      t.purchase_price || "",
-      "SCRAP",
-      t.driver_name || t.user_id || "",
-      t.vehicle_transferred_to || ""
+    const csvData = filteredTransactions.map((t, index) => [
+      index + 1, // Reference ID
+      nmvtisSettings.nmvtisId || "", // NMVTIS ID
+      nmvtisSettings.nmvtisPin || "", // PIN
+      nmvtisSettings.entityName || yardSettings.name || "", // REPORTING ENTITY NAME
+      "NO", // IS AN INSURANCE ENTITY?
+      nmvtisSettings.businessAddress || yardSettings.address || "", // ADDRESS
+      nmvtisSettings.businessCity || yardSettings.city || "", // CITY
+      nmvtisSettings.businessState || yardSettings.state || "", // ST
+      nmvtisSettings.businessZip || yardSettings.zip || "", // ZIP
+      nmvtisSettings.businessPhone || yardSettings.phone || "", // PHONE
+      nmvtisSettings.businessEmail || yardSettings.email || "", // EMAIL
+      t.vin || "", // VIN
+      t.vin || "", // Confirm VIN
+      t.make || "", // VEHICLE / VESSEL MAKE
+      t.year || "", // VEHICLE MODEL YEAR
+      t.model || "", // VEHICLE MODEL NAME
+      "", // VEHICLE STYLE
+      t.odometer || "", // MILEAGE
+      t.purchase_date || t.created_at || "", // VEHICLE SALVAGE OBTAIN DATE
+      "SCRAP", // VEHICLE DISPOSITION
+      "SALVAGE", // REASON FOR DISPOSITION
+      "NO", // VEHICLE INTENDED FOR EXPORT
+      "", // Reserved
+      "", // INSURANCE OWNER BUSINESS NAME
+      "", // INSURANCE OWNER FIRSTNM
+      "", // INSURANCE OWNER LASTNM
+      "", // INSURANCE OWNER MI
+      "", // INSURANCE OWNER ADDR
+      "", // INSURANCE OWNER CITY
+      "", // INSURANCE OWNER STATE
+      "", // INSURANCE OWNER ZIP
+      "", // VEHICLE TRANSFERRED TO COMPANY
+      "", // VEHICLE TRANSFERRED TO FIRSTNM
+      "", // VEHICLE TRANSFERRED TO LASTNM
+      "", // VEHICLE TRANSFERRED TO MI
+      "", // VEHICLE OBTAINED FROM COMPANY
+      t.seller_first_name || "", // VEHICLE OBTAINED FROM FIRSTNM
+      t.seller_last_name || "", // VEHICLE OBTAINED FROM LASTNM
+      "", // VEHICLE OBTAINED FROM MI
+      nmvtisSettings.entityName || yardSettings.name || "", // DISMANTLER LOCATION
+      yardSettings.licenseNumber || "", // DISMANTLER LIC NUMBER
+      "", // DISMANTLER STOCK NUMBER
+      "", // TITLING JURISDICTION
+      "" // TITLE NO
     ]);
 
     const csv = [
       headers.join(","),
-      ...csvData.map((row) => row.join(",")),
+      ...csvData.map((row) => row.map(field => `"${field}"`).join(",")),
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Logbook_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `NMVTIS_Report_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
   };
 
