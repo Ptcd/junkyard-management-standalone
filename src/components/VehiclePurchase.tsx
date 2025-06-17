@@ -263,15 +263,38 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           updated_at: new Date().toISOString()
         };
 
-        // Try to insert into Supabase
-        const { data, error } = await supabase
-          .from("vehicle_transactions")
-          .insert([supabaseData])
-          .select();
+        // Try to insert into Supabase with retry logic
+        let retries = 3;
+        let lastError = null;
 
-        if (error) {
-          console.error("Supabase insert error:", error);
-          // Store in offline queue if Supabase insert fails
+        while (retries > 0) {
+          try {
+            const { data, error } = await supabase
+              .from("vehicle_transactions")
+              .insert([supabaseData])
+              .select();
+
+            if (error) throw error;
+
+            console.log("Successfully saved to Supabase:", data);
+            setSuccess(true);
+            setError("");
+            break;
+          } catch (error) {
+            console.error(`Supabase insert attempt ${4 - retries} failed:`, error);
+            lastError = error;
+            retries--;
+            
+            if (retries > 0) {
+              // Wait before retrying (exponential backoff)
+              await new Promise(resolve => setTimeout(resolve, (4 - retries) * 1000));
+            }
+          }
+        }
+
+        if (retries === 0 && lastError) {
+          console.error("All Supabase insert attempts failed:", lastError);
+          // Store in offline queue if all Supabase insert attempts fail
           const offlineTransactions = JSON.parse(
             localStorage.getItem("offlineTransactions") || "[]"
           );
@@ -280,11 +303,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             "offlineTransactions",
             JSON.stringify(offlineTransactions)
           );
-          setError(`Failed to save to database: ${error.message}. Saved locally (offline mode). Will sync when online.`);
-        } else {
-          console.log("Successfully saved to Supabase:", data);
-          setSuccess(true);
-          setError("");
+          setError(`Failed to save to database after multiple attempts. Saved locally (offline mode). Will sync when online.`);
         }
 
         // Also save to local storage for immediate access
