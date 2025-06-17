@@ -127,12 +127,25 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     const savedSettings = localStorage.getItem("nmvtisSettings");
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        const loaded = JSON.parse(savedSettings);
+        setSettings((prev) => ({
+          ...prev,
+          ...loaded,
+          entityName: loaded.entityName || yardSettings.name,
+          businessAddress: loaded.businessAddress || yardSettings.address,
+        }));
       } catch (e) {
         console.error("Error loading settings:", e);
       }
+    } else {
+      // If no saved settings, initialize entityName and businessAddress from yardSettings
+      setSettings((prev) => ({
+        ...prev,
+        entityName: yardSettings.name,
+        businessAddress: yardSettings.address,
+      }));
     }
-  }, []);
+  }, [yardSettings.name, yardSettings.address]);
 
   const handleInputChange =
     (field: keyof NMVTISSettings) =>
@@ -168,6 +181,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       ...settings,
       entityName: yardSettings.name,
       businessAddress: yardSettings.address,
+      businessEmail: yardSettings.email,
     }));
 
     setSuccess(true);
