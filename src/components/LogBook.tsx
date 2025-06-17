@@ -21,8 +21,20 @@ import {
   CardContent,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
 } from "@mui/material";
-import { Download, FilterList, Sync, CloudOff } from "@mui/icons-material";
+import {
+  Download,
+  FilterList,
+  Sync,
+  CloudOff,
+  Delete as DeleteIcon,
+  Warning as WarningIcon
+} from "@mui/icons-material";
 import { supabase } from "../utils/supabaseAuth";
 
 interface User {
@@ -44,8 +56,12 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
   const [filterDisposition, setFilterDisposition] = useState("");
   const [filterVIN, setFilterVIN] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [hasOfflineData, setHasOfflineData] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchTransactions = async () => {
     try {
@@ -311,6 +327,97 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
     setFilterVIN("");
   };
 
+  const handleDelete = (transaction: any) => {
+    setTransactionToDelete(transaction);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
+    
+    setIsDeleting(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      // Step 1: Delete PDF from Supabase Storage if it exists
+      if (transactionToDelete.bill_of_sale_pdf_url) {
+        try {
+          // Extract file path from URL
+          const url = transactionToDelete.bill_of_sale_pdf_url;
+          const pathMatch = url.match(/\/storage\/v1\/object\/public\/legal-documents\/(.+)/);
+          if (pathMatch) {
+            const filePath = pathMatch[1];
+            const { error: storageError } = await supabase.storage
+              .from('legal-documents')
+              .remove([filePath]);
+            
+            if (storageError) {
+              console.error('Error deleting PDF:', storageError);
+              // Continue with transaction deletion even if PDF deletion fails
+            } else {
+              console.log('PDF deleted successfully:', filePath);
+            }
+          }
+        } catch (pdfError) {
+          console.error('Error deleting PDF:', pdfError);
+          // Continue with transaction deletion even if PDF deletion fails
+        }
+      }
+
+      // Step 2: Delete from Supabase database
+      const { error: dbError } = await supabase
+        .from("vehicle_transactions")
+        .delete()
+        .eq("id", transactionToDelete.id);
+
+      if (dbError) {
+        console.error("Error deleting transaction from database:", dbError);
+        setError("Failed to delete transaction from database. Please try again.");
+        return;
+      }
+
+      // Step 3: Remove from local storage
+      try {
+        // Remove from vehicleTransactions
+        const localTransactions = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+        const updatedTransactions = localTransactions.filter((t: any) => 
+          t.id !== transactionToDelete.id && 
+          !(t.vehicleVIN === transactionToDelete.vin && t.timestamp === transactionToDelete.created_at)
+        );
+        localStorage.setItem("vehicleTransactions", JSON.stringify(updatedTransactions));
+
+        // Remove from offline transactions if exists
+        const offlineTransactions = JSON.parse(localStorage.getItem("offlineTransactions") || "[]");
+        const updatedOfflineTransactions = offlineTransactions.filter((t: any) => 
+          t.id !== transactionToDelete.id && 
+          !(t.vehicleVIN === transactionToDelete.vin && t.timestamp === transactionToDelete.created_at)
+        );
+        localStorage.setItem("offlineTransactions", JSON.stringify(updatedOfflineTransactions));
+      } catch (localStorageError) {
+        console.error("Error updating local storage:", localStorageError);
+        // Continue anyway as the main deletion succeeded
+      }
+
+      console.log("Transaction deleted successfully:", transactionToDelete.id);
+      setSuccess(`Transaction for VIN ${transactionToDelete.vin || transactionToDelete.vehicleVIN} deleted successfully`);
+      
+      // Refresh the transactions list
+      await fetchTransactions();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+      
+    } catch (err) {
+      console.error("Error deleting transaction:", err);
+      setError("Failed to delete transaction. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setTransactionToDelete(null);
+    }
+  };
+
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -484,6 +591,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                 <TableCell>Disposition</TableCell>
                 {user.role === "admin" && <TableCell>Driver</TableCell>}
                 <TableCell>Status</TableCell>
+                {user.role === "admin" && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -540,6 +648,22 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                       variant="outlined"
                     />
                   </TableCell>
+                  {user.role === "admin" && (
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        <Tooltip title="Permanently delete this transaction and associated documents">
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDelete(transaction)}
+                            disabled={isDeleting}
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -554,6 +678,94 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           </Box>
         )}
       </Paper>
+
+      {/* Delete Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !isDeleting && setDeleteDialogOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="alert-dialog-title">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <WarningIcon color="warning" />
+            <Typography variant="h6">Permanently Delete Transaction</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          {transactionToDelete && (
+            <Stack spacing={2}>
+              <Alert severity="warning">
+                This action cannot be undone. The following will be permanently deleted:
+              </Alert>
+              
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Transaction Details:
+                </Typography>
+                <Typography variant="body2">
+                  • VIN: {transactionToDelete.vin || transactionToDelete.vehicleVIN}
+                </Typography>
+                <Typography variant="body2">
+                  • Vehicle: {transactionToDelete.year || transactionToDelete.vehicleYear} {transactionToDelete.make || transactionToDelete.vehicleMake}
+                </Typography>
+                <Typography variant="body2">
+                  • Seller: {transactionToDelete.seller_first_name || transactionToDelete.sellerFirstName} {transactionToDelete.seller_last_name || transactionToDelete.sellerLastName}
+                </Typography>
+                <Typography variant="body2">
+                  • Price: ${(transactionToDelete.purchase_price || transactionToDelete.salePrice || 0).toLocaleString()}
+                </Typography>
+                <Typography variant="body2">
+                  • Date: {new Date(transactionToDelete.created_at || transactionToDelete.timestamp).toLocaleDateString()}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  What will be deleted:
+                </Typography>
+                <Typography variant="body2">
+                  • Transaction record from database
+                </Typography>
+                <Typography variant="body2">
+                  • Transaction from local storage
+                </Typography>
+                {transactionToDelete.bill_of_sale_pdf_url && (
+                  <Typography variant="body2">
+                    • Associated PDF document from storage
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setDeleteDialogOpen(false)} 
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={isDeleting}
+            startIcon={isDeleting ? null : <DeleteIcon />}
+          >
+            {isDeleting ? "Deleting..." : "Permanently Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Alert */}
+      {success && (
+        <Alert severity="success" sx={{ mt: 2 }}>
+          {success}
+        </Alert>
+      )}
     </Box>
   );
 };
