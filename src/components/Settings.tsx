@@ -125,9 +125,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   useEffect(() => {
     // Load yard settings from localStorage first
     const savedYardSettings = localStorage.getItem("yardSettings");
+    let loadedYardSettings = yardSettings;
+    
     if (savedYardSettings) {
       try {
-        const loadedYardSettings = JSON.parse(savedYardSettings);
+        loadedYardSettings = JSON.parse(savedYardSettings);
         setYardSettings((prev) => ({ ...prev, ...loadedYardSettings }));
       } catch (e) {
         console.error("Error loading yard settings:", e);
@@ -142,23 +144,24 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         setSettings((prev) => ({
           ...prev,
           ...loaded,
-          entityName: loaded.entityName || yardSettings.name,
-          businessAddress: loaded.businessAddress || yardSettings.address,
-          businessEmail: loaded.businessEmail || yardSettings.email,
+          // Only use yard settings as fallback if the loaded values are empty
+          entityName: loaded.entityName || loadedYardSettings.name,
+          businessAddress: loaded.businessAddress || loadedYardSettings.address,
+          businessEmail: loaded.businessEmail || loadedYardSettings.email,
         }));
       } catch (e) {
         console.error("Error loading settings:", e);
       }
     } else {
-      // If no saved settings, initialize from yardSettings
+      // Only initialize from yardSettings if no saved NMVTIS settings exist
       setSettings((prev) => ({
         ...prev,
-        entityName: yardSettings.name,
-        businessAddress: yardSettings.address,
-        businessEmail: yardSettings.email,
+        entityName: loadedYardSettings.name,
+        businessAddress: loadedYardSettings.address,
+        businessEmail: loadedYardSettings.email,
       }));
     }
-  }, []);
+  }, []); // Keep empty dependencies to run only once on mount
 
   const handleInputChange =
     (field: keyof NMVTISSettings) =>
