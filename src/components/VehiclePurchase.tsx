@@ -253,14 +253,23 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           year: parseInt(formData.vehicleYear, 10),
           make: formData.vehicleMake,
           model: "", // Add model if available
+          color: "", // Add color if available
+          vehicle_type: "", // Add vehicle type if available
           purchase_price: parseFloat(formData.salePrice),
           seller_name: `${formData.sellerFirstName} ${formData.sellerLastName}`,
-          seller_address: formData.sellerAddress,
+          seller_address: `${formData.sellerAddress}, ${formData.sellerCity}, ${formData.sellerState} ${formData.sellerZip}`,
           seller_phone: formData.sellerPhone,
-          purchase_date: formData.saleDate,
+          seller_id_type: "Driver's License", // Default to Driver's License
+          seller_id_number: "", // Add if available
+          purchase_date: formData.saleDate, // Supabase will handle the date conversion
+          odometer: 0, // Add if available
+          condition: "Used", // Default to Used
+          purchase_method: "Cash", // Default to Cash
+          title_number: "", // Add if available
+          title_state: "", // Add if available
+          notes: "",
           signature_data: formData.sellerSignature,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          photos: [] // Add photos if available
         };
 
         // Try to insert into Supabase with retry logic
@@ -269,14 +278,26 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
 
         while (retries > 0) {
           try {
+            console.log("Attempting to save to Supabase:", supabaseData);
             const { data, error } = await supabase
               .from("vehicle_transactions")
               .insert([supabaseData])
               .select();
 
-            if (error) throw error;
+            if (error) {
+              console.error("Supabase error:", error);
+              throw error;
+            }
+
+            if (!data || data.length === 0) {
+              throw new Error("No data returned from insert");
+            }
 
             console.log("Successfully saved to Supabase:", data);
+            
+            // Update the transaction with the Supabase ID
+            transaction.id = data[0].id;
+            
             setSuccess(true);
             setError("");
             break;

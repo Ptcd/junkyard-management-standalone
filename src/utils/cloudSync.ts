@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 // Cloud Sync Configuration
 interface CloudSyncConfig {
   enabled: boolean;
@@ -46,7 +48,7 @@ export const needsSync = (): boolean => {
   return minutesSinceSync >= config.syncInterval;
 };
 
-// Mock cloud sync functions (replace with real Supabase integration)
+// Sync data to cloud
 export const syncToCloud = async (): Promise<{
   success: boolean;
   message: string;
@@ -54,32 +56,54 @@ export const syncToCloud = async (): Promise<{
   try {
     const config = getCloudSyncConfig();
 
-    if (!config.enabled) {
-      return { success: false, message: "Cloud sync not enabled" };
+    if (!config.enabled || !config.supabaseUrl || !config.supabaseKey) {
+      return { success: false, message: "Cloud sync not properly configured" };
     }
 
-    // In production, this would integrate with Supabase:
-    // const { createClient } = require('@supabase/supabase-js');
-    // const supabase = createClient(config.supabaseUrl, config.supabaseKey);
-
+    const supabase = createClient(config.supabaseUrl, config.supabaseKey);
     const syncData: any = {};
 
     // Collect all data to sync
-    SYNC_TABLES.forEach((table) => {
+    for (const table of SYNC_TABLES) {
       const data = localStorage.getItem(table);
       if (data) {
         syncData[table] = JSON.parse(data);
       }
-    });
+    }
 
-    // Mock API call - in production, this would be:
-    // await supabase.from('sync_data').upsert({
-    //   yard_id: getCurrentYardId(),
-    //   data: syncData,
-    //   updated_at: new Date().toISOString()
-    // });
+    // Get the current yard ID
+    const yardId = localStorage.getItem('currentYardId');
+    if (!yardId) {
+      return { success: false, message: "No yard ID found" };
+    }
 
-    console.log("Would sync to cloud:", Object.keys(syncData));
+    // Sync each table to Supabase
+    for (const [table, data] of Object.entries(syncData)) {
+      if (Array.isArray(data)) {
+        for (const record of data) {
+          // Add yard_id and device_id to each record
+          const recordWithMetadata = {
+            ...record,
+            yard_id: yardId,
+            device_id: localStorage.getItem('deviceId') || 'unknown',
+            last_synced: new Date().toISOString()
+          };
+
+          // Upsert the record
+          const { error } = await supabase
+            .from(table)
+            .upsert(recordWithMetadata, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            });
+
+          if (error) {
+            console.error(`Error syncing ${table}:`, error);
+            return { success: false, message: `Failed to sync ${table}` };
+          }
+        }
+      }
+    }
 
     // Update last sync time
     const updatedConfig = { ...config, lastSync: new Date().toISOString() };
@@ -92,7 +116,7 @@ export const syncToCloud = async (): Promise<{
   }
 };
 
-// Mock cloud restore function
+// Sync data from cloud
 export const syncFromCloud = async (): Promise<{
   success: boolean;
   message: string;
@@ -100,22 +124,57 @@ export const syncFromCloud = async (): Promise<{
   try {
     const config = getCloudSyncConfig();
 
-    if (!config.enabled) {
-      return { success: false, message: "Cloud sync not enabled" };
+    if (!config.enabled || !config.supabaseUrl || !config.supabaseKey) {
+      return { success: false, message: "Cloud sync not properly configured" };
     }
 
-    // In production, this would fetch from Supabase:
-    // const { data, error } = await supabase
-    //   .from('sync_data')
-    //   .select('data')
-    //   .eq('yard_id', getCurrentYardId())
-    //   .order('updated_at', { ascending: false })
-    //   .limit(1);
+    const supabase = createClient(config.supabaseUrl, config.supabaseKey);
+    const yardId = localStorage.getItem('currentYardId');
+    
+    if (!yardId) {
+      return { success: false, message: "No yard ID found" };
+    }
 
-    // Mock restored data
-    console.log("Would restore from cloud");
+    // Get last sync time
+    const lastSync = new Date(config.lastSync);
 
-    return { success: true, message: "Data restored from cloud successfully" };
+    // Sync each table from Supabase
+    for (const table of SYNC_TABLES) {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .eq('yard_id', yardId)
+        .gte('last_synced', lastSync.toISOString());
+
+      if (error) {
+        console.error(`Error fetching ${table}:`, error);
+        return { success: false, message: `Failed to fetch ${table}` };
+      }
+
+      if (data && data.length > 0) {
+        // Merge with local data
+        const localData = JSON.parse(localStorage.getItem(table) || '[]');
+        const mergedData = [...localData];
+        
+        for (const record of data) {
+          const existingIndex = mergedData.findIndex((r: any) => r.id === record.id);
+          if (existingIndex >= 0) {
+            mergedData[existingIndex] = record;
+          } else {
+            mergedData.push(record);
+          }
+        }
+
+        // Save merged data
+        localStorage.setItem(table, JSON.stringify(mergedData));
+      }
+    }
+
+    // Update last sync time
+    const updatedConfig = { ...config, lastSync: new Date().toISOString() };
+    saveCloudSyncConfig(updatedConfig);
+
+    return { success: true, message: "Data synced from cloud successfully" };
   } catch (error) {
     console.error("Cloud restore failed:", error);
     return { success: false, message: "Failed to restore from cloud" };
@@ -126,14 +185,20 @@ export const syncFromCloud = async (): Promise<{
 export const autoSync = async (): Promise<void> => {
   if (navigator.onLine && needsSync()) {
     await syncToCloud();
+    await syncFromCloud();
   }
 };
 
-// Setup cloud sync with Vercel + Supabase (future implementation guide)
+// Setup cloud sync with Supabase
 export const setupCloudSync = (
   supabaseUrl: string,
   supabaseKey: string,
 ): CloudSyncConfig => {
+  // Generate a unique device ID if not exists
+  if (!localStorage.getItem('deviceId')) {
+    localStorage.setItem('deviceId', crypto.randomUUID());
+  }
+
   const config: CloudSyncConfig = {
     enabled: true,
     supabaseUrl,
@@ -143,12 +208,6 @@ export const setupCloudSync = (
   };
 
   saveCloudSyncConfig(config);
-
-  // In production, test the connection:
-  // const { createClient } = require('@supabase/supabase-js');
-  // const supabase = createClient(supabaseUrl, supabaseKey);
-  // Test connection here...
-
   return config;
 };
 

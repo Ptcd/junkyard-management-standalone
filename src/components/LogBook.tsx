@@ -96,18 +96,61 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
     try {
       const offlineTransactions = JSON.parse(localStorage.getItem("offlineTransactions") || "[]");
       if (offlineTransactions.length > 0) {
-        const { error: syncError } = await supabase
+        // Format transactions for Supabase
+        const formattedTransactions = offlineTransactions.map((t: any) => ({
+          user_id: t.userId,
+          yard_id: t.yardId,
+          vin: t.vehicleVIN,
+          year: parseInt(t.vehicleYear, 10),
+          make: t.vehicleMake,
+          model: "",
+          color: "",
+          vehicle_type: "",
+          purchase_price: parseFloat(t.salePrice),
+          seller_name: t.sellerName,
+          seller_address: t.sellerAddress,
+          seller_phone: t.sellerPhone,
+          seller_id_type: "Driver's License",
+          seller_id_number: "",
+          purchase_date: t.saleDate,
+          odometer: 0,
+          condition: "Used",
+          purchase_method: "Cash",
+          title_number: "",
+          title_state: "",
+          notes: "",
+          signature_data: t.sellerSignature,
+          photos: []
+        }));
+
+        const { data, error: syncError } = await supabase
           .from("vehicle_transactions")
-          .insert(offlineTransactions);
+          .insert(formattedTransactions)
+          .select();
         
-        if (!syncError) {
-          localStorage.removeItem("offlineTransactions");
-          setHasOfflineData(false);
-          // Refresh transactions
-          fetchTransactions();
-        } else {
+        if (syncError) {
+          console.error("Failed to sync offline transactions:", syncError);
           setError("Failed to sync offline transactions. Please try again.");
+          return;
         }
+
+        if (!data || data.length === 0) {
+          throw new Error("No data returned from sync");
+        }
+
+        // Update local storage with Supabase IDs
+        const localTransactions = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+        const updatedTransactions = localTransactions.map((t: any) => {
+          const syncedTransaction = data.find((d: any) => d.vin === t.vehicleVIN);
+          return syncedTransaction ? { ...t, id: syncedTransaction.id } : t;
+        });
+
+        localStorage.setItem("vehicleTransactions", JSON.stringify(updatedTransactions));
+        localStorage.removeItem("offlineTransactions");
+        setHasOfflineData(false);
+        
+        // Refresh transactions
+        fetchTransactions();
       }
     } catch (syncError) {
       console.error("Failed to sync offline transactions:", syncError);

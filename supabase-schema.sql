@@ -211,7 +211,22 @@ CREATE POLICY "Users can insert transactions for their yard" ON vehicle_transact
     );
 
 CREATE POLICY "Users can update their own transactions" ON vehicle_transactions
-    FOR UPDATE USING (user_id = auth.uid());
+    FOR UPDATE USING (
+        user_id = auth.uid() OR
+        EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND role = 'admin' AND yard_id = vehicle_transactions.yard_id
+        )
+    );
+
+-- Add policy for device sync
+CREATE POLICY "Allow device sync" ON vehicle_transactions
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND yard_id = vehicle_transactions.yard_id
+        )
+    );
 
 -- Create policies for vehicle_sales
 CREATE POLICY "Users can view sales from their yard" ON vehicle_sales
