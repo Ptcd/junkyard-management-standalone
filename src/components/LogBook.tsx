@@ -109,13 +109,11 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           vin: t.vehicleVIN,
           year: parseInt(t.vehicleYear, 10),
           make: t.vehicleMake,
-          model: "",
-          color: "",
-          vehicle_type: "",
-          purchase_price: parseFloat(t.salePrice),
-          seller_name: t.sellerName,
+          seller_first_name: t.sellerFirstName,
+          seller_last_name: t.sellerLastName,
           seller_address: t.sellerAddress,
-          seller_phone: t.sellerPhone,
+          purchase_price: parseFloat(t.salePrice),
+          seller_phone: t.sellerPhone || "",
           seller_id_type: "Driver's License",
           seller_id_number: "",
           purchase_date: t.saleDate,
@@ -125,7 +123,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           title_number: "",
           title_state: "",
           notes: "",
-          signature_data: t.sellerSignature,
+          bill_of_sale_pdf_url: t.documentUrls?.[0] || null,
           photos: []
         }));
 
