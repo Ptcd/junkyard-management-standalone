@@ -247,8 +247,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       nmvtisSettings.businessCity || yardSettings.city || "", // CITY
       nmvtisSettings.businessState || yardSettings.state || "", // ST
       nmvtisSettings.businessZip || yardSettings.zip || "", // ZIP
-      // Format phone number as text to prevent scientific notation
-      `'${nmvtisSettings.businessPhone || yardSettings.phone || ""}`, // PHONE - prefix with apostrophe for text format
+      // Display phone number exactly as user entered it in settings
+      nmvtisSettings.businessPhone || yardSettings.phone || "", // PHONE
       nmvtisSettings.businessEmail || yardSettings.email || "", // EMAIL
       t.vin || "", // VIN
       t.vin || "", // Confirm VIN
@@ -280,8 +280,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       t.seller_first_name || "", // VEHICLE OBTAINED FROM FIRSTNM
       t.seller_last_name || "", // VEHICLE OBTAINED FROM LASTNM
       "", // VEHICLE OBTAINED FROM MI
-      nmvtisSettings.entityName || yardSettings.name || "", // DISMANTLER LOCATION
-      yardSettings.licenseNumber || "", // DISMANTLER LIC NUMBER
+      "", // DISMANTLER LOCATION (left blank as requested)
+      "", // DISMANTLER LIC NUMBER (left blank as requested)
       "", // DISMANTLER STOCK NUMBER (Column AN - left blank as requested)
       "", // TITLING JURISDICTION (Column AO - left blank as requested)
       "" // TITLE NO
