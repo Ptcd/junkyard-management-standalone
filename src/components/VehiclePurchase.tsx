@@ -97,6 +97,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
 
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVINScanner, setShowVINScanner] = useState(false);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [driverCashBalance, setDriverCashBalance] = useState(0);
@@ -183,6 +184,15 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+    setSuccess(false);
+
     // Validate required fields
     const requiredFields = [
       "sellerFirstName",
@@ -215,6 +225,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
         .filter(Boolean)
         .join(", ");
       setError(`Please fill in all required fields: ${allMissing}`);
+      setIsSubmitting(false);
       return;
     }
 
@@ -273,6 +284,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
         // Try to insert into Supabase with retry logic
         let retries = 3;
         let lastError = null;
+        let supabaseSuccess = false;
 
         while (retries > 0) {
           try {
@@ -295,15 +307,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             
             // Update the transaction with the Supabase ID
             transaction.id = data[0].id;
+            supabaseSuccess = true;
             
-            setSuccess(true);
-            setError("");
-
-            // After successful save, generate PDF and upload to Supabase Storage
-            // (Pseudo-code, actual implementation will require a PDF library and Supabase Storage API)
-            // const pdfUrl = await generateAndUploadPDF(supabaseData);
-            // await supabase.from('vehicle_transactions').update({ pdf_url: pdfUrl }).eq('id', data[0].id);
-
             break;
           } catch (error) {
             console.error(`Supabase insert attempt ${4 - retries} failed:`, error);
@@ -370,6 +375,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
         }
       }
 
+      // Only set success if we made it through everything
       setSuccess(true);
       setError("");
       setTimeout(() => {
@@ -378,6 +384,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
     } catch (error) {
       console.error("Failed to save transaction:", error);
       setError("Failed to save transaction. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -637,8 +645,9 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
                   variant="contained"
                   startIcon={<SaveIcon />}
                   size="large"
+                  disabled={isSubmitting}
                 >
-                  Record Purchase
+                  {isSubmitting ? "Recording Purchase..." : "Record Purchase"}
                 </Button>
               </Stack>
             </Box>
