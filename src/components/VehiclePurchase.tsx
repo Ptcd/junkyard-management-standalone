@@ -30,6 +30,7 @@ import { scheduleVehiclePurchaseReport } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
 import { supabase } from '../utils/supabaseAuth';
+import { generateMV2459PDF, fileToDataURL } from '../utils/pdfGenerator';
 
 interface VINDecodeResult {
   vin: string;
@@ -109,6 +110,31 @@ const dataURLToBlob = (dataURL: string): Blob => {
     u8arr[n] = bstr.charCodeAt(n);
   }
   return new Blob([u8arr], { type: mime });
+};
+
+// Helper function to upload PDF to Supabase Storage
+const uploadPDFToStorage = async (pdfBlob: Blob, fileName: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('legal-documents')
+      .upload(fileName, pdfBlob, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: 'application/pdf'
+      });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('legal-documents')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('PDF upload error:', error);
+    throw error;
+  }
 };
 
 const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
@@ -293,28 +319,67 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           JSON.stringify(existingImpoundLien),
         );
       } else {
-        // Upload files to Supabase Storage for legal compliance
-        let signatureUrl = '';
-        let idPhotoUrl = '';
+        // Generate PDF with embedded signature and ID photo
+        let pdfUrl = '';
 
         try {
-          // Upload signature if available
+          // Get yard settings for PDF generation
+          const yardSettings = JSON.parse(localStorage.getItem("yardSettings") || "{}");
+          const nmvtisSettings = JSON.parse(localStorage.getItem("nmvtisSettings") || "{}");
+
+          // Convert signature and ID photo to data URLs
+          let signatureDataUrl = '';
+          let idPhotoDataUrl = '';
+
           if (formData.sellerSignature) {
-            const signatureFileName = `signatures/${transactionId}_signature_${Date.now()}.png`;
-            const signatureBlob = dataURLToBlob(formData.sellerSignature);
-            signatureUrl = await uploadFileToStorage(signatureBlob, signatureFileName, 'legal-documents');
-            console.log('Signature uploaded:', signatureUrl);
+            signatureDataUrl = formData.sellerSignature;
           }
 
-          // Upload ID photo if available
           if (formData.sellerDriverLicensePhoto) {
-            const idPhotoFileName = `id-photos/${transactionId}_id_${Date.now()}.jpg`;
-            idPhotoUrl = await uploadFileToStorage(formData.sellerDriverLicensePhoto, idPhotoFileName, 'legal-documents');
-            console.log('ID photo uploaded:', idPhotoUrl);
+            idPhotoDataUrl = await fileToDataURL(formData.sellerDriverLicensePhoto);
           }
-        } catch (uploadError) {
-          console.error('File upload failed:', uploadError);
-          // Continue with transaction even if file upload fails
+
+          // Prepare data for PDF generation
+          const pdfData = {
+            transactionId,
+            purchaseDate: formData.saleDate,
+            purchasePrice: parseFloat(formData.salePrice),
+            
+            vin: formData.vehicleVIN,
+            year: formData.vehicleYear,
+            make: formData.vehicleMake,
+            
+            sellerFirstName: formData.sellerFirstName,
+            sellerLastName: formData.sellerLastName,
+            sellerAddress: formData.sellerAddress,
+            sellerCity: formData.sellerCity,
+            sellerState: formData.sellerState,
+            sellerZip: formData.sellerZip,
+            sellerPhone: formData.sellerPhone,
+            
+            purchaserName: `${user.firstName} ${user.lastName}`,
+            yardName: nmvtisSettings.entityName || yardSettings.name || 'Junkyard',
+            yardAddress: nmvtisSettings.businessAddress || yardSettings.address || '',
+            yardCity: nmvtisSettings.businessCity || yardSettings.city || '',
+            yardState: nmvtisSettings.businessState || yardSettings.state || 'WI',
+            yardZip: nmvtisSettings.businessZip || yardSettings.zip || '',
+            yardPhone: nmvtisSettings.businessPhone || yardSettings.phone || '',
+            
+            signatureDataUrl,
+            idPhotoDataUrl,
+          };
+
+          // Generate PDF
+          const pdfBlob = await generateMV2459PDF(pdfData);
+          
+          // Upload PDF to storage
+          const pdfFileName = `bill-of-sale/${transactionId}_MV2459_${Date.now()}.pdf`;
+          pdfUrl = await uploadPDFToStorage(pdfBlob, pdfFileName);
+          
+          console.log('PDF generated and uploaded:', pdfUrl);
+        } catch (pdfError) {
+          console.error('PDF generation failed:', pdfError);
+          // Continue with transaction even if PDF generation fails
         }
 
         // Format data according to Supabase schema
@@ -337,8 +402,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           title_number: "", // Add if available
           title_state: "", // Add if available
           notes: "",
-          signature_url: signatureUrl, // Store signature URL
-          id_photo_url: idPhotoUrl, // Store ID photo URL
+          bill_of_sale_pdf_url: pdfUrl, // Store PDF URL
           vehicleDisposition: 'SCRAP',
         };
 
@@ -368,9 +432,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             
             // Update the transaction with the Supabase ID and file URLs
             transaction.id = data[0].id;
-            (transaction as any).signatureUrl = signatureUrl;
-            (transaction as any).idPhotoUrl = idPhotoUrl;
-            (transaction as any).documentUrls = [signatureUrl, idPhotoUrl].filter(Boolean);
+            (transaction as any).signatureUrl = pdfUrl;
+            (transaction as any).documentUrls = [pdfUrl].filter(Boolean);
             supabaseSuccess = true;
             
             break;

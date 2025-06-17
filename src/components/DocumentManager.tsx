@@ -21,8 +21,8 @@ import {
   Alert,
   Card,
   CardContent,
-  Grid,
 } from "@mui/material";
+import Grid from '@mui/material/Grid';
 import {
   Search,
   Download,
@@ -31,6 +31,7 @@ import {
   Description,
   Image,
   Assignment,
+  PictureAsPdf,
 } from "@mui/icons-material";
 import { supabase } from "../utils/supabaseAuth";
 
@@ -50,13 +51,18 @@ interface TransactionDocument {
   id: string;
   vin: string;
   year: number;
+  make?: string;
   seller_first_name: string;
   seller_last_name: string;
   purchase_date: string;
   purchase_price: number;
+  created_at: string;
+  bill_of_sale_pdf_url?: string;
+  // Legacy fields for backward compatibility
+  signature_url?: string;
+  id_photo_url?: string;
   signature_data?: string;
   photos?: string[];
-  created_at: string;
   signatureUrl?: string;
   idPhotoUrl?: string;
   documentUrls?: string[];
