@@ -52,7 +52,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       const { data, error } = await supabase
         .from("vehicle_transactions")
         .select("*")
-        .order("timestamp", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching transactions:", error);
@@ -166,7 +166,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
 
     if (filterDate) {
       filtered = filtered.filter(
-        (t) => new Date(t.timestamp).toISOString().split("T")[0] === filterDate,
+        (t) => new Date(t.created_at).toISOString().split("T")[0] === filterDate,
       );
     }
 
@@ -202,7 +202,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
     ];
 
     const csvData = filteredTransactions.map((t) => [
-      new Date(t.timestamp).toISOString().split("T")[0],
+      new Date(t.created_at).toISOString().split("T")[0],
       t.vehicleVIN,
       t.vehicleYear,
       t.vehicleMake,
@@ -414,7 +414,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id} hover>
                   <TableCell>
-                    {new Date(transaction.timestamp).toLocaleDateString()}
+                    {new Date(transaction.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell
                     sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}

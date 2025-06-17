@@ -66,7 +66,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       const { data, error } = await supabase
         .from("vehicle_transactions")
         .select("*")
-        .order("timestamp", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching transactions:", error);
@@ -92,7 +92,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       const thisMonth = new Date();
       const monthlyVehicles = data.filter((t: any) => {
-        const tDate = new Date(t.timestamp);
+        const tDate = new Date(t.created_at);
         return (
           tDate.getMonth() === thisMonth.getMonth() &&
           tDate.getFullYear() === thisMonth.getFullYear()
@@ -294,7 +294,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     {recentTransactions.map((transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell>
-                          {new Date(transaction.timestamp).toLocaleDateString()}
+                          {new Date(transaction.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           {transaction.vehicleYear} {transaction.vehicleMake}{" "}

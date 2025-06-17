@@ -49,7 +49,7 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ user }) => {
         .from("vehicle_transactions")
         .select("*")
         .eq("user_id", user.id)
-        .order("timestamp", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching transactions:", error);
@@ -159,7 +159,7 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ user }) => {
                 {recentTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
-                      {new Date(transaction.timestamp).toLocaleDateString()}
+                      {new Date(transaction.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       {transaction.vehicleYear} {transaction.vehicleMake}{" "}
