@@ -158,7 +158,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         businessEmail: yardSettings.email,
       }));
     }
-  }, [yardSettings.name, yardSettings.address, yardSettings.email]);
+  }, []);
 
   const handleInputChange =
     (field: keyof NMVTISSettings) =>
@@ -172,15 +172,27 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    const requiredFields = [
-      "nmvtisPin",
-      "entityName",
-      "businessAddress",
-    ];
-    const missingFields = requiredFields.filter(
-      (field) => !settings[field as keyof NMVTISSettings],
-    );
+    // Validate required fields - check actual source values
+    const requiredFields = [];
+    const missingFields = [];
+
+    // Check NMVTIS PIN
+    if (!settings.nmvtisPin) {
+      requiredFields.push("nmvtisPin");
+      missingFields.push("NMVTIS PIN");
+    }
+
+    // Check entity name (from yard settings)
+    if (!yardSettings.name) {
+      requiredFields.push("entityName");
+      missingFields.push("Business Name");
+    }
+
+    // Check business address (from yard settings)
+    if (!yardSettings.address) {
+      requiredFields.push("businessAddress");
+      missingFields.push("Business Address");
+    }
 
     if (missingFields.length > 0) {
       setError(
