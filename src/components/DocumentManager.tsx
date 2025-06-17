@@ -22,7 +22,6 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import Grid from '@mui/material/Grid';
 import {
   Search,
   Download,
@@ -231,8 +230,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ user }) => {
           <Typography variant="h6" gutterBottom>
             Search Documents
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2 }}>
+            <Box sx={{ flex: { xs: 1, md: 2 } }}>
               <TextField
                 fullWidth
                 label="Search by VIN (partial match)"
@@ -244,8 +243,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ user }) => {
                 }}
                 helperText="Enter any part of the VIN to find matching vehicles"
               />
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
                 label="Filter by Date"
@@ -254,8 +253,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ user }) => {
                 onChange={(e) => setSearchDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={12} md={2}>
+            </Box>
+            <Box sx={{ flex: 0.5 }}>
               <Button
                 fullWidth
                 variant="outlined"
@@ -267,8 +266,8 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ user }) => {
               >
                 Clear
               </Button>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
 

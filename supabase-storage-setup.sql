@@ -13,27 +13,23 @@ VALUES (
 
 -- Create RLS policies for legal-documents bucket
 
--- Allow authenticated users to upload documents for their yard
-CREATE POLICY "Users can upload documents for their yard" ON storage.objects
+-- Allow authenticated users to upload documents
+CREATE POLICY "Users can upload documents" ON storage.objects
 FOR INSERT WITH CHECK (
   bucket_id = 'legal-documents' AND
-  auth.role() = 'authenticated' AND
-  EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE id = auth.uid() AND yard_id = split_part(name, '/', 1)
-  )
+  auth.role() = 'authenticated'
 );
 
--- Allow users to view documents from their yard
-CREATE POLICY "Users can view documents from their yard" ON storage.objects
+-- Allow users to view documents they uploaded or admins to view all
+CREATE POLICY "Users can view their documents" ON storage.objects
 FOR SELECT USING (
   bucket_id = 'legal-documents' AND
   auth.role() = 'authenticated' AND
-  EXISTS (
-    SELECT 1 FROM user_profiles 
-    WHERE id = auth.uid() AND (
-      role = 'admin' OR 
-      yard_id = split_part(name, '/', 1)
+  (
+    owner = auth.uid() OR
+    EXISTS (
+      SELECT 1 FROM user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
     )
   )
 );
@@ -59,16 +55,10 @@ RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  yard_id TEXT;
   file_path TEXT;
 BEGIN
-  -- Get yard_id from user profile
-  SELECT up.yard_id INTO yard_id
-  FROM user_profiles up
-  WHERE up.id = auth.uid();
-  
-  -- Generate secure path: yard_id/document_type/transaction_id_timestamp.extension
-  file_path := yard_id || '/' || document_type || '/' || transaction_id || '_' || extract(epoch from now())::text || '.' || file_extension;
+  -- Generate secure path: document_type/transaction_id_timestamp.extension
+  file_path := document_type || '/' || transaction_id || '_' || extract(epoch from now())::text || '.' || file_extension;
   
   RETURN file_path;
 END;
@@ -198,14 +188,10 @@ SELECT
   vt.additional_document_urls,
   vt.created_at,
   up.first_name as purchaser_first_name,
-  up.last_name as purchaser_last_name,
-  ys.entity_name as yard_name,
-  ys.business_address as yard_address,
-  ys.business_phone as yard_phone
+  up.last_name as purchaser_last_name
 FROM vehicle_transactions vt
 LEFT JOIN user_profiles up ON vt.user_id = up.id
-LEFT JOIN yard_settings ys ON vt.yard_id = ys.yard_id
-WHERE vt.signature_url IS NOT NULL OR vt.id_photo_url IS NOT NULL;
+WHERE vt.signature_url IS NOT NULL OR vt.id_photo_url IS NOT NULL OR vt.bill_of_sale_pdf_url IS NOT NULL;
 
 -- Grant access to the view for admins
 GRANT SELECT ON law_enforcement_documents TO authenticated;
