@@ -276,8 +276,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           title_number: "", // Add if available
           title_state: "", // Add if available
           notes: "",
-          signature_data: formData.sellerSignature,
-          seller_id_photo: formData.sellerDriverLicensePhoto, // Save the file or its URL
           vehicleDisposition: 'SCRAP',
         };
 
