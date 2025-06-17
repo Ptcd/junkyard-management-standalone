@@ -187,31 +187,109 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
 
   const exportCSV = () => {
     const headers = [
-      "Date",
+      "Reference ID",
+      "NMVTIS ID",
+      "PIN",
+      "REPORTING ENTITY NAME",
+      "IS AN INSURANCE ENTITY?",
+      "REPORTING ENTITY ADDR",
+      "REPORTING ENTITY CITY",
+      "REPORTING ENTITY ST",
+      "REPORTING ENTITY ZIP",
+      "REPORTING ENTITY PHONE",
+      "REPORTING ENTITY EMAIL",
       "VIN",
-      "Year",
-      "Make",
-      "Model",
-      "Seller Name",
-      "Seller Address",
-      "Sale Price",
-      "Disposition",
-      "Driver ID",
-      "Notes",
+      "CONFIRM VIN",
+      "VEHICLE MAKE",
+      "VEHICLE MODEL YEAR",
+      "VEHICLE MODEL NAME",
+      "VEHICLE STYLE",
+      "MILEAGE",
+      "VEHICLE SALVAGE OBTAIN DATE",
+      "VEHICLE DISPOSITION TEXT",
+      "REASON FOR DISPOSITION",
+      "VEHICLE INTENDED FOR EXPORT",
+      "Reserved",
+      "INSURANCE OWNER BUSINESS NAME",
+      "INSURANCE OWNER FIRSTNM",
+      "INSURANCE OWNER LASTNM",
+      "INSURANCE OWNER MI",
+      "INSURANCE OWNER ADDR",
+      "INSURANCE OWNER CITY",
+      "INSURANCE OWNER STATE",
+      "INSURANCE OWNER ZIP",
+      "VEHICLE TRANSFERRED TO COMPANY",
+      "VEHICLE TRANSFERRED TO FIRSTNM",
+      "VEHICLE TRANSFERRED TO LASTNM",
+      "VEHICLE TRANSFERRED TO MI",
+      "VEHICLE OBTAINED FROM COMPANY",
+      "VEHICLE OBTAINED FROM FIRSTNM",
+      "VEHICLE OBTAINED FROM LASTNM",
+      "VEHICLE OBTAINED FROM MI",
+      "DISMANTLER LOCATION",
+      "DISMANTLER LIC NUMBER",
+      "DISMANTLER STOCK NUMBER",
+      "TITLING JURISDICTION",
+      "TITLE NUMBER"
     ];
 
+    // Static placeholders for required reporting entity fields
+    const NMVTIS_ID = "YOUR_NMVTIS_ID";
+    const PIN = "YOUR_PIN";
+    const ENTITY_NAME = "YOUR_ENTITY_NAME";
+    const ENTITY_ADDR = "YOUR_ENTITY_ADDRESS";
+    const ENTITY_CITY = "YOUR_ENTITY_CITY";
+    const ENTITY_ST = "WI";
+    const ENTITY_ZIP = "532250000";
+    const ENTITY_PHONE = "2627770909";
+    const ENTITY_EMAIL = "";
+    const IS_INSURANCE_ENTITY = "N";
+
     const csvData = filteredTransactions.map((t) => [
-      new Date(t.created_at).toISOString().split("T")[0],
+      t.id || "", // Reference ID
+      NMVTIS_ID,
+      PIN,
+      ENTITY_NAME,
+      IS_INSURANCE_ENTITY,
+      ENTITY_ADDR,
+      ENTITY_CITY,
+      ENTITY_ST,
+      ENTITY_ZIP,
+      ENTITY_PHONE,
+      ENTITY_EMAIL,
       t.vin || t.vehicleVIN || "",
-      t.year || t.vehicleYear || "",
+      "", // Confirm VIN (leave blank unless non-standard)
       t.make || t.vehicleMake || "",
+      t.year || t.vehicleYear || "",
       t.model || t.vehicleModel || "",
-      t.seller_name || t.sellerName || "",
-      t.seller_address || t.sellerAddress || "",
-      t.purchase_price || t.salePrice || "",
+      t.vehicle_type || "",
+      t.odometer ? `${t.odometer}M` : "", // M for miles
+      t.purchase_date ? new Date(t.purchase_date).toLocaleDateString() : "",
       t.vehicle_disposition || t.vehicleDisposition || "",
-      t.user_id || t.userId || "",
-      t.notes || "",
+      "", // Reason for disposition
+      "N", // Vehicle intended for export (default N)
+      "", // Reserved
+      "", // INSURANCE OWNER BUSINESS NAME
+      "", // INSURANCE OWNER FIRSTNM
+      "", // INSURANCE OWNER LASTNM
+      "", // INSURANCE OWNER MI
+      "", // INSURANCE OWNER ADDR
+      "", // INSURANCE OWNER CITY
+      "", // INSURANCE OWNER STATE
+      "", // INSURANCE OWNER ZIP
+      "", // VEHICLE TRANSFERRED TO COMPANY
+      "", // VEHICLE TRANSFERRED TO FIRSTNM
+      "", // VEHICLE TRANSFERRED TO LASTNM
+      "", // VEHICLE TRANSFERRED TO MI
+      "", // VEHICLE OBTAINED FROM COMPANY
+      "", // VEHICLE OBTAINED FROM FIRSTNM
+      "", // VEHICLE OBTAINED FROM LASTNM
+      "", // VEHICLE OBTAINED FROM MI
+      "", // DISMANTLER LOCATION
+      "", // DISMANTLER LIC NUMBER
+      "", // DISMANTLER STOCK NUMBER
+      "", // TITLING JURISDICTION
+      t.title_number || "" // TITLE NUMBER
     ]);
 
     const csv = [
