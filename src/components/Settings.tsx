@@ -148,7 +148,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
     // Validate required fields
     const requiredFields = [
-      "nmvtisId",
       "nmvtisPin",
       "entityName",
       "businessAddress",
@@ -165,7 +164,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     }
 
     // Save to localStorage
-    localStorage.setItem("nmvtisSettings", JSON.stringify(settings));
+    localStorage.setItem("nmvtisSettings", JSON.stringify({
+      ...settings,
+      entityName: yardSettings.name,
+      businessAddress: yardSettings.address,
+    }));
 
     setSuccess(true);
     setError("");
@@ -299,7 +302,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
                   <TextField
                     fullWidth
-                    label="Business Name"
+                    label="Business Name (Entity Name)"
                     value={yardSettings.name}
                     onChange={(e) =>
                       setYardSettings((prev) => ({
@@ -311,7 +314,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
                   <TextField
                     fullWidth
-                    label="Address"
+                    label="Address (Business Address)"
                     value={yardSettings.address}
                     onChange={(e) =>
                       setYardSettings((prev) => ({
@@ -426,6 +429,16 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     onChange={handleInputChange("businessEmail")}
                     type="email"
                     helperText="Email for compliance notifications and reports"
+                  />
+
+                  {/* NMVTIS PIN Field */}
+                  <TextField
+                    fullWidth
+                    label="NMVTIS PIN"
+                    value={settings.nmvtisPin}
+                    onChange={handleInputChange("nmvtisPin")}
+                    required
+                    helperText="Your NMVTIS reporting PIN (required)"
                   />
 
                   <Button
