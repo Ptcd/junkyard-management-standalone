@@ -403,7 +403,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           title_state: "", // Add if available
           notes: "",
           bill_of_sale_pdf_url: pdfUrl, // Store PDF URL
-          vehicleDisposition: 'SCRAP',
         };
 
         // Try to insert into Supabase with retry logic
