@@ -54,6 +54,7 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   Person,
+  Folder,
 } from "@mui/icons-material";
 import Login from "./components/Login";
 import AdminDashboard from "./components/AdminDashboard";
@@ -68,6 +69,7 @@ import AccountingDashboard from "./components/AccountingDashboard";
 import ExpenseReporting from "./components/ExpenseReporting";
 import NMVTISManager from "./components/NMVTISManager";
 import VAWorkflowHelper from "./components/VAWorkflowHelper";
+import DocumentManager from "./components/DocumentManager";
 import { initializeNMVTISScheduler } from "./utils/nmvtisScheduler";
 import { initializeNMVTIS } from "./utils/nmvtisReporting";
 import { getCurrentUser, signOut, User } from "./utils/supabaseAuth";
@@ -248,6 +250,12 @@ const getMenuItems = (userRole: string) =>
       path: "/settings",
       label: "Settings",
       icon: <SettingsIcon />,
+      roles: ["admin"],
+    },
+    {
+      path: "/document-manager",
+      label: "Document Manager",
+      icon: <Folder />,
       roles: ["admin"],
     },
   ].filter((item) => item.roles.includes(userRole));
@@ -635,6 +643,7 @@ function MainApp() {
           {user.role === "admin" && (
             <Route path="/settings" element={<Settings user={user} />} />
           )}
+          <Route path="/document-manager" element={<DocumentManager user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>

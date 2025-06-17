@@ -74,6 +74,43 @@ interface VehiclePurchaseProps {
   user: User;
 }
 
+// Helper function to upload file to Supabase Storage
+const uploadFileToStorage = async (file: File | Blob, fileName: string, bucket: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('File upload error:', error);
+    throw error;
+  }
+};
+
+// Helper function to convert signature data URL to blob
+const dataURLToBlob = (dataURL: string): Blob => {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)![1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
 const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<VehiclePurchaseData>({
@@ -256,6 +293,30 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           JSON.stringify(existingImpoundLien),
         );
       } else {
+        // Upload files to Supabase Storage for legal compliance
+        let signatureUrl = '';
+        let idPhotoUrl = '';
+
+        try {
+          // Upload signature if available
+          if (formData.sellerSignature) {
+            const signatureFileName = `signatures/${transactionId}_signature_${Date.now()}.png`;
+            const signatureBlob = dataURLToBlob(formData.sellerSignature);
+            signatureUrl = await uploadFileToStorage(signatureBlob, signatureFileName, 'legal-documents');
+            console.log('Signature uploaded:', signatureUrl);
+          }
+
+          // Upload ID photo if available
+          if (formData.sellerDriverLicensePhoto) {
+            const idPhotoFileName = `id-photos/${transactionId}_id_${Date.now()}.jpg`;
+            idPhotoUrl = await uploadFileToStorage(formData.sellerDriverLicensePhoto, idPhotoFileName, 'legal-documents');
+            console.log('ID photo uploaded:', idPhotoUrl);
+          }
+        } catch (uploadError) {
+          console.error('File upload failed:', uploadError);
+          // Continue with transaction even if file upload fails
+        }
+
         // Format data according to Supabase schema
         const supabaseData = {
           user_id: user.id,
@@ -276,6 +337,8 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           title_number: "", // Add if available
           title_state: "", // Add if available
           notes: "",
+          signature_url: signatureUrl, // Store signature URL
+          id_photo_url: idPhotoUrl, // Store ID photo URL
           vehicleDisposition: 'SCRAP',
         };
 
@@ -303,8 +366,11 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
 
             console.log("Successfully saved to Supabase:", data);
             
-            // Update the transaction with the Supabase ID
+            // Update the transaction with the Supabase ID and file URLs
             transaction.id = data[0].id;
+            (transaction as any).signatureUrl = signatureUrl;
+            (transaction as any).idPhotoUrl = idPhotoUrl;
+            (transaction as any).documentUrls = [signatureUrl, idPhotoUrl].filter(Boolean);
             supabaseSuccess = true;
             
             break;
