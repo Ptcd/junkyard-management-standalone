@@ -42,6 +42,7 @@ import {
   getPendingNMVTISReportsCount,
 } from "../utils/nmvtisScheduler";
 import { User } from "../utils/supabaseAuth";
+import { supabase } from "../utils/supabaseAuth";
 
 interface AdminDashboardProps {
   user: User;
@@ -57,53 +58,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     scheduledNMVTISReports: 0,
     failedNMVTISReports: 0,
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load transactions from localStorage
-    const stored = JSON.parse(
-      localStorage.getItem("vehicleTransactions") || "[]",
-    );
-    setTransactions(stored);
+    // Fetch transactions from Supabase
+    const fetchTransactions = async () => {
+      const { data, error } = await supabase
+        .from("vehicle_transactions")
+        .select("*")
+        .order("timestamp", { ascending: false });
 
-    // Load sales data
-    const salesData = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        setError("Failed to load transactions. Please try again.");
+        return;
+      }
 
-    // Calculate stats
-    const totalRevenue = stored.reduce(
-      (sum: number, t: any) => sum + parseFloat(t.salePrice || 0),
-      0,
-    );
+      setTransactions(data);
 
-    const salesRevenue = salesData.reduce(
-      (sum: number, s: any) => sum + parseFloat(s.salePrice || 0),
-      0,
-    );
+      // Load sales data
+      const salesData = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
 
-    const thisMonth = new Date();
-    const monthlyVehicles = stored.filter((t: any) => {
-      const tDate = new Date(t.timestamp);
-      return (
-        tDate.getMonth() === thisMonth.getMonth() &&
-        tDate.getFullYear() === thisMonth.getFullYear()
+      // Calculate stats
+      const totalRevenue = data.reduce(
+        (sum: number, t: any) => sum + parseFloat(t.salePrice || 0),
+        0,
       );
-    }).length;
 
-    // Get NMVTIS report statistics
-    const scheduledReports = getScheduledNMVTISReports();
-    const pendingReportsCount = getPendingNMVTISReportsCount();
-    const failedReportsCount = scheduledReports.filter(
-      (r) => r.status === "failed",
-    ).length;
+      const salesRevenue = salesData.reduce(
+        (sum: number, s: any) => sum + parseFloat(s.salePrice || 0),
+        0,
+      );
 
-    setStats({
-      totalVehicles: stored.length,
-      totalRevenue: salesRevenue, // Show sales revenue instead of purchase cost
-      monthlyVehicles,
-      pendingNMVTIS: stored.filter((t: any) => t.vehicleDisposition === "TBD")
-        .length,
-      scheduledNMVTISReports: pendingReportsCount,
-      failedNMVTISReports: failedReportsCount,
-    });
+      const thisMonth = new Date();
+      const monthlyVehicles = data.filter((t: any) => {
+        const tDate = new Date(t.timestamp);
+        return (
+          tDate.getMonth() === thisMonth.getMonth() &&
+          tDate.getFullYear() === thisMonth.getFullYear()
+        );
+      }).length;
+
+      // Get NMVTIS report statistics
+      const scheduledReports = getScheduledNMVTISReports();
+      const pendingReportsCount = getPendingNMVTISReportsCount();
+      const failedReportsCount = scheduledReports.filter(
+        (r) => r.status === "failed",
+      ).length;
+
+      setStats({
+        totalVehicles: data.length,
+        totalRevenue: salesRevenue, // Show sales revenue instead of purchase cost
+        monthlyVehicles,
+        pendingNMVTIS: data.filter((t: any) => t.vehicleDisposition === "TBD")
+          .length,
+        scheduledNMVTISReports: pendingReportsCount,
+        failedNMVTISReports: failedReportsCount,
+      });
+    };
+
+    fetchTransactions();
   }, []);
 
   const exportNMVTISReport = () => {

@@ -31,6 +31,15 @@ import {
   AccountCircle,
   Delete,
 } from "@mui/icons-material";
+import MenuIcon from '@mui/icons-material/Menu';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import BackupManager from "./BackupManager";
 import UserManagement from "./UserManagement";
 import BuyerProfilesManager from "./BuyerProfilesManager";
@@ -100,6 +109,18 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     email: "office@demojunkyard.com",
     licenseNumber: "WI-JUNK-2024-001",
   });
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const settingsSections = [
+    { label: 'General Settings', icon: <SettingsIcon /> },
+    { label: 'Backup & Recovery', icon: <Backup /> },
+    { label: 'User Management', icon: <People /> },
+    { label: 'Buyer Profiles', icon: <Business /> },
+    { label: 'Account Management', icon: <AccountCircle /> },
+  ];
 
   useEffect(() => {
     // Load settings from localStorage
@@ -209,377 +230,392 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         Configure junkyard operations, NMVTIS reporting, and data backup
       </Typography>
 
-      {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab
-            icon={<SettingsIcon />}
-            label="General Settings"
-            iconPosition="start"
-          />
-          <Tab
-            icon={<Backup />}
-            label="Backup & Recovery"
-            iconPosition="start"
-          />
-          <Tab icon={<People />} label="User Management" iconPosition="start" />
-          <Tab
-            icon={<Business />}
-            label="Buyer Profiles"
-            iconPosition="start"
-          />
-          <Tab
-            icon={<AccountCircle />}
-            label="Account Management"
-            iconPosition="start"
-          />
-        </Tabs>
-      </Paper>
+      {/* Hamburger menu for mobile */}
+      {isMobile ? (
+        <>
+          <Button
+            onClick={() => setDrawerOpen(true)}
+            startIcon={<MenuIcon />}
+            sx={{ mb: 2 }}
+            variant="outlined"
+          >
+            Menu
+          </Button>
+          <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+            <List sx={{ width: 240 }}>
+              {settingsSections.map((section, idx) => (
+                <ListItem key={section.label} disablePadding>
+                  <ListItemButton
+                    selected={tabValue === idx}
+                    onClick={() => {
+                      setTabValue(idx);
+                      setDrawerOpen(false);
+                    }}
+                  >
+                    <ListItemIcon>{section.icon}</ListItemIcon>
+                    <ListItemText primary={section.label} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Drawer>
+        </>
+      ) : (
+        <Paper sx={{ mb: 3 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+            <Tab icon={<SettingsIcon />} label="General Settings" iconPosition="start" />
+            <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
+            <Tab icon={<People />} label="User Management" iconPosition="start" />
+            <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
+            <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+          </Tabs>
+        </Paper>
+      )}
 
-      {/* Tab Content */}
-      {tabValue === 0 && (
-        <Box>
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Settings saved successfully!
-            </Alert>
-          )}
+      {/* Tab Content (single column, full width on mobile) */}
+      <Box sx={{ maxWidth: 600, mx: 'auto', width: '100%' }}>
+        {tabValue === 0 && (
+          <Box>
+            {success && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Settings saved successfully!
+              </Alert>
+            )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Paper elevation={2} sx={{ p: 3 }}>
+              <form onSubmit={handleSubmit}>
+                <Stack spacing={3}>
+                  {/* Yard Information Section */}
+                  <Stack spacing={2}>
+                    <Typography variant="h6" gutterBottom>
+                      Junkyard Information
+                    </Typography>
+                    <Divider />
+                  </Stack>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+                  <TextField
+                    fullWidth
+                    label="Business Name"
+                    value={yardSettings.name}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
 
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <form onSubmit={handleSubmit}>
-              <Stack spacing={3}>
-                {/* Yard Information Section */}
-                <Stack spacing={2}>
-                  <Typography variant="h6" gutterBottom>
-                    Junkyard Information
-                  </Typography>
-                  <Divider />
+                  <TextField
+                    fullWidth
+                    label="Address"
+                    value={yardSettings.address}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Stack direction="row" spacing={2}>
+                    <TextField
+                      label="City"
+                      value={yardSettings.city}
+                      onChange={(e) =>
+                        setYardSettings((prev) => ({
+                          ...prev,
+                          city: e.target.value,
+                        }))
+                      }
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      label="State"
+                      value={yardSettings.state}
+                      onChange={(e) =>
+                        setYardSettings((prev) => ({
+                          ...prev,
+                          state: e.target.value,
+                        }))
+                      }
+                      sx={{ width: 100 }}
+                    />
+                    <TextField
+                      label="ZIP Code"
+                      value={yardSettings.zip}
+                      onChange={(e) =>
+                        setYardSettings((prev) => ({
+                          ...prev,
+                          zip: e.target.value,
+                        }))
+                      }
+                      sx={{ width: 120 }}
+                    />
+                  </Stack>
+
+                  <Stack direction="row" spacing={2}>
+                    <TextField
+                      label="Phone Number"
+                      value={yardSettings.phone}
+                      onChange={(e) =>
+                        setYardSettings((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
+                      sx={{ flex: 1 }}
+                    />
+                    <TextField
+                      label="Email"
+                      value={yardSettings.email}
+                      onChange={(e) =>
+                        setYardSettings((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      sx={{ flex: 1 }}
+                    />
+                  </Stack>
+
+                  <TextField
+                    fullWidth
+                    label="License Number"
+                    value={yardSettings.licenseNumber}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        licenseNumber: e.target.value,
+                      }))
+                    }
+                  />
+
+                  {/* NMVTIS Settings Section */}
+                  <Stack spacing={2}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                      NMVTIS Reporting Configuration
+                    </Typography>
+                    <Divider />
+                  </Stack>
+
+                  <TextField
+                    fullWidth
+                    label="NMVTIS Identification Number"
+                    value={settings.nmvtisId}
+                    onChange={handleInputChange("nmvtisId")}
+                    helperText="Your unique NMVTIS reporting identifier"
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Reporting Frequency (days)"
+                    value={settings.reportingFrequency}
+                    onChange={handleInputChange("reportingFrequency")}
+                    type="number"
+                    helperText="How often to generate NMVTIS reports (typically 30 days)"
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Business Contact Email"
+                    value={settings.businessEmail}
+                    onChange={handleInputChange("businessEmail")}
+                    type="email"
+                    helperText="Email for compliance notifications and reports"
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    size="large"
+                  >
+                    Save Settings
+                  </Button>
                 </Stack>
+              </form>
+            </Paper>
+          </Box>
+        )}
 
-                <TextField
-                  fullWidth
-                  label="Business Name"
-                  value={yardSettings.name}
-                  onChange={(e) =>
-                    setYardSettings((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                />
+        {tabValue === 1 && <BackupManager />}
 
-                <TextField
-                  fullWidth
-                  label="Address"
-                  value={yardSettings.address}
-                  onChange={(e) =>
-                    setYardSettings((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                    }))
-                  }
-                />
+        {tabValue === 2 && <UserManagement currentUser={user} />}
 
-                <Stack direction="row" spacing={2}>
+        {tabValue === 3 && <BuyerProfilesManager user={user} />}
+
+        {tabValue === 4 && (
+          <Box>
+            {success && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Profile updated successfully!
+              </Alert>
+            )}
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            {/* Profile Management */}
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Profile Information
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              <form onSubmit={handleProfileUpdate}>
+                <Stack spacing={3}>
+                  <Stack direction="row" spacing={2}>
+                    <TextField
+                      fullWidth
+                      label="First Name"
+                      value={profileForm.firstName}
+                      onChange={(e) =>
+                        setProfileForm((prev) => ({
+                          ...prev,
+                          firstName: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <TextField
+                      fullWidth
+                      label="Last Name"
+                      value={profileForm.lastName}
+                      onChange={(e) =>
+                        setProfileForm((prev) => ({
+                          ...prev,
+                          lastName: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </Stack>
+
                   <TextField
-                    label="City"
-                    value={yardSettings.city}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        city: e.target.value,
-                      }))
-                    }
-                    sx={{ flex: 1 }}
+                    fullWidth
+                    label="Email"
+                    value={profileForm.email}
+                    disabled
+                    helperText="Email cannot be changed. Contact an administrator if needed."
                   />
-                  <TextField
-                    label="State"
-                    value={yardSettings.state}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        state: e.target.value,
-                      }))
-                    }
-                    sx={{ width: 100 }}
-                  />
-                  <TextField
-                    label="ZIP Code"
-                    value={yardSettings.zip}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        zip: e.target.value,
-                      }))
-                    }
-                    sx={{ width: 120 }}
-                  />
-                </Stack>
 
-                <Stack direction="row" spacing={2}>
                   <TextField
+                    fullWidth
                     label="Phone Number"
-                    value={yardSettings.phone}
+                    value={profileForm.phone}
                     onChange={(e) =>
-                      setYardSettings((prev) => ({
+                      setProfileForm((prev) => ({
                         ...prev,
                         phone: e.target.value,
                       }))
                     }
-                    sx={{ flex: 1 }}
                   />
-                  <TextField
-                    label="Email"
-                    value={yardSettings.email}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
-                    sx={{ flex: 1 }}
-                  />
-                </Stack>
 
-                <TextField
-                  fullWidth
-                  label="License Number"
-                  value={yardSettings.licenseNumber}
-                  onChange={(e) =>
-                    setYardSettings((prev) => ({
-                      ...prev,
-                      licenseNumber: e.target.value,
-                    }))
-                  }
-                />
-
-                {/* NMVTIS Settings Section */}
-                <Stack spacing={2}>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                    NMVTIS Reporting Configuration
+                  <Typography variant="body2" color="text.secondary">
+                    Role: {user.role} • Yard ID: {user.yardId}
                   </Typography>
-                  <Divider />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    Update Profile
+                  </Button>
                 </Stack>
+              </form>
+            </Paper>
 
-                <TextField
-                  fullWidth
-                  label="NMVTIS Identification Number"
-                  value={settings.nmvtisId}
-                  onChange={handleInputChange("nmvtisId")}
-                  helperText="Your unique NMVTIS reporting identifier"
-                />
+            {/* Account Deletion */}
+            <Paper
+              elevation={2}
+              sx={{ p: 3, border: "1px solid", borderColor: "error.main" }}
+            >
+              <Typography variant="h6" gutterBottom color="error">
+                Danger Zone
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
 
-                <TextField
-                  fullWidth
-                  label="Reporting Frequency (days)"
-                  value={settings.reportingFrequency}
-                  onChange={handleInputChange("reportingFrequency")}
-                  type="number"
-                  helperText="How often to generate NMVTIS reports (typically 30 days)"
-                />
+              <Typography variant="body1" gutterBottom>
+                Delete your account permanently. This action cannot be undone.
+              </Typography>
 
-                <TextField
-                  fullWidth
-                  label="Business Contact Email"
-                  value={settings.businessEmail}
-                  onChange={handleInputChange("businessEmail")}
-                  type="email"
-                  helperText="Email for compliance notifications and reports"
-                />
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                • All your data will be permanently deleted • You will be
+                immediately signed out • This action cannot be reversed
+              </Typography>
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  size="large"
-                >
-                  Save Settings
-                </Button>
-              </Stack>
-            </form>
-          </Paper>
-        </Box>
-      )}
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<Delete />}
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Delete Account
+              </Button>
+            </Paper>
+          </Box>
+        )}
 
-      {tabValue === 1 && <BackupManager />}
+        {/* Delete Account Confirmation Dialog */}
+        <Dialog
+          open={showDeleteDialog}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            setDeleteConfirmText("");
+            setError("");
+          }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle color="error">Delete Account</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              This will permanently delete your account and all associated data.
+              This action cannot be undone.
+            </DialogContentText>
 
-      {tabValue === 2 && <UserManagement currentUser={user} />}
+            <DialogContentText sx={{ mb: 2 }}>
+              Type <strong>DELETE</strong> to confirm:
+            </DialogContentText>
 
-      {tabValue === 3 && <BuyerProfilesManager user={user} />}
-
-      {tabValue === 4 && (
-        <Box>
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Profile updated successfully!
-            </Alert>
-          )}
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {/* Profile Management */}
-          <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Profile Information
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-
-            <form onSubmit={handleProfileUpdate}>
-              <Stack spacing={3}>
-                <Stack direction="row" spacing={2}>
-                  <TextField
-                    fullWidth
-                    label="First Name"
-                    value={profileForm.firstName}
-                    onChange={(e) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        firstName: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                  <TextField
-                    fullWidth
-                    label="Last Name"
-                    value={profileForm.lastName}
-                    onChange={(e) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        lastName: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </Stack>
-
-                <TextField
-                  fullWidth
-                  label="Email"
-                  value={profileForm.email}
-                  disabled
-                  helperText="Email cannot be changed. Contact an administrator if needed."
-                />
-
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={profileForm.phone}
-                  onChange={(e) =>
-                    setProfileForm((prev) => ({
-                      ...prev,
-                      phone: e.target.value,
-                    }))
-                  }
-                />
-
-                <Typography variant="body2" color="text.secondary">
-                  Role: {user.role} • Yard ID: {user.yardId}
-                </Typography>
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  sx={{ alignSelf: "flex-start" }}
-                >
-                  Update Profile
-                </Button>
-              </Stack>
-            </form>
-          </Paper>
-
-          {/* Account Deletion */}
-          <Paper
-            elevation={2}
-            sx={{ p: 3, border: "1px solid", borderColor: "error.main" }}
-          >
-            <Typography variant="h6" gutterBottom color="error">
-              Danger Zone
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-
-            <Typography variant="body1" gutterBottom>
-              Delete your account permanently. This action cannot be undone.
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              • All your data will be permanently deleted • You will be
-              immediately signed out • This action cannot be reversed
-            </Typography>
-
+            <TextField
+              fullWidth
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE here"
+              error={error.includes("DELETE")}
+            />
+          </DialogContent>
+          <DialogActions>
             <Button
-              variant="outlined"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+                setError("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteAccount}
               color="error"
-              startIcon={<Delete />}
-              onClick={() => setShowDeleteDialog(true)}
+              variant="contained"
+              disabled={deleteConfirmText !== "DELETE"}
             >
               Delete Account
             </Button>
-          </Paper>
-        </Box>
-      )}
-
-      {/* Delete Account Confirmation Dialog */}
-      <Dialog
-        open={showDeleteDialog}
-        onClose={() => {
-          setShowDeleteDialog(false);
-          setDeleteConfirmText("");
-          setError("");
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle color="error">Delete Account</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            This will permanently delete your account and all associated data.
-            This action cannot be undone.
-          </DialogContentText>
-
-          <DialogContentText sx={{ mb: 2 }}>
-            Type <strong>DELETE</strong> to confirm:
-          </DialogContentText>
-
-          <TextField
-            fullWidth
-            value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
-            placeholder="Type DELETE here"
-            error={error.includes("DELETE")}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setShowDeleteDialog(false);
-              setDeleteConfirmText("");
-              setError("");
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteAccount}
-            color="error"
-            variant="contained"
-            disabled={deleteConfirmText !== "DELETE"}
-          >
-            Delete Account
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </Box>
   );
 };

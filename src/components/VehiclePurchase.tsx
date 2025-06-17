@@ -233,8 +233,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       purchaserName: `${user.firstName} ${user.lastName}`,
     };
 
-    const offlineManager = OfflineManager.getInstance();
-
     try {
       if (formData.isImpoundOrLien) {
         // Store impound/lien vehicles separately (local only)
@@ -265,19 +263,36 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
               purchase_date: formData.saleDate,
               status: "completed",
               purchaser_name: `${user.firstName} ${user.lastName}`,
-              // Add other fields as needed
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
           ]);
+
         if (error) {
-          // Fallback to offline/local if Supabase insert fails
-          await offlineManager.saveTransaction(transaction, "vehicleTransactions");
-          setError("Saved locally (offline mode): " + error.message);
+          // Store in offline queue if Supabase insert fails
+          const offlineTransactions = JSON.parse(
+            localStorage.getItem("offlineTransactions") || "[]"
+          );
+          offlineTransactions.push(transaction);
+          localStorage.setItem(
+            "offlineTransactions",
+            JSON.stringify(offlineTransactions)
+          );
+          setError("Saved locally (offline mode). Will sync when online.");
         } else {
           setSuccess(true);
           setError("");
         }
+
+        // Also save to local storage for immediate access
+        const existingTransactions = JSON.parse(
+          localStorage.getItem("vehicleTransactions") || "[]"
+        );
+        existingTransactions.push(transaction);
+        localStorage.setItem(
+          "vehicleTransactions",
+          JSON.stringify(existingTransactions)
+        );
 
         // Record cash transaction for vehicle purchase
         try {

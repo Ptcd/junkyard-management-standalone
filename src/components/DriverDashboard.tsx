@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { User } from "../utils/supabaseAuth";
+import { supabase } from "../utils/supabaseAuth";
 
 interface DriverDashboardProps {
   user: User;
@@ -38,16 +39,28 @@ interface DriverDashboardProps {
 
 const DriverDashboard: React.FC<DriverDashboardProps> = ({ user }) => {
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load transactions from localStorage
-    const stored = JSON.parse(
-      localStorage.getItem("vehicleTransactions") || "[]",
-    );
-    // Filter transactions by this driver
-    const driverTransactions = stored.filter((t: any) => t.userId === user.id);
-    setTransactions(driverTransactions);
+    // Fetch transactions from Supabase
+    const fetchTransactions = async () => {
+      const { data, error } = await supabase
+        .from("vehicle_transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("timestamp", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        setError("Failed to load transactions. Please try again.");
+        return;
+      }
+
+      setTransactions(data);
+    };
+
+    fetchTransactions();
   }, [user.id]);
 
   const recentTransactions = transactions.slice(-10).reverse();

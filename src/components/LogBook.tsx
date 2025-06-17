@@ -19,8 +19,11 @@ import {
   Stack,
   Card,
   CardContent,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { Download, FilterList } from "@mui/icons-material";
+import { Download, FilterList, Sync, CloudOff } from "@mui/icons-material";
+import { supabase } from "../utils/supabaseAuth";
 
 interface User {
   id: string;
@@ -40,22 +43,79 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
   const [filterDate, setFilterDate] = useState("");
   const [filterDisposition, setFilterDisposition] = useState("");
   const [filterVIN, setFilterVIN] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [hasOfflineData, setHasOfflineData] = useState(false);
 
+  const fetchTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("vehicle_transactions")
+        .select("*")
+        .order("timestamp", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        // Fallback to localStorage if Supabase fetch fails
+        const stored = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+        const userTransactions = user.role === "admin" 
+          ? stored 
+          : stored.filter((t: any) => t.userId === user.id);
+        setTransactions(userTransactions);
+        setFilteredTransactions(userTransactions);
+        return;
+      }
+
+      // For drivers, only show their transactions; for admins, show all
+      const userTransactions =
+        user.role === "admin"
+          ? data
+          : data.filter((t: any) => t.user_id === user.id);
+
+      setTransactions(userTransactions);
+      setFilteredTransactions(userTransactions);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setError("Failed to fetch transactions. Please try again.");
+    }
+  };
+
+  // Check for offline data
   useEffect(() => {
-    // Load transactions from localStorage
-    const stored = JSON.parse(
-      localStorage.getItem("vehicleTransactions") || "[]",
-    );
+    const offlineTransactions = JSON.parse(localStorage.getItem("offlineTransactions") || "[]");
+    setHasOfflineData(offlineTransactions.length > 0);
+  }, []);
 
-    // For drivers, only show their transactions; for admins, show all
-    const userTransactions =
-      user.role === "admin"
-        ? stored
-        : stored.filter((t: any) => t.userId === user.id);
-
-    setTransactions(userTransactions);
-    setFilteredTransactions(userTransactions);
+  // Initial fetch
+  useEffect(() => {
+    fetchTransactions();
   }, [user.id, user.role]);
+
+  const syncOfflineTransactions = async () => {
+    setIsSyncing(true);
+    try {
+      const offlineTransactions = JSON.parse(localStorage.getItem("offlineTransactions") || "[]");
+      if (offlineTransactions.length > 0) {
+        const { error: syncError } = await supabase
+          .from("vehicle_transactions")
+          .insert(offlineTransactions);
+        
+        if (!syncError) {
+          localStorage.removeItem("offlineTransactions");
+          setHasOfflineData(false);
+          // Refresh transactions
+          fetchTransactions();
+        } else {
+          setError("Failed to sync offline transactions. Please try again.");
+        }
+      }
+    } catch (syncError) {
+      console.error("Failed to sync offline transactions:", syncError);
+      setError("Failed to sync offline transactions. Please try again.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     // Apply filters
@@ -134,9 +194,32 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Transaction Log Book
-      </Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h4">
+          Transaction Log Book
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          {hasOfflineData && (
+            <Tooltip title="You have offline transactions that need to be synced">
+              <Chip
+                icon={<CloudOff />}
+                label="Offline Data"
+                color="warning"
+                onClick={syncOfflineTransactions}
+                disabled={isSyncing}
+              />
+            </Tooltip>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={<Sync />}
+            onClick={syncOfflineTransactions}
+            disabled={isSyncing || !hasOfflineData}
+          >
+            {isSyncing ? "Syncing..." : "Sync Offline Data"}
+          </Button>
+        </Stack>
+      </Stack>
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
         Complete record of all vehicle transactions for NMVTIS compliance
       </Typography>
