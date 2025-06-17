@@ -172,13 +172,13 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
 
     if (filterDisposition) {
       filtered = filtered.filter(
-        (t) => t.vehicleDisposition === filterDisposition,
+        (t) => (t.disposition || t.vehicleDisposition) === filterDisposition,
       );
     }
 
     if (filterVIN) {
       filtered = filtered.filter((t) =>
-        t.vehicleVIN.toLowerCase().includes(filterVIN.toLowerCase()),
+        (t.vin || t.vehicleVIN || "").toLowerCase().includes(filterVIN.toLowerCase()),
       );
     }
 
@@ -250,16 +250,17 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       // Display phone number exactly as user entered it in settings
       nmvtisSettings.businessPhone || yardSettings.phone || "", // PHONE
       nmvtisSettings.businessEmail || yardSettings.email || "", // EMAIL
-      t.vin || "", // VIN
-      t.vin || "", // Confirm VIN
-      t.make || "", // VEHICLE / VESSEL MAKE
-      t.year || "", // VEHICLE MODEL YEAR
-      t.model || "", // VEHICLE MODEL NAME
+      t.vin || t.vehicleVIN || "", // VIN (handle both field names)
+      t.vin || t.vehicleVIN || "", // Confirm VIN
+      t.make || t.vehicleMake || "", // VEHICLE / VESSEL MAKE
+      t.year || t.vehicleYear || "", // VEHICLE MODEL YEAR
+      t.model || t.vehicleModel || "", // VEHICLE MODEL NAME
       "", // VEHICLE STYLE
       t.odometer || "", // MILEAGE
       // Format date properly to avoid #### display issues
       t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('en-US') : 
-      (t.created_at ? new Date(t.created_at).toLocaleDateString('en-US') : ""), // VEHICLE SALVAGE OBTAIN DATE
+      (t.saleDate ? new Date(t.saleDate).toLocaleDateString('en-US') :
+      (t.created_at ? new Date(t.created_at).toLocaleDateString('en-US') : "")), // VEHICLE SALVAGE OBTAIN DATE
       "SCRAP", // VEHICLE DISPOSITION
       "SALVAGE", // REASON FOR DISPOSITION
       "NO", // VEHICLE INTENDED FOR EXPORT
@@ -277,8 +278,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       "", // VEHICLE TRANSFERRED TO LASTNM
       "", // VEHICLE TRANSFERRED TO MI
       "", // VEHICLE OBTAINED FROM COMPANY
-      t.seller_first_name || "", // VEHICLE OBTAINED FROM FIRSTNM
-      t.seller_last_name || "", // VEHICLE OBTAINED FROM LASTNM
+      t.seller_first_name || t.sellerFirstName || "", // VEHICLE OBTAINED FROM FIRSTNM
+      t.seller_last_name || t.sellerLastName || "", // VEHICLE OBTAINED FROM LASTNM
       "", // VEHICLE OBTAINED FROM MI
       "", // DISMANTLER LOCATION (left blank as requested)
       "", // DISMANTLER LIC NUMBER (left blank as requested)
@@ -424,7 +425,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
             <CardContent sx={{ textAlign: "center" }}>
               <Typography variant="h4" color="warning.main">
                 {
-                  transactions.filter((t) => t.vehicleDisposition === "TBD")
+                  transactions.filter((t) => (t.disposition || t.vehicleDisposition) === "TBD")
                     .length
                 }
               </Typography>
@@ -440,7 +441,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
               <Typography variant="h4" color="success.main">
                 $
                 {transactions
-                  .reduce((sum, t) => sum + parseFloat(t.salePrice || 0), 0)
+                  .reduce((sum, t) => sum + parseFloat(t.purchase_price || t.salePrice || 0), 0)
                   .toLocaleString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -485,39 +486,39 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
               {filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id} hover>
                   <TableCell>
-                    {new Date(transaction.created_at).toLocaleDateString()}
+                    {new Date(transaction.created_at || transaction.timestamp).toLocaleDateString()}
                   </TableCell>
                   <TableCell
                     sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}
                   >
-                    {transaction.vehicleVIN}
+                    {transaction.vin || transaction.vehicleVIN}
                   </TableCell>
                   <TableCell>
-                    {transaction.vehicleYear} {transaction.vehicleMake}{" "}
-                    {transaction.vehicleModel}
+                    {transaction.year || transaction.vehicleYear} {transaction.make || transaction.vehicleMake}{" "}
+                    {transaction.model || transaction.vehicleModel}
                     <br />
                     <Typography variant="caption" color="text.secondary">
-                      {transaction.vehicleColor} {transaction.vehicleBody}
+                      {transaction.color || transaction.vehicleColor} {transaction.vehicle_type || transaction.vehicleBody}
                     </Typography>
                   </TableCell>
-                  <TableCell>{transaction.sellerFirstName}</TableCell>
-                  <TableCell>{transaction.sellerLastName}</TableCell>
+                  <TableCell>{transaction.seller_first_name || transaction.sellerFirstName}</TableCell>
+                  <TableCell>{transaction.seller_last_name || transaction.sellerLastName}</TableCell>
                   <TableCell>
-                    {transaction.sellerAddress}
+                    {transaction.seller_address || transaction.sellerAddress}
                     <br />
                     <Typography variant="caption" color="text.secondary">
-                      {transaction.sellerCity}, {transaction.sellerState}{" "}
-                      {transaction.sellerZip}
+                      {transaction.seller_city || transaction.sellerCity}, {transaction.seller_state || transaction.sellerState}{" "}
+                      {transaction.seller_zip || transaction.sellerZip}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    ${parseFloat(transaction.salePrice).toLocaleString()}
+                    ${parseFloat(transaction.purchase_price || transaction.salePrice || 0).toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={transaction.vehicleDisposition}
+                      label={transaction.disposition || transaction.vehicleDisposition || "SCRAP"}
                       color={
-                        transaction.vehicleDisposition === "TBD"
+                        (transaction.disposition || transaction.vehicleDisposition) === "TBD"
                           ? "warning"
                           : "success"
                       }
@@ -525,7 +526,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                     />
                   </TableCell>
                   {user.role === "admin" && (
-                    <TableCell>{transaction.driverName}</TableCell>
+                    <TableCell>{transaction.driver_name || transaction.driverName || transaction.purchaserName}</TableCell>
                   )}
                   <TableCell>
                     <Chip
