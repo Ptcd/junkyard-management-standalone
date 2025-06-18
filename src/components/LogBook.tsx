@@ -257,6 +257,30 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       "TITLE NO"
     ];
 
+    // Helper function to format date for Excel compatibility
+    const formatDateForExcel = (dateStr: string): string => {
+      if (!dateStr) return "";
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "";
+        // Use MM/DD/YYYY format with leading zeros to prevent Excel interpretation issues
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+      } catch (error) {
+        console.error('Date formatting error:', error);
+        return "";
+      }
+    };
+
+    // Helper function to format phone number as text for Excel
+    const formatPhoneForExcel = (phone: string): string => {
+      if (!phone) return "";
+      // Add a leading apostrophe to force Excel to treat as text
+      return `'${phone}`;
+    };
+
     const csvData = filteredTransactions.map((t, index) => [
       index + 1, // Reference ID
       nmvtisSettings.nmvtisId || "", // NMVTIS ID
@@ -267,8 +291,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       nmvtisSettings.businessCity || yardSettings.city || "", // CITY
       nmvtisSettings.businessState || yardSettings.state || "", // ST
       nmvtisSettings.businessZip || yardSettings.zip || "", // ZIP
-      // Display phone number exactly as user entered it in settings
-      nmvtisSettings.businessPhone || yardSettings.phone || "", // PHONE
+      // Format phone number as text to prevent scientific notation
+      formatPhoneForExcel(nmvtisSettings.businessPhone || yardSettings.phone || ""), // PHONE
       nmvtisSettings.businessEmail || yardSettings.email || "", // EMAIL
       t.vin || t.vehicleVIN || "", // VIN (handle both field names)
       t.vin || t.vehicleVIN || "", // Confirm VIN
@@ -277,10 +301,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       t.model || t.vehicleModel || "", // VEHICLE MODEL NAME
       "", // VEHICLE STYLE
       t.odometer || "", // MILEAGE
-      // Format date properly to avoid #### display issues
-      t.purchase_date ? new Date(t.purchase_date).toLocaleDateString('en-US') : 
-      (t.saleDate ? new Date(t.saleDate).toLocaleDateString('en-US') :
-      (t.created_at ? new Date(t.created_at).toLocaleDateString('en-US') : "")), // VEHICLE SALVAGE OBTAIN DATE
+      // Format date properly to prevent Excel display issues and scientific notation
+      formatDateForExcel(t.purchase_date || t.saleDate || t.created_at || ""), // VEHICLE SALVAGE OBTAIN DATE
       "SCRAP", // VEHICLE DISPOSITION
       "SALVAGE", // REASON FOR DISPOSITION
       "NO", // VEHICLE INTENDED FOR EXPORT
@@ -294,7 +316,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       "", // INSURANCE OWNER STATE
       "", // INSURANCE OWNER ZIP
       "", // VEHICLE TRANSFERRED TO COMPANY
-      "", // VEHICLE TRANSFERRED TO FIRSTNM
+      "",
       "", // VEHICLE TRANSFERRED TO LASTNM
       "", // VEHICLE TRANSFERRED TO MI
       "", // VEHICLE OBTAINED FROM COMPANY
