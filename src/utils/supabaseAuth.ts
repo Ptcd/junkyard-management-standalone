@@ -302,3 +302,69 @@ export const deleteAccount = async () => {
     return { error };
   }
 };
+
+// Admin function to delete any user (profile + auth)
+export const deleteUserAsAdmin = async (targetUserId: string) => {
+  try {
+    // Call the database function that handles complete user deletion
+    const { data, error } = await supabase.rpc('delete_user_complete', {
+      target_user_id: targetUserId
+    });
+
+    if (error) {
+      console.error("Error calling delete_user_complete:", error);
+      return { error: error.message || "Failed to delete user" };
+    }
+
+    // The function returns JSON with success/error info
+    if (data && typeof data === 'object') {
+      if (data.success) {
+        return { 
+          success: true, 
+          message: data.message,
+          deletionSummary: data 
+        };
+      } else {
+        return { error: data.error || "Deletion failed" };
+      }
+    }
+
+    return { error: "Unexpected response from deletion function" };
+  } catch (error) {
+    console.error("Error in deleteUserAsAdmin:", error);
+    return { error: error instanceof Error ? error.message : "Failed to delete user" };
+  }
+};
+
+// Admin function to delete user profile only (keeps auth record)
+export const deleteUserProfileOnly = async (targetUserId: string) => {
+  try {
+    // Call the database function that handles profile deletion only
+    const { data, error } = await supabase.rpc('delete_user_safely', {
+      target_user_id: targetUserId
+    });
+
+    if (error) {
+      console.error("Error calling delete_user_safely:", error);
+      return { error: error.message || "Failed to delete user profile" };
+    }
+
+    // The function returns JSON with success/error info
+    if (data && typeof data === 'object') {
+      if (data.success) {
+        return { 
+          success: true, 
+          message: data.message,
+          deletionSummary: data 
+        };
+      } else {
+        return { error: data.error || "Profile deletion failed" };
+      }
+    }
+
+    return { error: "Unexpected response from deletion function" };
+  } catch (error) {
+    console.error("Error in deleteUserProfileOnly:", error);
+    return { error: error instanceof Error ? error.message : "Failed to delete user profile" };
+  }
+};

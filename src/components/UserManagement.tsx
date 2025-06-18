@@ -25,6 +25,8 @@ import {
   Alert,
   Card,
   CardContent,
+  Tooltip,
+  DialogContentText,
 } from "@mui/material";
 import {
   PersonAdd,
@@ -36,6 +38,7 @@ import {
   LocalShipping,
   AttachMoney,
   TrendingUp,
+  Warning as WarningIcon,
 } from "@mui/icons-material";
 import {
   getDriverCashBalance,
@@ -47,6 +50,7 @@ import {
   getAllUsers,
   signUp,
   updateUserProfile,
+  deleteUserAsAdmin,
 } from "../utils/supabaseAuth";
 
 interface UserManagementProps {
@@ -57,11 +61,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showUserDetailsDialog, setShowUserDetailsDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newUser, setNewUser] = useState({
     password: "",
     firstName: "",
@@ -163,6 +170,57 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       setSuccess("");
       setError("");
     }, 3000);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    // Prevent deleting yourself
+    if (userToDelete.id === currentUser.id) {
+      setError("You cannot delete your own account from here. Use Account Settings instead.");
+      setShowDeleteDialog(false);
+      setUserToDelete(null);
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      const result = await deleteUserAsAdmin(userToDelete.id);
+
+      if (result.error) {
+        setError(`Failed to delete user: ${result.error}`);
+      } else if (result.success) {
+        setSuccess(`User ${userToDelete.firstName} ${userToDelete.lastName} deleted successfully!`);
+        
+        // Log deletion summary if available
+        if (result.deletionSummary) {
+          console.log("Deletion summary:", result.deletionSummary);
+        }
+        
+        // Reload the users list
+        loadUsers();
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      setError("An unexpected error occurred while deleting the user");
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+      setUserToDelete(null);
+      
+      // Clear messages after 5 seconds
+      setTimeout(() => {
+        setSuccess("");
+        setError("");
+      }, 5000);
+    }
   };
 
   const getUserStats = (user: User) => {
@@ -356,6 +414,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                       >
                         {user.status === "active" ? "Deactivate" : "Activate"}
                       </Button>
+                      <Tooltip title={
+                        user.id === currentUser.id 
+                          ? "Cannot delete your own account" 
+                          : "Permanently delete user and all associated data"
+                      }>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={loading || deleting || user.id === currentUser.id}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -364,6 +438,83 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={() => !deleting && setShowDeleteDialog(false)}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="delete-dialog-title">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <WarningIcon color="error" />
+            <Typography variant="h6">Permanently Delete User</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            {userToDelete && (
+              <>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  <strong>This action cannot be undone!</strong>
+                </Alert>
+                
+                <Typography gutterBottom>
+                  Are you sure you want to permanently delete the following user?
+                </Typography>
+                
+                <Box sx={{ my: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Email: {userToDelete.email}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Role: {userToDelete.role}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Status: {userToDelete.status}
+                  </Typography>
+                </Box>
+
+                <Typography variant="body2" color="text.secondary">
+                  This will permanently delete:
+                </Typography>
+                <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                  <li>User account and authentication</li>
+                  <li>All vehicle transactions by this user</li>
+                  <li>All vehicle sales by this user</li>
+                  <li>All cash transactions by this user</li>
+                  <li>All expense reports by this user</li>
+                  <li>All NMVTIS reports by this user</li>
+                  <li>Associated document files</li>
+                </ul>
+              </>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowDeleteDialog(false)} 
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteUser} 
+            color="error" 
+            variant="contained"
+            disabled={deleting}
+            startIcon={deleting ? null : <Delete />}
+          >
+            {deleting ? "Deleting..." : "Delete Permanently"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Add User Dialog */}
       <Dialog
