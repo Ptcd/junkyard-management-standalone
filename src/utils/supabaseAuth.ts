@@ -284,22 +284,50 @@ export const deleteAccount = async () => {
       return { error: "No authenticated user" };
     }
 
-    // First delete the user profile (the auth user will be handled by RLS/triggers)
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .delete()
-      .eq("id", user.id);
+    // Use the database function to completely delete the current user's account
+    const { data, error } = await supabase.rpc('delete_my_account');
 
-    if (profileError) throw profileError;
+    if (error) {
+      console.error("Error calling delete_my_account:", error);
+      // Fallback to manual deletion if the function fails
+      try {
+        // First delete the user profile
+        const { error: profileError } = await supabase
+          .from("user_profiles")
+          .delete()
+          .eq("id", user.id);
 
-    // Sign out the user
-    const { error: signOutError } = await supabase.auth.signOut();
+        if (profileError) throw profileError;
 
-    if (signOutError) throw signOutError;
+        // Sign out the user (they won't be able to sign back in since profile is deleted)
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) throw signOutError;
 
-    return { error: null };
+        return { error: null, message: "Account deleted (profile only - auth record may remain)" };
+      } catch (fallbackError) {
+        return { error: fallbackError };
+      }
+    }
+
+    // Check if the function succeeded
+    if (data && typeof data === 'object') {
+      if (data.success) {
+        // The function deletes both profile and auth user
+        // User will be automatically signed out when their auth record is removed
+        return { 
+          error: null, 
+          message: data.message || "Account deleted completely from Supabase",
+          deletionSummary: data 
+        };
+      } else {
+        return { error: data.error || "Account deletion failed" };
+      }
+    }
+
+    return { error: "Unexpected response from deletion function" };
   } catch (error) {
-    return { error };
+    console.error("Error in deleteAccount:", error);
+    return { error: error instanceof Error ? error.message : "Failed to delete account" };
   }
 };
 
