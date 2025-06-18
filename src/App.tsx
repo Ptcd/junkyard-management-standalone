@@ -57,6 +57,7 @@ import {
   Folder,
 } from "@mui/icons-material";
 import Login from "./components/Login";
+import PasswordReset from "./components/PasswordReset";
 import AdminDashboard from "./components/AdminDashboard";
 import DriverDashboard from "./components/DriverDashboard";
 import VehiclePurchase from "./components/VehiclePurchase";
@@ -260,72 +261,28 @@ const getMenuItems = (userRole: string) =>
     },
   ].filter((item) => item.roles.includes(userRole));
 
-function MainApp() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function MainApp({ user }: { user: User }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const location = useLocation();
-  const menuItems = user ? getMenuItems(user.role) : [];
-
-  // Check authentication status
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const { user: currentUser, error: authError } = await getCurrentUser();
-
-        if (authError) {
-          console.error("Auth check error:", authError);
-          setError(
-            typeof authError === "string" ? authError : "Authentication error",
-          );
-          setUser(null);
-        } else {
-          setUser(currentUser);
-        }
-      } catch (e) {
-        console.error("Unexpected error during auth check:", e);
-        setError("Unexpected authentication error");
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-  }, []);
-
-  // Handle login success
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    setError(null);
-    navigate("/");
-  };
+  const menuItems = getMenuItems(user.role);
 
   // Handle logout
   const handleLogout = async () => {
     try {
-      setLoading(true);
       const { error: signOutError } = await signOut();
       if (signOutError) {
         console.error("Sign out error:", signOutError);
-        setError("Error signing out");
       } else {
-        setUser(null);
-        setError(null);
-        navigate("/login");
+        // Force page reload to reset auth state
+        window.location.href = "/";
       }
     } catch (e) {
       console.error("Unexpected error during sign out:", e);
-      setError("Error signing out");
     } finally {
-      setLoading(false);
       setAnchorEl(null);
     }
   };
@@ -346,51 +303,6 @@ function MainApp() {
   const toggleMobileDrawer = () => {
     setMobileDrawerOpen(!mobileDrawerOpen);
   };
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box
-        sx={{
-          p: 3,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-        <Button
-          variant="contained"
-          onClick={() => {
-            setError(null);
-            navigate("/login");
-          }}
-        >
-          Return to Login
-        </Button>
-      </Box>
-    );
-  }
-
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -652,11 +564,80 @@ function MainApp() {
 }
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { user: currentUser, error: authError } = await getCurrentUser();
+
+        if (authError) {
+          console.error("Auth check error:", authError);
+          setError(
+            typeof authError === "string" ? authError : "Authentication error",
+          );
+          setUser(null);
+        } else {
+          setUser(currentUser);
+        }
+      } catch (e) {
+        console.error("Unexpected error during auth check:", e);
+        setError("Unexpected authentication error");
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+  }, []);
+
+  // Handle login success
+  const handleLogin = (userData: User) => {
+    setUser(userData);
+    setError(null);
+  };
+
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <MainApp />
+        <Routes>
+          {/* Public routes - no authentication required */}
+          <Route path="/reset-password" element={<PasswordReset />} />
+          
+          {/* Protected routes - authentication required */}
+          <Route path="/*" element={
+            user ? (
+              <MainApp user={user} />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          } />
+        </Routes>
       </Router>
     </ThemeProvider>
   );

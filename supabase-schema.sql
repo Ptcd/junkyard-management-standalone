@@ -193,6 +193,18 @@ CREATE POLICY "Admins can update all profiles" ON user_profiles
 CREATE POLICY "New users can insert their profile" ON user_profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
+-- Add missing DELETE policies for user_profiles
+CREATE POLICY "Users can delete their own profile" ON user_profiles
+    FOR DELETE USING (auth.uid() = id);
+
+CREATE POLICY "Admins can delete any profile" ON user_profiles
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
 -- Create policies for vehicle_transactions
 CREATE POLICY "Users can view transactions from their yard" ON vehicle_transactions
     FOR SELECT USING (
@@ -213,6 +225,15 @@ CREATE POLICY "Users can insert transactions for their yard" ON vehicle_transact
 CREATE POLICY "Users can update their own transactions" ON vehicle_transactions
     FOR UPDATE USING (
         user_id = auth.uid() OR
+        EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND role = 'admin' AND yard_id = vehicle_transactions.yard_id
+        )
+    );
+
+-- Add DELETE policy for vehicle_transactions
+CREATE POLICY "Admins can delete transactions from their yard" ON vehicle_transactions
+    FOR DELETE USING (
         EXISTS (
             SELECT 1 FROM user_profiles 
             WHERE id = auth.uid() AND role = 'admin' AND yard_id = vehicle_transactions.yard_id

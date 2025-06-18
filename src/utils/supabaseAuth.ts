@@ -214,7 +214,14 @@ export const getCurrentUser = async () => {
 
 // Password reset
 export const resetPassword = async (email: string) => {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  // Determine the correct redirect URL based on the current environment
+  const baseURL = window.location.origin;
+  const redirectTo = `${baseURL}/reset-password`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo,
+  });
+  
   return { error };
 };
 
