@@ -283,13 +283,18 @@ export const getAllUsers = async () => {
 // Delete current user account
 export const deleteAccount = async () => {
   try {
+    console.log("Starting deleteAccount process...");
+    
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.log("No authenticated user found");
       return { error: "No authenticated user" };
     }
+
+    console.log("User found:", user.id);
 
     // Get user profile to check role
     const { data: profile, error: profileError } = await supabase
@@ -303,10 +308,16 @@ export const deleteAccount = async () => {
       return { error: "Could not determine user role" };
     }
 
+    console.log("User profile found, role:", profile.role);
+
     // Use different deletion methods based on role
     if (profile.role === 'driver') {
+      console.log("Attempting driver deletion with delete_driver_profile_only...");
+      
       // For drivers, use the special function that preserves transactions
       const { data, error } = await supabase.rpc('delete_driver_profile_only');
+
+      console.log("Driver deletion response:", { data, error });
 
       if (error) {
         console.error("Error calling delete_driver_profile_only:", error);
@@ -316,20 +327,27 @@ export const deleteAccount = async () => {
       // Check if the function succeeded
       if (data && typeof data === 'object') {
         if (data.success) {
+          console.log("Driver deletion successful:", data);
           return { 
             error: null, 
             message: data.message || "Driver account deleted successfully. Transactions preserved.",
             deletionSummary: data 
           };
         } else {
+          console.error("Driver deletion failed:", data.error);
           return { error: data.error || "Driver account deletion failed" };
         }
       }
 
+      console.error("Unexpected response from driver deletion function:", data);
       return { error: "Unexpected response from driver deletion function" };
     } else {
+      console.log("Attempting admin deletion with delete_my_account...");
+      
       // For admins, use the complete deletion function
       const { data, error } = await supabase.rpc('delete_my_account');
+
+      console.log("Admin deletion response:", { data, error });
 
       if (error) {
         console.error("Error calling delete_my_account:", error);

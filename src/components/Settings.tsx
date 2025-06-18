@@ -252,22 +252,32 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleDeleteAccount = async () => {
+    console.log("handleDeleteAccount called with deleteConfirmText:", deleteConfirmText);
+    
     if (deleteConfirmText !== "DELETE") {
+      console.log("Confirmation text doesn't match, showing error");
       setError("Please type DELETE to confirm account deletion");
       return;
     }
 
+    console.log("Starting account deletion for user role:", user.role);
+    setError(""); // Clear any previous errors
+
     // For drivers, we want to keep transactions but transfer ownership to admin
     // For admins, we use the standard deletion process
-    const { error: deleteError } = await deleteAccount();
+    const result = await deleteAccount();
+    
+    console.log("deleteAccount result:", result);
 
-    if (deleteError) {
+    if (result.error) {
+      console.error("Account deletion failed:", result.error);
       setError(
-        typeof deleteError === "string"
-          ? deleteError
+        typeof result.error === "string"
+          ? result.error
           : "Failed to delete account",
       );
     } else {
+      console.log("Account deletion successful, redirecting...");
       // User will be signed out automatically
       window.location.href = "/";
     }
