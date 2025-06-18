@@ -251,7 +251,7 @@ const getMenuItems = (userRole: string) =>
       path: "/settings",
       label: "Settings",
       icon: <SettingsIcon />,
-      roles: ["admin"],
+      roles: ["admin", "driver"],
     },
     {
       path: "/document-manager",
@@ -552,9 +552,7 @@ function MainApp({ user }: { user: User }) {
             path="/va-workflow"
             element={<VAWorkflowHelper user={user} />}
           />
-          {user.role === "admin" && (
-            <Route path="/settings" element={<Settings user={user} />} />
-          )}
+          <Route path="/settings" element={<Settings user={user} />} />
           <Route path="/document-manager" element={<DocumentManager user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

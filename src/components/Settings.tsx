@@ -114,11 +114,13 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const settingsSections = [
+  const settingsSections = user.role === 'admin' ? [
     { label: 'General Settings', icon: <SettingsIcon /> },
     { label: 'Backup & Recovery', icon: <Backup /> },
     { label: 'User Management', icon: <People /> },
     { label: 'Buyer Profiles', icon: <Business /> },
+    { label: 'Account Management', icon: <AccountCircle /> },
+  ] : [
     { label: 'Account Management', icon: <AccountCircle /> },
   ];
 
@@ -255,6 +257,8 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       return;
     }
 
+    // For drivers, we want to keep transactions but transfer ownership to admin
+    // For admins, we use the standard deletion process
     const { error: deleteError } = await deleteAccount();
 
     if (deleteError) {
@@ -311,33 +315,47 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       ) : (
         <Paper sx={{ mb: 3 }}>
           <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-            <Tab icon={<SettingsIcon />} label="General Settings" iconPosition="start" />
-            <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
-            <Tab icon={<People />} label="User Management" iconPosition="start" />
-            <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
-            <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+            {user.role === 'admin' ? (
+              <>
+                <Tab icon={<SettingsIcon />} label="General Settings" iconPosition="start" />
+                <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
+                <Tab icon={<People />} label="User Management" iconPosition="start" />
+                <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
+                <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+              </>
+            ) : (
+              <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+            )}
           </Tabs>
         </Paper>
       )}
 
       {/* Tab Content (single column, full width on mobile) */}
-      <Box sx={{ maxWidth: 600, mx: 'auto', width: '100%' }}>
-        {tabValue === 0 && (
+      <Box sx={{ width: "100%" }}>
+        {/* General Settings - Admin Only */}
+        {user.role === 'admin' && tabValue === 0 && (
           <Box>
             {success && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 Settings saved successfully!
               </Alert>
             )}
+
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
+
             <Paper elevation={2} sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Junkyard & NMVTIS Configuration
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
               <form onSubmit={handleSubmit}>
                 <Stack spacing={3}>
-                  {/* Yard Information Section */}
+                  {/* Yard Settings Section */}
                   <Stack spacing={2}>
                     <Typography variant="h6" gutterBottom>
                       Junkyard Information
@@ -347,7 +365,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
                   <TextField
                     fullWidth
-                    label="Business Name (Entity Name)"
+                    label="Business Name"
                     value={yardSettings.name}
                     onChange={(e) =>
                       setYardSettings((prev) => ({
@@ -355,11 +373,13 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                         name: e.target.value,
                       }))
                     }
+                    required
+                    helperText="Legal business name for documentation"
                   />
 
                   <TextField
                     fullWidth
-                    label="Address (Business Address)"
+                    label="Business Address"
                     value={yardSettings.address}
                     onChange={(e) =>
                       setYardSettings((prev) => ({
@@ -367,10 +387,12 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                         address: e.target.value,
                       }))
                     }
+                    required
                   />
 
                   <Stack direction="row" spacing={2}>
                     <TextField
+                      fullWidth
                       label="City"
                       value={yardSettings.city}
                       onChange={(e) =>
@@ -379,20 +401,30 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                           city: e.target.value,
                         }))
                       }
-                      sx={{ flex: 1 }}
+                      required
                     />
+
+                    <FormControl fullWidth>
+                      <InputLabel>State</InputLabel>
+                      <Select
+                        value={yardSettings.state}
+                        onChange={(e) =>
+                          setYardSettings((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }))
+                        }
+                        required
+                      >
+                        <MenuItem value="WI">Wisconsin</MenuItem>
+                        <MenuItem value="MN">Minnesota</MenuItem>
+                        <MenuItem value="IA">Iowa</MenuItem>
+                        <MenuItem value="IL">Illinois</MenuItem>
+                      </Select>
+                    </FormControl>
+
                     <TextField
-                      label="State"
-                      value={yardSettings.state}
-                      onChange={(e) =>
-                        setYardSettings((prev) => ({
-                          ...prev,
-                          state: e.target.value,
-                        }))
-                      }
-                      sx={{ width: 100 }}
-                    />
-                    <TextField
+                      fullWidth
                       label="ZIP Code"
                       value={yardSettings.zip}
                       onChange={(e) =>
@@ -401,23 +433,22 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                           zip: e.target.value,
                         }))
                       }
-                      sx={{ width: 120 }}
+                      required
                     />
                   </Stack>
 
-                  <Stack direction="row" spacing={2}>
-                    <TextField
-                      label="Phone Number"
-                      value={yardSettings.phone}
-                      onChange={(e) =>
-                        setYardSettings((prev) => ({
-                          ...prev,
-                          phone: e.target.value,
-                        }))
-                      }
-                      sx={{ flex: 1 }}
-                    />
-                  </Stack>
+                  <TextField
+                    fullWidth
+                    label="Business Phone"
+                    value={yardSettings.phone}
+                    onChange={(e) =>
+                      setYardSettings((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
+                    required
+                  />
 
                   <TextField
                     fullWidth
@@ -500,13 +531,17 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           </Box>
         )}
 
-        {tabValue === 1 && <BackupManager />}
+        {/* Backup & Recovery - Admin Only */}
+        {user.role === 'admin' && tabValue === 1 && <BackupManager />}
 
-        {tabValue === 2 && <UserManagement currentUser={user} />}
+        {/* User Management - Admin Only */}
+        {user.role === 'admin' && tabValue === 2 && <UserManagement currentUser={user} />}
 
-        {tabValue === 3 && <BuyerProfilesManager user={user} />}
+        {/* Buyer Profiles - Admin Only */}
+        {user.role === 'admin' && tabValue === 3 && <BuyerProfilesManager user={user} />}
 
-        {tabValue === 4 && (
+        {/* Account Management - Both Admin and Driver */}
+        {((user.role === 'admin' && tabValue === 4) || (user.role === 'driver' && tabValue === 0)) && (
           <Box>
             {success && (
               <Alert severity="success" sx={{ mb: 2 }}>
@@ -598,17 +633,37 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               sx={{ p: 3, border: "1px solid", borderColor: "error.main" }}
             >
               <Typography variant="h6" gutterBottom color="error">
-                Danger Zone
+                {user.role === 'driver' ? 'Delete Driver Account' : 'Danger Zone'}
               </Typography>
               <Divider sx={{ mb: 3 }} />
 
               <Typography variant="body1" gutterBottom>
-                Delete your account permanently. This action cannot be undone.
+                {user.role === 'driver' 
+                  ? 'Delete your driver account. Your transactions will remain with the admin account.' 
+                  : 'Delete your account permanently. This action cannot be undone.'
+                }
               </Typography>
 
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                • All your data will be permanently deleted • You will be
-                immediately signed out • This action cannot be reversed
+                {user.role === 'driver' ? (
+                  <>
+                    • Your profile will be deleted
+                    <br />
+                    • All vehicle transactions you created will remain in the system
+                    <br />
+                    • You will be immediately signed out
+                    <br />
+                    • This action cannot be reversed
+                  </>
+                ) : (
+                  <>
+                    • All your data will be permanently deleted
+                    <br />
+                    • You will be immediately signed out
+                    <br />
+                    • This action cannot be reversed
+                  </>
+                )}
               </Typography>
 
               <Button
@@ -617,7 +672,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                 startIcon={<Delete />}
                 onClick={() => setShowDeleteDialog(true)}
               >
-                Delete Account
+                {user.role === 'driver' ? 'Delete Driver Account' : 'Delete Account'}
               </Button>
             </Paper>
           </Box>
@@ -634,11 +689,22 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle color="error">Delete Account</DialogTitle>
+          <DialogTitle color="error">
+            {user.role === 'driver' ? 'Delete Driver Account' : 'Delete Account'}
+          </DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
-              This will permanently delete your account and all associated data.
-              This action cannot be undone.
+              {user.role === 'driver' ? (
+                <>
+                  This will delete your driver account but keep all vehicle transactions in the system. 
+                  Your transactions will remain accessible to administrators.
+                </>
+              ) : (
+                <>
+                  This will permanently delete your account and all associated data. 
+                  This action cannot be undone.
+                </>
+              )}
             </DialogContentText>
 
             <DialogContentText sx={{ mb: 2 }}>
@@ -669,7 +735,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               variant="contained"
               disabled={deleteConfirmText !== "DELETE"}
             >
-              Delete Account
+              {user.role === 'driver' ? 'Delete Driver Account' : 'Delete Account'}
             </Button>
           </DialogActions>
         </Dialog>

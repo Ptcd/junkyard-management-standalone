@@ -27,25 +27,18 @@ const PasswordReset: React.FC = () => {
     // Check if we have the required parameters and session
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session error:", error);
-          setError("Invalid password reset link. Please request a new one.");
-          return;
-        }
+        // First check URL parameters for recovery type
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const urlParams = new URLSearchParams(window.location.search);
+        const type = hashParams.get('type') || urlParams.get('type');
+        const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
 
-        if (session) {
-          setIsValidSession(true);
-        } else {
-          // Check if we have the hash parameters from the email link
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const type = hashParams.get('type');
+        console.log("Password reset params:", { type, hasAccessToken: !!accessToken });
 
-          if (type === 'recovery' && accessToken) {
-            // Set the session with the tokens from the URL
+        // If this is a recovery flow, set up the session for password reset
+        if (type === 'recovery' && accessToken) {
+          try {
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
@@ -54,13 +47,43 @@ const PasswordReset: React.FC = () => {
             if (sessionError) {
               console.error("Session setup error:", sessionError);
               setError("Invalid password reset link. Please request a new one.");
-            } else {
-              setIsValidSession(true);
+              return;
             }
-          } else {
-            setError("Invalid password reset link. Please request a new one.");
+
+            // Successfully set up recovery session
+            setIsValidSession(true);
+            return;
+          } catch (err) {
+            console.error("Error setting up recovery session:", err);
+            setError("Failed to process password reset link.");
+            return;
           }
         }
+
+        // If no recovery parameters, check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          setError("Invalid password reset link. Please request a new one.");
+          return;
+        }
+
+        // If we have a session but it's not from a recovery flow, reject it
+        if (session && type !== 'recovery') {
+          console.log("Regular session detected, but not recovery flow");
+          setError("Invalid password reset link. Please request a new one.");
+          return;
+        }
+
+        // If we have a recovery session, allow password reset
+        if (session && type === 'recovery') {
+          setIsValidSession(true);
+          return;
+        }
+
+        // No valid session or recovery flow
+        setError("Invalid password reset link. Please request a new one.");
       } catch (err) {
         console.error("Error checking session:", err);
         setError("Something went wrong. Please try again.");

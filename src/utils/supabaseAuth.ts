@@ -291,47 +291,83 @@ export const deleteAccount = async () => {
       return { error: "No authenticated user" };
     }
 
-    // Use the database function to completely delete the current user's account
-    const { data, error } = await supabase.rpc('delete_my_account');
+    // Get user profile to check role
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-    if (error) {
-      console.error("Error calling delete_my_account:", error);
-      // Fallback to manual deletion if the function fails
-      try {
-        // First delete the user profile
-        const { error: profileError } = await supabase
-          .from("user_profiles")
-          .delete()
-          .eq("id", user.id);
-
-        if (profileError) throw profileError;
-
-        // Sign out the user (they won't be able to sign back in since profile is deleted)
-        const { error: signOutError } = await supabase.auth.signOut();
-        if (signOutError) throw signOutError;
-
-        return { error: null, message: "Account deleted (profile only - auth record may remain)" };
-      } catch (fallbackError) {
-        return { error: fallbackError };
-      }
+    if (profileError) {
+      console.error("Error getting user profile:", profileError);
+      return { error: "Could not determine user role" };
     }
 
-    // Check if the function succeeded
-    if (data && typeof data === 'object') {
-      if (data.success) {
-        // The function deletes both profile and auth user
-        // User will be automatically signed out when their auth record is removed
-        return { 
-          error: null, 
-          message: data.message || "Account deleted completely from Supabase",
-          deletionSummary: data 
-        };
-      } else {
-        return { error: data.error || "Account deletion failed" };
-      }
-    }
+    // Use different deletion methods based on role
+    if (profile.role === 'driver') {
+      // For drivers, use the special function that preserves transactions
+      const { data, error } = await supabase.rpc('delete_driver_profile_only');
 
-    return { error: "Unexpected response from deletion function" };
+      if (error) {
+        console.error("Error calling delete_driver_profile_only:", error);
+        return { error: error.message || "Failed to delete driver account" };
+      }
+
+      // Check if the function succeeded
+      if (data && typeof data === 'object') {
+        if (data.success) {
+          return { 
+            error: null, 
+            message: data.message || "Driver account deleted successfully. Transactions preserved.",
+            deletionSummary: data 
+          };
+        } else {
+          return { error: data.error || "Driver account deletion failed" };
+        }
+      }
+
+      return { error: "Unexpected response from driver deletion function" };
+    } else {
+      // For admins, use the complete deletion function
+      const { data, error } = await supabase.rpc('delete_my_account');
+
+      if (error) {
+        console.error("Error calling delete_my_account:", error);
+        // Fallback to manual deletion if the function fails
+        try {
+          // First delete the user profile
+          const { error: profileError } = await supabase
+            .from("user_profiles")
+            .delete()
+            .eq("id", user.id);
+
+          if (profileError) throw profileError;
+
+          // Sign out the user (they won't be able to sign back in since profile is deleted)
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) throw signOutError;
+
+          return { error: null, message: "Account deleted (profile only - auth record may remain)" };
+        } catch (fallbackError) {
+          return { error: fallbackError };
+        }
+      }
+
+      // Check if the function succeeded
+      if (data && typeof data === 'object') {
+        if (data.success) {
+          return { 
+            error: null, 
+            message: data.message || "Account deleted completely from Supabase",
+            deletionSummary: data 
+          };
+        } else {
+          return { error: data.error || "Account deletion failed" };
+        }
+      }
+
+      return { error: "Unexpected response from deletion function" };
+    }
   } catch (error) {
     console.error("Error in deleteAccount:", error);
     return { error: error instanceof Error ? error.message : "Failed to delete account" };
