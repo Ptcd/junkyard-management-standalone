@@ -740,7 +740,10 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               Cancel
             </Button>
             <Button
-              onClick={handleDeleteAccount}
+              onClick={() => {
+                console.log("Delete button clicked! Test message");
+                handleDeleteAccount();
+              }}
               color="error"
               variant="contained"
               disabled={deleteConfirmText !== "DELETE"}
