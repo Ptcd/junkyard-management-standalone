@@ -54,8 +54,7 @@ BEGIN
         'email', email,
         'first_name', first_name,
         'last_name', last_name,
-        'role', role,
-        'status', status
+        'role', role
     ) INTO target_user_data
     FROM user_profiles
     WHERE id = current_user_id;

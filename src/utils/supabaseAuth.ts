@@ -381,6 +381,52 @@ export const deleteAccount = async () => {
           };
         } else {
           console.error("Driver deletion failed:", data.error);
+          
+          // If the SQL function failed due to column issues, try manual deletion
+          if (data.error && data.error.includes('column') && data.error.includes('does not exist')) {
+            console.log("SQL function has column issues, trying manual driver deletion...");
+            
+            try {
+              // Manual approach: Set user_id to NULL on all transactions, then delete profile
+              console.log("Setting user_id to NULL on all transactions...");
+              
+              // Update transactions to preserve them but remove user association
+              const updatePromises = [
+                supabase.from("vehicle_transactions").update({ user_id: null }).eq("user_id", user.id),
+                supabase.from("vehicle_sales").update({ user_id: null }).eq("user_id", user.id),
+                supabase.from("cash_transactions").update({ user_id: null }).eq("user_id", user.id),
+                supabase.from("expenses").update({ user_id: null }).eq("user_id", user.id),
+                supabase.from("impound_lien_vehicles").update({ user_id: null }).eq("user_id", user.id),
+                supabase.from("nmvtis_reports").update({ user_id: null }).eq("user_id", user.id),
+              ];
+              
+              await Promise.all(updatePromises);
+              console.log("Successfully updated all transaction records");
+              
+              // Delete the user profile
+              const { error: profileError } = await supabase
+                .from("user_profiles")
+                .delete()
+                .eq("id", user.id);
+
+              if (profileError) throw profileError;
+              console.log("Successfully deleted user profile");
+
+              // Sign out the user
+              const { error: signOutError } = await supabase.auth.signOut();
+              if (signOutError) throw signOutError;
+              console.log("Successfully signed out user");
+
+              return { 
+                error: null, 
+                message: "Driver account deleted successfully. All transactions preserved for admin access." 
+              };
+            } catch (manualError) {
+              console.error("Manual deletion failed:", manualError);
+              return { error: manualError instanceof Error ? manualError.message : "Manual deletion failed" };
+            }
+          }
+          
           return { error: data.error || "Driver account deletion failed" };
         }
       }
