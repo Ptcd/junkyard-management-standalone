@@ -332,29 +332,53 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
             onChange={handleTabChange} 
             variant="scrollable" 
             scrollButtons="auto"
-            sx={{ '& .MuiTab-root': { minHeight: 48 } }}
+            sx={{ 
+              '& .MuiTab-root': { 
+                minHeight: 48,
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                }
+              },
+              '& .MuiTabs-flexContainer': {
+                pointerEvents: 'auto'
+              }
+            }}
+            onMouseDown={(e) => console.log("🖱️ Tabs onMouseDown:", e.target)}
+            onClick={(e) => console.log("🖱️ Tabs onClick:", e.target)}
           >
             {user.role === 'admin' ? (
               <>
                 <Tab 
                   icon={<SettingsIcon />} 
                   label="General Settings"
+                  onMouseDown={() => console.log("🖱️ General Settings tab mousedown")}
+                  onClick={() => console.log("🖱️ General Settings tab clicked")}
                 />
                 <Tab 
                   icon={<Backup />} 
                   label="Backup & Recovery"
+                  onMouseDown={() => console.log("🖱️ Backup tab mousedown")}
+                  onClick={() => console.log("🖱️ Backup tab clicked")}
                 />
                 <Tab 
                   icon={<People />} 
                   label="User Management"
+                  onMouseDown={() => console.log("🖱️ User Management tab mousedown")}
+                  onClick={() => console.log("🖱️ User Management tab clicked")}
                 />
                 <Tab 
                   icon={<Business />} 
                   label="Buyer Profiles"
+                  onMouseDown={() => console.log("🖱️ Buyer Profiles tab mousedown")}
+                  onClick={() => console.log("🖱️ Buyer Profiles tab clicked")}
                 />
                 <Tab 
                   icon={<AccountCircle />} 
                   label="Account Management"
+                  onMouseDown={() => console.log("🖱️ Account Management tab mousedown")}
+                  onClick={() => console.log("🖱️ Account Management tab clicked")}
                 />
               </>
             ) : (
@@ -370,6 +394,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         <Box sx={{ p: 2, mb: 2, bgcolor: "grey.100", borderRadius: 1, border: '2px solid orange' }}>
           <Typography variant="body2" color="text.primary" sx={{ fontWeight: 'bold', mb: 1 }}>
             🐛 DEBUG INFO - Current tab value = {tabValue}, User role = {user.role}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+            handleTabChange function: {typeof handleTabChange} | 
+            Tabs value prop: {tabValue} | 
+            onChange prop: {handleTabChange ? 'ATTACHED' : 'MISSING'}
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <Button size="small" variant="outlined" onClick={() => console.log("Test button clicked!")}>
