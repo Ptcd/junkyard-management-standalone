@@ -325,17 +325,43 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         </>
       ) : (
         <Paper sx={{ mb: 3 }}>
-          <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            variant="scrollable" 
+            scrollButtons="auto"
+            sx={{ '& .MuiTab-root': { minHeight: 48 } }}
+          >
             {user.role === 'admin' ? (
               <>
-                <Tab icon={<SettingsIcon />} label="General Settings" iconPosition="start" />
-                <Tab icon={<Backup />} label="Backup & Recovery" iconPosition="start" />
-                <Tab icon={<People />} label="User Management" iconPosition="start" />
-                <Tab icon={<Business />} label="Buyer Profiles" iconPosition="start" />
-                <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+                <Tab 
+                  icon={<SettingsIcon />} 
+                  label="General Settings" 
+                  onClick={() => console.log("General Settings clicked")}
+                />
+                <Tab 
+                  icon={<Backup />} 
+                  label="Backup & Recovery" 
+                  onClick={() => console.log("Backup clicked")}
+                />
+                <Tab 
+                  icon={<People />} 
+                  label="User Management" 
+                  onClick={() => console.log("User Management clicked")}
+                />
+                <Tab 
+                  icon={<Business />} 
+                  label="Buyer Profiles" 
+                  onClick={() => console.log("Buyer Profiles clicked")}
+                />
+                <Tab 
+                  icon={<AccountCircle />} 
+                  label="Account Management" 
+                  onClick={() => console.log("Account Management clicked")}
+                />
               </>
             ) : (
-              <Tab icon={<AccountCircle />} label="Account Management" iconPosition="start" />
+              <Tab icon={<AccountCircle />} label="Account Management" />
             )}
           </Tabs>
         </Paper>
@@ -344,9 +370,26 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       {/* Tab Content (single column, full width on mobile) */}
       <Box sx={{ width: "100%" }}>
         {/* Debug info */}
-        <Box sx={{ p: 1, mb: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+        <Box sx={{ p: 2, mb: 2, bgcolor: "grey.100", borderRadius: 1, border: '2px solid orange' }}>
+          <Typography variant="body2" color="text.primary" sx={{ fontWeight: 'bold', mb: 1 }}>
+            🐛 DEBUG INFO - Current tab value = {tabValue}, User role = {user.role}
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+            <Button size="small" variant="outlined" onClick={() => console.log("Test button clicked!")}>
+              Test Console Log
+            </Button>
+            <Button size="small" variant="outlined" onClick={() => alert("JavaScript is working!")}>
+              Test Alert
+            </Button>
+            <Button size="small" variant="outlined" onClick={() => setTabValue(1)}>
+              Force Tab 1
+            </Button>
+            <Button size="small" variant="outlined" onClick={() => setTabValue(2)}>
+              Force Tab 2
+            </Button>
+          </Stack>
           <Typography variant="caption" color="text.secondary">
-            Debug: Current tab value = {tabValue}, User role = {user.role}
+            If clicking tabs doesn't change the tab value above, there's an event handler issue.
           </Typography>
         </Box>
 
