@@ -398,7 +398,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
             handleTabChange function: {typeof handleTabChange} | 
             Tabs value prop: {tabValue} | 
-            onChange prop: {handleTabChange ? 'ATTACHED' : 'MISSING'}
+            onChange prop: ATTACHED
           </Typography>
           <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <Button size="small" variant="outlined" onClick={() => console.log("Test button clicked!")}>
