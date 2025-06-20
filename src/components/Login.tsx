@@ -94,11 +94,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { data, error: authError } = await signUp(email, password, userData);
 
     if (authError) {
-      setError(
-        typeof authError === "string"
-          ? authError
-          : (authError as any)?.message || "Failed to create account",
-      );
+      let errorMessage = "Failed to create account";
+      
+      if (typeof authError === "string") {
+        errorMessage = authError;
+      } else if (authError && typeof authError === "object") {
+        errorMessage = (authError as any)?.message || errorMessage;
+      }
+      
+      // Provide additional context for rate limiting
+      if (errorMessage.includes("rate limit")) {
+        errorMessage += "\n\nTip: You can also create users directly in your Supabase dashboard (Authentication > Users) to bypass rate limits during development.";
+      }
+      
+      setError(errorMessage);
     } else if (data?.user) {
       setSuccess(
         "Account created successfully! Please check your email to verify your account.",

@@ -227,6 +227,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    console.log("Tab changed to:", newValue); // Debug log
     setTabValue(newValue);
   };
 
@@ -342,6 +343,13 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
       {/* Tab Content (single column, full width on mobile) */}
       <Box sx={{ width: "100%" }}>
+        {/* Debug info */}
+        <Box sx={{ p: 1, mb: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Debug: Current tab value = {tabValue}, User role = {user.role}
+          </Typography>
+        </Box>
+
         {/* General Settings - Admin Only */}
         {user.role === 'admin' && tabValue === 0 && (
           <Box>
@@ -542,13 +550,28 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         )}
 
         {/* Backup & Recovery - Admin Only */}
-        {user.role === 'admin' && tabValue === 1 && <BackupManager />}
+        {user.role === 'admin' && tabValue === 1 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>Backup & Recovery (Debug: Tab 1)</Typography>
+            <BackupManager />
+          </Box>
+        )}
 
         {/* User Management - Admin Only */}
-        {user.role === 'admin' && tabValue === 2 && <UserManagement currentUser={user} />}
+        {user.role === 'admin' && tabValue === 2 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>User Management (Debug: Tab 2)</Typography>
+            <UserManagement currentUser={user} />
+          </Box>
+        )}
 
         {/* Buyer Profiles - Admin Only */}
-        {user.role === 'admin' && tabValue === 3 && <BuyerProfilesManager user={user} />}
+        {user.role === 'admin' && tabValue === 3 && (
+          <Box>
+            <Typography variant="h6" gutterBottom>Buyer Profiles (Debug: Tab 3)</Typography>
+            <BuyerProfilesManager user={user} />
+          </Box>
+        )}
 
         {/* Account Management - Both Admin and Driver */}
         {((user.role === 'admin' && tabValue === 4) || (user.role === 'driver' && tabValue === 0)) && (

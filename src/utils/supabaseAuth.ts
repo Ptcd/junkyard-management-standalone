@@ -62,7 +62,23 @@ export const signUp = async (
 
     console.log("Auth signUp result:", { data, error });
 
-    if (error) throw error;
+    if (error) {
+      // Provide more specific error messages for common issues
+      if (error.message.includes('rate limit')) {
+        throw new Error("Too many signup attempts. Please wait an hour before trying again, or use a different email address.");
+      }
+      if (error.message.includes('already registered')) {
+        throw new Error("An account with this email already exists. Please try signing in instead.");
+      }
+      if (error.message.includes('invalid email')) {
+        throw new Error("Please enter a valid email address.");
+      }
+      if (error.message.includes('password')) {
+        throw new Error("Password must be at least 6 characters long.");
+      }
+      
+      throw error;
+    }
 
     // If signup succeeds, try to update the profile
     if (data.user) {
