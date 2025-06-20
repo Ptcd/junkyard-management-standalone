@@ -227,7 +227,9 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    console.log("Tab changed to:", newValue); // Debug log
+    console.log("🎯 handleTabChange called! Old value:", tabValue, "New value:", newValue);
+    console.log("Event target:", event.target);
+    console.log("Event currentTarget:", event.currentTarget);
     setTabValue(newValue);
   };
 
@@ -336,28 +338,23 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
               <>
                 <Tab 
                   icon={<SettingsIcon />} 
-                  label="General Settings" 
-                  onClick={() => console.log("General Settings clicked")}
+                  label="General Settings"
                 />
                 <Tab 
                   icon={<Backup />} 
-                  label="Backup & Recovery" 
-                  onClick={() => console.log("Backup clicked")}
+                  label="Backup & Recovery"
                 />
                 <Tab 
                   icon={<People />} 
-                  label="User Management" 
-                  onClick={() => console.log("User Management clicked")}
+                  label="User Management"
                 />
                 <Tab 
                   icon={<Business />} 
-                  label="Buyer Profiles" 
-                  onClick={() => console.log("Buyer Profiles clicked")}
+                  label="Buyer Profiles"
                 />
                 <Tab 
                   icon={<AccountCircle />} 
-                  label="Account Management" 
-                  onClick={() => console.log("Account Management clicked")}
+                  label="Account Management"
                 />
               </>
             ) : (
