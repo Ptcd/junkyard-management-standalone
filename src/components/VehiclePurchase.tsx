@@ -19,7 +19,7 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
-import { Save as SaveIcon, QrCodeScanner } from "@mui/icons-material";
+import { Save as SaveIcon, QrCodeScanner, PhotoCamera, Folder } from "@mui/icons-material";
 import VINScanner from "./VINScanner";
 import OfflineManager from "../utils/offlineManager";
 import {
@@ -624,30 +624,61 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             </Box>
 
             <Box>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const file = e.target.files?.[0] || null;
-                  handleFileChange(file);
-                }}
-                style={{ display: "none" }}
-                id="driver-license-upload"
-                required
-              />
-              <label htmlFor="driver-license-upload">
-                <Button variant="outlined" component="span" fullWidth>
-                  Take Photo of Driver's License *
-                  {formData.sellerDriverLicensePhoto && (
-                    <Chip
-                      label="Photo Uploaded"
-                      color="success"
-                      size="small"
-                      sx={{ ml: 1 }}
-                    />
-                  )}
-                </Button>
-              </label>
+              <Typography variant="subtitle2" gutterBottom>
+                Driver's License Photo *
+              </Typography>
+              <Stack spacing={1}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const file = e.target.files?.[0] || null;
+                    handleFileChange(file);
+                  }}
+                  style={{ display: "none" }}
+                  id="camera-upload"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const file = e.target.files?.[0] || null;
+                    handleFileChange(file);
+                  }}
+                  style={{ display: "none" }}
+                  id="gallery-upload"
+                />
+                
+                <Stack direction="row" spacing={1}>
+                  <label htmlFor="camera-upload" style={{ flex: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      component="span" 
+                      fullWidth
+                      startIcon={<PhotoCamera />}
+                    >
+                      Take Photo
+                    </Button>
+                  </label>
+                  <label htmlFor="gallery-upload" style={{ flex: 1 }}>
+                    <Button 
+                      variant="outlined" 
+                      component="span" 
+                      fullWidth
+                      startIcon={<Folder />}
+                    >
+                      Choose from Files
+                    </Button>
+                  </label>
+                </Stack>
+                
+                {formData.sellerDriverLicensePhoto && (
+                  <Alert severity="success" sx={{ mt: 1 }}>
+                    ✓ Driver's license photo uploaded
+                  </Alert>
+                )}
+              </Stack>
             </Box>
 
             <Box>
