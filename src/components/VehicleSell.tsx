@@ -45,6 +45,7 @@ import { reportVehicleSaleImmediate } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
 import { BuyerProfile, getBuyerProfiles } from "../utils/buyerProfiles";
+import { supabase } from "../utils/supabaseAuth";
 
 interface VehicleTransaction {
   id: string;
@@ -152,18 +153,72 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
   }, [user.id, user.role]);
 
-  const loadAvailableVehicles = () => {
-    // Load vehicles that haven't been sold yet (vehicleDisposition is "TBD")
-    const stored = JSON.parse(
-      localStorage.getItem("vehicleTransactions") || "[]",
-    );
-    const available = stored.filter(
-      (vehicle: VehicleTransaction) =>
-        vehicle.vehicleDisposition === "TBD" &&
-        !vehicle.isImpoundOrLien &&
-        (user.role === "admin" || vehicle.yardId === user.yardId),
-    );
-    setAvailableVehicles(available);
+  const loadAvailableVehicles = async () => {
+    try {
+      // First try to load from Supabase
+      const { data, error } = await supabase
+        .from("vehicle_transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      let allTransactions = [];
+
+      if (error) {
+        console.error("Error fetching from Supabase:", error);
+        // Fallback to localStorage if Supabase fetch fails
+        const stored = JSON.parse(localStorage.getItem("vehicleTransactions") || "[]");
+        allTransactions = stored;
+        console.log("Using localStorage fallback for VehicleSell");
+      } else {
+        console.log("Loaded transactions from Supabase for VehicleSell:", data?.length || 0);
+        allTransactions = data || [];
+      }
+
+      // Filter for available vehicles (not sold, not impound/lien, user's yard)
+      const available = allTransactions.filter((vehicle: any) => {
+        const vehicleDisposition = vehicle.vehicle_disposition || vehicle.vehicleDisposition || "TBD";
+        const isImpoundOrLien = vehicle.is_impound_or_lien || vehicle.isImpoundOrLien || false;
+        const vehicleYardId = vehicle.yard_id || vehicle.yardId;
+        const vehicleVIN = vehicle.vin || vehicle.vehicleVIN;
+        
+        return (
+          vehicleDisposition === "TBD" &&
+          !isImpoundOrLien &&
+          vehicleVIN && // Must have a VIN
+          (user.role === "admin" || vehicleYardId === user.yardId)
+        );
+      });
+
+      // Convert Supabase format to expected format if needed
+      const formattedVehicles = available.map((vehicle: any) => ({
+        id: vehicle.id,
+        sellerName: `${vehicle.seller_first_name || vehicle.sellerFirstName || ""} ${vehicle.seller_last_name || vehicle.sellerLastName || ""}`.trim(),
+        sellerAddress: vehicle.seller_address || vehicle.sellerAddress || "",
+        sellerCity: vehicle.seller_city || vehicle.sellerCity || "",
+        sellerState: vehicle.seller_state || vehicle.sellerState || "",
+        sellerZip: vehicle.seller_zip || vehicle.sellerZip || "",
+        sellerPhone: vehicle.seller_phone || vehicle.sellerPhone || "",
+        vehicleYear: (vehicle.year || vehicle.vehicleYear || "").toString(),
+        vehicleMake: vehicle.make || vehicle.vehicleMake || "",
+        vehicleVIN: vehicle.vin || vehicle.vehicleVIN || "",
+        salePrice: (vehicle.purchase_price || vehicle.salePrice || "0").toString(),
+        saleDate: vehicle.purchase_date || vehicle.saleDate || "",
+        isImpoundOrLien: vehicle.is_impound_or_lien || vehicle.isImpoundOrLien || false,
+        driverName: vehicle.driver_name || vehicle.driverName || "",
+        timestamp: vehicle.created_at || vehicle.timestamp || "",
+        userId: vehicle.user_id || vehicle.userId || "",
+        yardId: vehicle.yard_id || vehicle.yardId || "",
+        status: vehicle.status || "completed",
+        vehicleDisposition: vehicle.vehicle_disposition || vehicle.vehicleDisposition || "TBD",
+        purchaserName: vehicle.purchaser_name || vehicle.purchaserName || "",
+      }));
+
+      console.log("Available vehicles for sale:", formattedVehicles.length);
+      setAvailableVehicles(formattedVehicles);
+    } catch (err) {
+      console.error("Error loading available vehicles:", err);
+      setError("Failed to load available vehicles. Please try again.");
+    }
   };
 
   const loadBuyerProfiles = () => {

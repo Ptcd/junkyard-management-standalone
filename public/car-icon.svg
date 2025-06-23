@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="#1976d2">
+  <defs>
+    <style>
+      .car-body { fill: #1976d2; }
+      .car-window { fill: #87ceeb; }
+      .car-wheel { fill: #333; }
+      .car-rim { fill: #666; }
+      .wrench { fill: #ff6b35; }
+    </style>
+  </defs>
+  
+  <!-- Main car body -->
+  <rect x="32" y="96" width="128" height="48" rx="8" class="car-body"/>
+  
+  <!-- Car roof/cabin -->
+  <path d="M48 96 L64 64 L128 64 L144 96 Z" class="car-body"/>
+  
+  <!-- Windows -->
+  <path d="M56 88 L68 72 L124 72 L136 88 Z" class="car-window"/>
+  
+  <!-- Front and rear -->
+  <rect x="24" y="104" width="8" height="32" rx="4" class="car-body"/>
+  <rect x="160" y="104" width="8" height="32" rx="4" class="car-body"/>
+  
+  <!-- Wheels -->
+  <circle cx="64" cy="152" r="16" class="car-wheel"/>
+  <circle cx="128" cy="152" r="16" class="car-wheel"/>
+  <circle cx="64" cy="152" r="8" class="car-rim"/>
+  <circle cx="128" cy="152" r="8" class="car-rim"/>
+  
+  <!-- Wrench tool overlay -->
+  <g transform="translate(140,32)">
+    <rect x="0" y="8" width="12" height="32" rx="6" class="wrench"/>
+    <circle cx="6" cy="6" r="6" class="wrench"/>
+    <circle cx="6" cy="42" r="4" class="wrench"/>
+  </g>
+</svg> 
