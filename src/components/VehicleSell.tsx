@@ -181,6 +181,20 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         const vehicleYardId = vehicle.yard_id || vehicle.yardId;
         const vehicleVIN = vehicle.vin || vehicle.vehicleVIN;
         
+        // Debug logging to see what's happening
+        console.log("VehicleSell Filter Debug:", {
+          vehicleId: vehicle.id,
+          vehicleVIN: vehicleVIN,
+          vehicleDisposition: vehicleDisposition,
+          isImpoundOrLien: isImpoundOrLien,
+          vehicleYardId: vehicleYardId,
+          userYardId: user.yardId,
+          userRole: user.role,
+          rawDisposition: vehicle.vehicle_disposition,
+          rawDisposition2: vehicle.vehicleDisposition,
+          passes: vehicleDisposition === "TBD" && !isImpoundOrLien && vehicleVIN && (user.role === "admin" || vehicleYardId === user.yardId)
+        });
+        
         return (
           vehicleDisposition === "TBD" &&
           !isImpoundOrLien &&
