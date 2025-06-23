@@ -407,7 +407,28 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         yardId: user.yardId,
       };
 
-      // Update the original vehicle transaction with new disposition
+      // Update the original vehicle transaction with new disposition in Supabase AND localStorage
+      try {
+        // First update in Supabase
+        const { error: updateError } = await supabase
+          .from("vehicle_transactions")
+          .update({
+            vehicle_disposition: formData.disposition,
+            sale_record_id: saleId,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", formData.originalVehicle.id);
+
+        if (updateError) {
+          console.error("Error updating vehicle in Supabase:", updateError);
+        } else {
+          console.log("Vehicle disposition updated in Supabase successfully");
+        }
+      } catch (supabaseError) {
+        console.error("Failed to update vehicle in Supabase:", supabaseError);
+      }
+
+      // Also update localStorage for immediate local consistency
       const existingTransactions = JSON.parse(
         localStorage.getItem("vehicleTransactions") || "[]",
       );
@@ -422,13 +443,51 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             : t,
       );
 
-      // Save updated transactions
+      // Save updated transactions to localStorage
       localStorage.setItem(
         "vehicleTransactions",
         JSON.stringify(updatedTransactions),
       );
 
-      // Store sale record
+      // Store sale record in Supabase AND localStorage
+      try {
+        // First save to Supabase
+        const { error: saleError } = await supabase
+          .from("vehicle_sales")
+          .insert([{
+            id: saleId,
+            original_transaction_id: formData.originalVehicle.id,
+            original_vehicle: formData.originalVehicle,
+            buyer_name: formData.buyerName,
+            buyer_address: formData.buyerAddress,
+            buyer_city: formData.buyerCity,
+            buyer_state: formData.buyerState,
+            buyer_zip: formData.buyerZip,
+            buyer_phone: formData.buyerPhone,
+            buyer_email: formData.buyerEmail,
+            buyer_license_number: formData.buyerLicenseNumber,
+            sale_price: parseFloat(formData.actualSalePrice),
+            sale_date: formData.saleDate,
+            disposition: formData.disposition,
+            notes: formData.notes,
+            payment_status: "completed",
+            actual_received_amount: parseFloat(formData.actualSalePrice),
+            timestamp: new Date().toISOString(),
+            sold_by: `${user.firstName} ${user.lastName}`,
+            user_id: user.id,
+            yard_id: user.yardId,
+          }]);
+
+        if (saleError) {
+          console.error("Error saving sale to Supabase:", saleError);
+        } else {
+          console.log("Vehicle sale saved to Supabase successfully");
+        }
+      } catch (supabaseSaleError) {
+        console.error("Failed to save sale to Supabase:", supabaseSaleError);
+      }
+
+      // Also store in localStorage for immediate local access
       const existingSales = JSON.parse(
         localStorage.getItem("vehicleSales") || "[]",
       );
@@ -519,6 +578,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       }
 
       // Reset form and reload available vehicles
+      await loadAvailableVehicles(); // Refresh the vehicle list immediately
       setTimeout(() => {
         navigate("/dashboard");
       }, 2000);
