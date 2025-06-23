@@ -39,6 +39,7 @@ import {
 } from "@mui/icons-material";
 import {
   getAllDriversCash,
+  getAllDriversCashSync,
   getDriverCashHistory,
   adjustDriverCash,
   recordCashDeposit,
@@ -48,6 +49,7 @@ import {
 } from "../utils/cashTracker";
 import {
   getAllExpenses,
+  getAllExpensesSync,
   getExpenseStats,
   EXPENSE_CATEGORIES,
 } from "../utils/expenseManager";
@@ -89,28 +91,33 @@ const AccountingDashboard: React.FC<AccountingDashboardProps> = ({ user }) => {
     loadData();
   }, [user.yardId]);
 
-  const loadData = () => {
-    // Load driver cash records
-    const cashRecords = getAllDriversCash(
-      user.role === "admin" ? undefined : user.yardId,
-    );
-    setDriverCashRecords(cashRecords);
+  const loadData = async () => {
+    try {
+      // Load driver cash records with Supabase sync
+      const cashRecords = await getAllDriversCashSync(
+        user.role === "admin" ? undefined : user.yardId,
+      );
+      setDriverCashRecords(cashRecords);
 
-    // Load expense data
-    const expenses = getAllExpenses(
-      user.role === "admin" ? undefined : user.yardId,
-    );
-    const stats = getExpenseStats(
-      undefined,
-      user.role === "admin" ? undefined : user.yardId,
-    );
+      // Load expense data with Supabase sync
+      const expenses = await getAllExpensesSync(
+        user.role === "admin" ? undefined : user.yardId,
+      );
+      const stats = getExpenseStats(
+        undefined,
+        user.role === "admin" ? undefined : user.yardId,
+      );
 
-    setAllExpenses(expenses);
-    setExpenseStats(stats);
+      setAllExpenses(expenses);
+      setExpenseStats(stats);
 
-    // Load cash summary
-    const summary = getYardCashSummary(user.yardId);
-    setCashSummary(summary);
+      // Load cash summary
+      const summary = getYardCashSummary(user.yardId);
+      setCashSummary(summary);
+    } catch (error) {
+      console.error("Error loading accounting data:", error);
+      setError("Failed to load accounting data. Please try again.");
+    }
   };
 
   const handleCashAdjustment = () => {

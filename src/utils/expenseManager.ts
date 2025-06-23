@@ -1,4 +1,5 @@
 import { recordExpenseDeduction } from "./cashTracker";
+import { supabase } from "./supabaseAuth";
 
 interface ExpenseReport {
   id: string;
@@ -120,7 +121,7 @@ export const getDriverExpenses = (
   }
 };
 
-// Get all expenses for admin view
+// Get all expenses for admin view - Original localStorage version
 export const getAllExpenses = (yardId?: string): ExpenseReport[] => {
   try {
     const expenses = JSON.parse(localStorage.getItem("expenseReports") || "[]");
@@ -135,6 +136,73 @@ export const getAllExpenses = (yardId?: string): ExpenseReport[] => {
   } catch (error) {
     console.error("Error getting all expenses:", error);
     return [];
+  }
+};
+
+// Get all expenses with Supabase sync (for admin view) - New async version  
+export const getAllExpensesSync = async (yardId?: string): Promise<ExpenseReport[]> => {
+  try {
+    // First try to get from Supabase if available
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("expense_reports")
+        .select("*")
+        .order("submitted_at", { ascending: false });
+      
+      if (!error && data) {
+        console.log("Loaded expenses from Supabase:", data.length);
+        // Convert Supabase format to expected format
+        const formattedExpenses = data.map((expense: any) => ({
+          id: expense.id,
+          driverId: expense.driver_id || expense.driverId,
+          driverName: expense.driver_name || expense.driverName,
+          yardId: expense.yard_id || expense.yardId,
+          category: expense.category,
+          amount: expense.amount,
+          description: expense.description,
+          receiptPhoto: expense.receipt_photo || expense.receiptPhoto,
+          expenseDate: expense.expense_date || expense.expenseDate,
+          submittedAt: expense.submitted_at || expense.submittedAt,
+          status: expense.status || "approved",
+          approvedBy: expense.approved_by || expense.approvedBy,
+          approvedAt: expense.approved_at || expense.approvedAt,
+          notes: expense.notes,
+        }));
+        
+        // Update localStorage with fresh data
+        localStorage.setItem("expenseReports", JSON.stringify(formattedExpenses));
+        
+        return formattedExpenses.filter((expense: ExpenseReport) =>
+          yardId ? expense.yardId === yardId : true,
+        );
+      } else {
+        console.log("Supabase expenses query failed, using localStorage fallback");
+      }
+    }
+    
+    // Fallback to localStorage
+    const expenses = JSON.parse(localStorage.getItem("expenseReports") || "[]");
+    console.log("Using localStorage for expenses:", expenses.length);
+    return expenses
+      .filter((expense: ExpenseReport) =>
+        yardId ? expense.yardId === yardId : true,
+      )
+      .sort(
+        (a: ExpenseReport, b: ExpenseReport) =>
+          new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+      );
+  } catch (error) {
+    console.error("Error getting all expenses:", error);
+    // Final fallback to localStorage on any error
+    const expenses = JSON.parse(localStorage.getItem("expenseReports") || "[]");
+    return expenses
+      .filter((expense: ExpenseReport) =>
+        yardId ? expense.yardId === yardId : true,
+      )
+      .sort(
+        (a: ExpenseReport, b: ExpenseReport) =>
+          new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+      );
   }
 };
 

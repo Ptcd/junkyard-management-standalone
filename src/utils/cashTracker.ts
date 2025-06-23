@@ -1,3 +1,5 @@
+import { supabase } from "./supabaseAuth";
+
 interface DriverCashRecord {
   driverId: string;
   driverName: string;
@@ -238,7 +240,7 @@ export const getDriverCashHistory = (
   }
 };
 
-// Get all drivers' cash records (for admin)
+// Get all drivers' cash records (for admin) - Original localStorage version
 export const getAllDriversCash = (yardId?: string): DriverCashRecord[] => {
   try {
     const cashRecords = JSON.parse(
@@ -252,6 +254,62 @@ export const getAllDriversCash = (yardId?: string): DriverCashRecord[] => {
   } catch (error) {
     console.error("Error getting all drivers cash:", error);
     return [];
+  }
+};
+
+// Get all drivers' cash records with Supabase sync (for admin) - New async version
+export const getAllDriversCashSync = async (yardId?: string): Promise<DriverCashRecord[]> => {
+  try {
+    // First try to get from Supabase if available
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("driver_cash_records")
+        .select("*")
+        .order("last_updated", { ascending: false });
+      
+      if (!error && data) {
+        console.log("Loaded cash records from Supabase:", data.length);
+        // Convert Supabase format to expected format
+        const formattedRecords = data.map((record: any) => ({
+          driverId: record.driver_id || record.driverId,
+          driverName: record.driver_name || record.driverName,
+          yardId: record.yard_id || record.yardId,
+          currentCash: record.current_cash || record.currentCash || 0,
+          lastUpdated: record.last_updated || record.lastUpdated,
+        }));
+        
+        // Update localStorage with fresh data
+        localStorage.setItem("driverCashRecords", JSON.stringify(formattedRecords));
+        
+        return yardId
+          ? formattedRecords.filter((record: DriverCashRecord) => record.yardId === yardId)
+          : formattedRecords;
+      } else {
+        console.log("Supabase cash records query failed, using localStorage fallback");
+      }
+    }
+    
+    // Fallback to localStorage
+    const cashRecords = JSON.parse(
+      localStorage.getItem("driverCashRecords") || "[]",
+    );
+    console.log("Using localStorage for cash records:", cashRecords.length);
+    return yardId
+      ? cashRecords.filter(
+          (record: DriverCashRecord) => record.yardId === yardId,
+        )
+      : cashRecords;
+  } catch (error) {
+    console.error("Error getting all drivers cash:", error);
+    // Final fallback to localStorage on any error
+    const cashRecords = JSON.parse(
+      localStorage.getItem("driverCashRecords") || "[]",
+    );
+    return yardId
+      ? cashRecords.filter(
+          (record: DriverCashRecord) => record.yardId === yardId,
+        )
+      : cashRecords;
   }
 };
 
