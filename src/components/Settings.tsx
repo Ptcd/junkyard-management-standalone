@@ -227,9 +227,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    console.log("🎯 handleTabChange called! Old value:", tabValue, "New value:", newValue);
-    console.log("Event target:", event.target);
-    console.log("Event currentTarget:", event.currentTarget);
     setTabValue(newValue);
   };
 
@@ -345,40 +342,28 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                 pointerEvents: 'auto'
               }
             }}
-            onMouseDown={(e) => console.log("🖱️ Tabs onMouseDown:", e.target)}
-            onClick={(e) => console.log("🖱️ Tabs onClick:", e.target)}
           >
             {user.role === 'admin' ? (
               <>
                 <Tab 
                   icon={<SettingsIcon />} 
                   label="General Settings"
-                  onMouseDown={() => console.log("🖱️ General Settings tab mousedown")}
-                  onClick={() => console.log("🖱️ General Settings tab clicked")}
                 />
                 <Tab 
                   icon={<Backup />} 
                   label="Backup & Recovery"
-                  onMouseDown={() => console.log("🖱️ Backup tab mousedown")}
-                  onClick={() => console.log("🖱️ Backup tab clicked")}
                 />
                 <Tab 
                   icon={<People />} 
                   label="User Management"
-                  onMouseDown={() => console.log("🖱️ User Management tab mousedown")}
-                  onClick={() => console.log("🖱️ User Management tab clicked")}
                 />
                 <Tab 
                   icon={<Business />} 
                   label="Buyer Profiles"
-                  onMouseDown={() => console.log("🖱️ Buyer Profiles tab mousedown")}
-                  onClick={() => console.log("🖱️ Buyer Profiles tab clicked")}
                 />
                 <Tab 
                   icon={<AccountCircle />} 
                   label="Account Management"
-                  onMouseDown={() => console.log("🖱️ Account Management tab mousedown")}
-                  onClick={() => console.log("🖱️ Account Management tab clicked")}
                 />
               </>
             ) : (
@@ -390,35 +375,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
       {/* Tab Content (single column, full width on mobile) */}
       <Box sx={{ width: "100%" }}>
-        {/* Debug info */}
-        <Box sx={{ p: 2, mb: 2, bgcolor: "grey.100", borderRadius: 1, border: '2px solid orange' }}>
-          <Typography variant="body2" color="text.primary" sx={{ fontWeight: 'bold', mb: 1 }}>
-            🐛 DEBUG INFO - Current tab value = {tabValue}, User role = {user.role}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-            handleTabChange function: {typeof handleTabChange} | 
-            Tabs value prop: {tabValue} | 
-            onChange prop: ATTACHED
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <Button size="small" variant="outlined" onClick={() => console.log("Test button clicked!")}>
-              Test Console Log
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => alert("JavaScript is working!")}>
-              Test Alert
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => setTabValue(1)}>
-              Force Tab 1
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => setTabValue(2)}>
-              Force Tab 2
-            </Button>
-          </Stack>
-          <Typography variant="caption" color="text.secondary">
-            If clicking tabs doesn't change the tab value above, there's an event handler issue.
-          </Typography>
-        </Box>
-
         {/* General Settings - Admin Only */}
         {user.role === 'admin' && tabValue === 0 && (
           <Box>
@@ -621,7 +577,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         {/* Backup & Recovery - Admin Only */}
         {user.role === 'admin' && tabValue === 1 && (
           <Box>
-            <Typography variant="h6" gutterBottom>Backup & Recovery (Debug: Tab 1)</Typography>
             <BackupManager />
           </Box>
         )}
@@ -629,7 +584,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         {/* User Management - Admin Only */}
         {user.role === 'admin' && tabValue === 2 && (
           <Box>
-            <Typography variant="h6" gutterBottom>User Management (Debug: Tab 2)</Typography>
             <UserManagement currentUser={user} />
           </Box>
         )}
@@ -637,7 +591,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         {/* Buyer Profiles - Admin Only */}
         {user.role === 'admin' && tabValue === 3 && (
           <Box>
-            <Typography variant="h6" gutterBottom>Buyer Profiles (Debug: Tab 3)</Typography>
             <BuyerProfilesManager user={user} />
           </Box>
         )}
