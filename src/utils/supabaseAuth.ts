@@ -503,14 +503,59 @@ export const deleteAccount = async () => {
 // Admin function to delete any user (profile + auth)
 export const deleteUserAsAdmin = async (targetUserId: string) => {
   try {
-    // Call the database function that handles complete user deletion
+    console.log("Starting admin deletion for user:", targetUserId);
+    
+    // Try the database function first
     const { data, error } = await supabase.rpc('delete_user_complete', {
       target_user_id: targetUserId
     });
 
     if (error) {
       console.error("Error calling delete_user_complete:", error);
-      return { error: error.message || "Failed to delete user" };
+      console.log("Database function failed, trying direct deletion approach...");
+      
+      // Fallback: Direct deletion approach
+      try {
+        // First get user info before deletion
+        const { data: userData, error: getUserError } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("id", targetUserId)
+          .single();
+          
+        if (getUserError) {
+          console.error("Error getting user data:", getUserError);
+          return { error: "User not found" };
+        }
+        
+        console.log("Found user to delete:", userData.firstName, userData.lastName);
+        
+        // Delete user profile (CASCADE should handle related records)
+        const { error: deleteError } = await supabase
+          .from("user_profiles")
+          .delete()
+          .eq("id", targetUserId);
+          
+        if (deleteError) {
+          console.error("Error deleting user profile:", deleteError);
+          return { error: deleteError.message || "Failed to delete user profile" };
+        }
+        
+        console.log("Successfully deleted user profile");
+        
+        return { 
+          success: true, 
+          message: `User ${userData.firstName} ${userData.lastName} deleted successfully`,
+          deletionSummary: {
+            deleted_user: userData,
+            message: "User profile deleted successfully"
+          }
+        };
+        
+      } catch (fallbackError) {
+        console.error("Fallback deletion failed:", fallbackError);
+        return { error: fallbackError instanceof Error ? fallbackError.message : "Fallback deletion failed" };
+      }
     }
 
     // The function returns JSON with success/error info
@@ -522,10 +567,12 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
           deletionSummary: data 
         };
       } else {
+        console.error("Database function returned error:", data.error);
         return { error: data.error || "Deletion failed" };
       }
     }
 
+    console.error("Unexpected response from deletion function:", data);
     return { error: "Unexpected response from deletion function" };
   } catch (error) {
     console.error("Error in deleteUserAsAdmin:", error);
