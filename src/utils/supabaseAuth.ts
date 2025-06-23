@@ -510,8 +510,13 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
       target_user_id: targetUserId
     });
 
-    if (error) {
-      console.error("Error calling delete_user_complete:", error);
+    // Check if the RPC call failed OR if the function returned an error
+    if (error || (data && !data.success)) {
+      if (error) {
+        console.error("Error calling delete_user_complete:", error);
+      } else {
+        console.error("Database function returned error:", data.error);
+      }
       console.log("Database function failed, trying direct deletion approach...");
       
       // Fallback: Direct deletion approach
@@ -528,7 +533,7 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
           return { error: "User not found" };
         }
         
-        console.log("Found user to delete:", userData.firstName, userData.lastName);
+        console.log("Found user to delete:", userData.first_name, userData.last_name);
         
         // Delete user profile (CASCADE should handle related records)
         const { error: deleteError } = await supabase
@@ -545,7 +550,7 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
         
         return { 
           success: true, 
-          message: `User ${userData.firstName} ${userData.lastName} deleted successfully`,
+          message: `User ${userData.first_name} ${userData.last_name} deleted successfully`,
           deletionSummary: {
             deleted_user: userData,
             message: "User profile deleted successfully"
@@ -558,18 +563,13 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
       }
     }
 
-    // The function returns JSON with success/error info
-    if (data && typeof data === 'object') {
-      if (data.success) {
-        return { 
-          success: true, 
-          message: data.message,
-          deletionSummary: data 
-        };
-      } else {
-        console.error("Database function returned error:", data.error);
-        return { error: data.error || "Deletion failed" };
-      }
+    // The function succeeded
+    if (data && data.success) {
+      return { 
+        success: true, 
+        message: data.message,
+        deletionSummary: data 
+      };
     }
 
     console.error("Unexpected response from deletion function:", data);
