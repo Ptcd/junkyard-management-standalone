@@ -227,7 +227,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    console.log("🎯 handleTabChange called! Old value:", tabValue, "New value:", newValue);
     setTabValue(newValue);
   };
 
@@ -338,26 +337,35 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                 <Tab 
                   icon={<SettingsIcon />} 
                   label="General Settings"
+                  onClick={() => setTabValue(0)}
                 />
                 <Tab 
                   icon={<Backup />} 
                   label="Backup & Recovery"
+                  onClick={() => setTabValue(1)}
                 />
                 <Tab 
                   icon={<People />} 
                   label="User Management"
+                  onClick={() => setTabValue(2)}
                 />
                 <Tab 
                   icon={<Business />} 
                   label="Buyer Profiles"
+                  onClick={() => setTabValue(3)}
                 />
                 <Tab 
                   icon={<AccountCircle />} 
                   label="Account Management"
+                  onClick={() => setTabValue(4)}
                 />
               </>
             ) : (
-              <Tab icon={<AccountCircle />} label="Account Management" />
+              <Tab 
+                icon={<AccountCircle />} 
+                label="Account Management" 
+                onClick={() => setTabValue(0)}
+              />
             )}
           </Tabs>
         </Paper>
@@ -365,20 +373,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
       {/* Tab Content (single column, full width on mobile) */}
       <Box sx={{ width: "100%" }}>
-        {/* Temporary Debug Section */}
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            🐛 DEBUG: Current tab value = {tabValue} | User role = {user.role}
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-            <Button size="small" onClick={() => setTabValue(0)}>Set Tab 0</Button>
-            <Button size="small" onClick={() => setTabValue(1)}>Set Tab 1</Button>
-            <Button size="small" onClick={() => setTabValue(2)}>Set Tab 2</Button>
-            <Button size="small" onClick={() => setTabValue(3)}>Set Tab 3</Button>
-            <Button size="small" onClick={() => setTabValue(4)}>Set Tab 4</Button>
-          </Stack>
-        </Alert>
-        
         {/* General Settings - Admin Only */}
         {user.role === 'admin' && tabValue === 0 && (
           <Box>
