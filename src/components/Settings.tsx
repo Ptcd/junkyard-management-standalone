@@ -227,6 +227,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    console.log("🎯 handleTabChange called! Old value:", tabValue, "New value:", newValue);
     setTabValue(newValue);
   };
 
@@ -326,22 +327,11 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         <Paper sx={{ mb: 3 }}>
           <Tabs 
             value={tabValue} 
-            onChange={handleTabChange} 
+            onChange={handleTabChange}
+            indicatorColor="primary"
+            textColor="primary"
             variant="scrollable" 
             scrollButtons="auto"
-            sx={{ 
-              '& .MuiTab-root': { 
-                minHeight: 48,
-                cursor: 'pointer',
-                pointerEvents: 'auto',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                }
-              },
-              '& .MuiTabs-flexContainer': {
-                pointerEvents: 'auto'
-              }
-            }}
           >
             {user.role === 'admin' ? (
               <>
@@ -375,6 +365,20 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
 
       {/* Tab Content (single column, full width on mobile) */}
       <Box sx={{ width: "100%" }}>
+        {/* Temporary Debug Section */}
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="body2">
+            🐛 DEBUG: Current tab value = {tabValue} | User role = {user.role}
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            <Button size="small" onClick={() => setTabValue(0)}>Set Tab 0</Button>
+            <Button size="small" onClick={() => setTabValue(1)}>Set Tab 1</Button>
+            <Button size="small" onClick={() => setTabValue(2)}>Set Tab 2</Button>
+            <Button size="small" onClick={() => setTabValue(3)}>Set Tab 3</Button>
+            <Button size="small" onClick={() => setTabValue(4)}>Set Tab 4</Button>
+          </Stack>
+        </Alert>
+        
         {/* General Settings - Admin Only */}
         {user.role === 'admin' && tabValue === 0 && (
           <Box>
