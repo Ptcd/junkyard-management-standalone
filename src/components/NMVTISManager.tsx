@@ -46,6 +46,7 @@ import {
   getAAMVASubmissionStats,
   formatAAMVADate,
 } from "../utils/nmvtisAAMVAHelper";
+import { getScheduledNMVTISReportsSync } from "../utils/nmvtisScheduler";
 
 interface User {
   id: string;
@@ -78,12 +79,19 @@ const NMVTISManager: React.FC<NMVTISManagerProps> = ({ user }) => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const pending = getPendingAAMVAReports();
-    const statsData = getAAMVASubmissionStats();
+  const loadData = async () => {
+    try {
+      // Load NMVTIS reports with Supabase sync
+      await getScheduledNMVTISReportsSync();
+      
+      const pending = getPendingAAMVAReports();
+      const statsData = getAAMVASubmissionStats();
 
-    setPendingReports(pending);
-    setStats(statsData);
+      setPendingReports(pending);
+      setStats(statsData);
+    } catch (error) {
+      console.error("Error loading NMVTIS data:", error);
+    }
   };
 
   const handleSelectReport = (reportId: string, checked: boolean) => {

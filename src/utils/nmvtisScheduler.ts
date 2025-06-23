@@ -6,6 +6,7 @@ import {
   reportJunkVehicle,
   reportVehicleSold,
 } from "./nmvtisReporting";
+import { supabase } from "./supabaseAuth";
 
 interface ScheduledNMVTISReport {
   id: string;
@@ -278,4 +279,51 @@ export const initializeNMVTISScheduler = (): void => {
   ); // 30 minutes
 
   console.log("NMVTIS Scheduler initialized");
+};
+
+// Get scheduled NMVTIS reports with Supabase sync - New async version
+export const getScheduledNMVTISReportsSync = async (): Promise<ScheduledNMVTISReport[]> => {
+  try {
+    // First try to get from Supabase if available
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("scheduled_nmvtis_reports")
+        .select("*")
+        .order("schedule_date", { ascending: false });
+      
+      if (!error && data) {
+        console.log("Loaded scheduled NMVTIS reports from Supabase:", data.length);
+        // Convert Supabase format to expected format
+        const formattedReports = data.map((report: any) => ({
+          id: report.id,
+          vin: report.vin,
+          reportType: report.report_type || report.reportType,
+          scheduleDate: report.schedule_date || report.scheduleDate,
+          vehicleData: report.vehicle_data || report.vehicleData,
+          originalTransactionId: report.original_transaction_id || report.originalTransactionId,
+          status: report.status,
+          attempts: report.attempts || 0,
+          lastAttempt: report.last_attempt || report.lastAttempt,
+          errorMessage: report.error_message || report.errorMessage,
+        }));
+        
+        // Update localStorage with fresh data
+        localStorage.setItem("scheduledNMVTISReports", JSON.stringify(formattedReports));
+        
+        return formattedReports;
+      } else {
+        console.log("Supabase scheduled NMVTIS reports query failed, using localStorage fallback");
+      }
+    }
+    
+    // Fallback to localStorage
+    const reports = JSON.parse(localStorage.getItem("scheduledNMVTISReports") || "[]");
+    console.log("Using localStorage for scheduled NMVTIS reports:", reports.length);
+    return reports;
+  } catch (error) {
+    console.error("Error getting scheduled NMVTIS reports:", error);
+    // Final fallback to localStorage on any error
+    const reports = JSON.parse(localStorage.getItem("scheduledNMVTISReports") || "[]");
+    return reports;
+  }
 };

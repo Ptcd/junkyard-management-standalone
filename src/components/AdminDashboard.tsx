@@ -43,6 +43,7 @@ import {
 } from "../utils/nmvtisScheduler";
 import { User } from "../utils/supabaseAuth";
 import { supabase } from "../utils/supabaseAuth";
+import { getVehicleSalesSync } from "../utils/vehicleSales";
 
 interface AdminDashboardProps {
   user: User;
@@ -76,8 +77,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
       setTransactions(data);
 
-      // Load sales data
-      const salesData = JSON.parse(localStorage.getItem("vehicleSales") || "[]");
+      // Load sales data using the sync function
+      const salesData = await getVehicleSalesSync();
 
       // Calculate stats
       const totalRevenue = data.reduce(

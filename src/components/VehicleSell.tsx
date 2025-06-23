@@ -44,7 +44,7 @@ import { recordVehicleSale, getDriverCashBalance } from "../utils/cashTracker";
 import { reportVehicleSaleImmediate } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
-import { BuyerProfile, getBuyerProfiles } from "../utils/buyerProfiles";
+import { BuyerProfile, getBuyerProfilesSync } from "../utils/buyerProfiles";
 import { supabase } from "../utils/supabaseAuth";
 
 interface VehicleTransaction {
@@ -221,9 +221,13 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
   };
 
-  const loadBuyerProfiles = () => {
-    const profiles = getBuyerProfiles(user.yardId);
-    setBuyerProfiles(profiles);
+  const loadBuyerProfiles = async () => {
+    try {
+      const profiles = await getBuyerProfilesSync(user.yardId);
+      setBuyerProfiles(profiles);
+    } catch (error) {
+      console.error("Error loading buyer profiles:", error);
+    }
   };
 
   const handleVINSearch = () => {

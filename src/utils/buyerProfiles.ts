@@ -1,6 +1,8 @@
 // Buyer Profiles Management
 // Allows admins to pre-configure common buyers for quick selection during sales
 
+import { supabase } from "./supabaseAuth";
+
 export interface BuyerProfile {
   id: string;
   companyName: string;
@@ -226,4 +228,62 @@ export const createDefaultBuyerProfiles = (yardId: string): void => {
   defaultProfiles.forEach((profileData) => {
     createBuyerProfile(profileData);
   });
+};
+
+// Get buyer profiles with Supabase sync - New async version
+export const getBuyerProfilesSync = async (yardId: string): Promise<BuyerProfile[]> => {
+  try {
+    // First try to get from Supabase if available
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("buyer_profiles")
+        .select("*")
+        .eq("yard_id", yardId)
+        .order("company_name", { ascending: true });
+      
+      if (!error && data) {
+        console.log("Loaded buyer profiles from Supabase:", data.length);
+        // Convert Supabase format to expected format
+        const formattedProfiles = data.map((profile: any) => ({
+          id: profile.id,
+          yardId: profile.yard_id || profile.yardId,
+          companyName: profile.company_name || profile.companyName,
+          contactName: profile.contact_name || profile.contactName,
+          phone: profile.phone,
+          email: profile.email,
+          secondaryEmail: profile.secondary_email || profile.secondaryEmail,
+          address: profile.address,
+          city: profile.city,
+          state: profile.state,
+          zip: profile.zip,
+          licenseNumber: profile.license_number || profile.licenseNumber,
+          buyerType: profile.buyer_type || profile.buyerType || "other",
+          notes: profile.notes,
+          isActive: profile.is_active !== undefined ? profile.is_active : (profile.isActive !== undefined ? profile.isActive : true),
+          createdAt: profile.created_at || profile.createdAt,
+          updatedAt: profile.updated_at || profile.updatedAt || profile.created_at || profile.createdAt,
+        }));
+        
+        // Update localStorage with fresh data for offline access
+        const allLocalProfiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+        const otherYardProfiles = allLocalProfiles.filter((p: BuyerProfile) => p.yardId !== yardId);
+        const updatedProfiles = [...otherYardProfiles, ...formattedProfiles];
+        localStorage.setItem("buyerProfiles", JSON.stringify(updatedProfiles));
+        
+        return formattedProfiles;
+      } else {
+        console.log("Supabase buyer profiles query failed, using localStorage fallback");
+      }
+    }
+    
+    // Fallback to localStorage
+    const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+    console.log("Using localStorage for buyer profiles:", profiles.length);
+    return profiles.filter((profile: BuyerProfile) => profile.yardId === yardId);
+  } catch (error) {
+    console.error("Error getting buyer profiles:", error);
+    // Final fallback to localStorage on any error
+    const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+    return profiles.filter((profile: BuyerProfile) => profile.yardId === yardId);
+  }
 };

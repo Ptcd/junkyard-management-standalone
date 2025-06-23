@@ -29,6 +29,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
+import { getVehicleSalesSync } from "../utils/vehicleSales";
 
 interface ImpoundLienVehicle {
   id: string;
@@ -211,7 +212,7 @@ const ImpoundLienManager: React.FC<ImpoundLienManagerProps> = ({ user }) => {
       },
     };
 
-    // Store sale record
+    // Store sale record (keeping localStorage for immediate consistency)
     const existingSales = JSON.parse(
       localStorage.getItem("vehicleSales") || "[]",
     );

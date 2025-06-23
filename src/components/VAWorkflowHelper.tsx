@@ -38,6 +38,7 @@ import {
   markAAMVAReportsSubmitted,
   getAAMVASubmissionStats,
 } from "../utils/nmvtisAAMVAHelper";
+import { getScheduledNMVTISReportsSync } from "../utils/nmvtisScheduler";
 
 interface User {
   id: string;
@@ -69,11 +70,18 @@ const VAWorkflowHelper: React.FC<VAWorkflowHelperProps> = ({ user }) => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const pending = getPendingAAMVAReports();
-    const statsData = getAAMVASubmissionStats();
-    setPendingReports(pending);
-    setStats(statsData);
+  const loadData = async () => {
+    try {
+      // Load NMVTIS reports with Supabase sync
+      await getScheduledNMVTISReportsSync();
+      
+      const pending = getPendingAAMVAReports();
+      const statsData = getAAMVASubmissionStats();
+      setPendingReports(pending);
+      setStats(statsData);
+    } catch (error) {
+      console.error("Error loading VA workflow data:", error);
+    }
   };
 
   const steps = [
