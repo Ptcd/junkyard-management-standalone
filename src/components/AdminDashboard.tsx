@@ -295,23 +295,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                     {recentTransactions.map((transaction) => (
                       <TableRow key={transaction.id}>
                         <TableCell>
-                          {new Date(transaction.created_at).toLocaleDateString()}
+                          {new Date(transaction.created_at || transaction.timestamp).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          {transaction.vehicleYear} {transaction.vehicleMake}{" "}
-                          {transaction.vehicleModel}
+                          {(transaction.year || transaction.vehicleYear)} {(transaction.make || transaction.vehicleMake)}{" "}
+                          {(transaction.model || transaction.vehicleModel)}
                         </TableCell>
                         <TableCell sx={{ fontFamily: "monospace" }}>
-                          {transaction.vehicleVIN}
+                          {(transaction.vin || transaction.vehicleVIN)}
                         </TableCell>
                         <TableCell>
-                          ${parseFloat(transaction.salePrice).toLocaleString()}
+                          ${parseFloat(transaction.purchase_price || transaction.salePrice || 0).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={transaction.vehicleDisposition}
+                            label={transaction.vehicle_disposition || transaction.vehicleDisposition || "TBD"}
                             color={
-                              transaction.vehicleDisposition === "TBD"
+                              (transaction.vehicle_disposition || transaction.vehicleDisposition || "TBD") === "TBD"
                                 ? "warning"
                                 : "success"
                             }
