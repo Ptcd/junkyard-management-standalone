@@ -45,7 +45,7 @@ import {
   updateBuyerProfile,
   deleteBuyerProfile,
   getBuyerProfileStats,
-  createDefaultBuyerProfiles,
+  clearDemoBuyerProfiles,
   searchBuyerProfiles,
 } from "../utils/buyerProfiles";
 import { User } from "../utils/supabaseAuth";
@@ -91,8 +91,8 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
   useEffect(() => {
     loadProfiles();
     loadStats();
-    // Create default profiles if none exist
-    createDefaultBuyerProfiles(user.yardId);
+    // Clear any demo profiles on first load
+    clearDemoBuyerProfiles(user.yardId);
   }, [user.yardId]);
 
   const loadProfiles = () => {
@@ -100,9 +100,11 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
     console.log("Loading buyer profiles:", allProfiles.length, "total");
     console.log("Profile statuses:", allProfiles.map(p => ({ 
       name: p.companyName, 
-      isActive: p.isActive 
+      isActive: p.isActive,
+      id: p.id
     })));
-    setProfiles(allProfiles);
+    // Force a new array reference to trigger re-render
+    setProfiles([...allProfiles]);
   };
 
   const loadStats = () => {
@@ -191,8 +193,12 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
         if (result) {
           setSuccess("Buyer profile deactivated successfully!");
           console.log("Profile deactivated, refreshing lists...");
-          loadProfiles();
-          loadStats();
+          
+          // Add a small delay to ensure localStorage is updated
+          setTimeout(() => {
+            loadProfiles();
+            loadStats();
+          }, 100);
         } else {
           setError("Failed to deactivate buyer profile - profile not found");
         }
@@ -437,8 +443,11 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
 
         {profiles.length === 0 && (
           <Box sx={{ p: 3, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              No buyer profiles found.
+            </Typography>
             <Typography variant="body2" color="text.secondary">
-              No buyer profiles found. Add some buyers to get started.
+              Click "Add Buyer" to create your first buyer profile for quick vehicle sales.
             </Typography>
           </Box>
         )}

@@ -106,13 +106,21 @@ export const deleteBuyerProfile = async (profileId: string): Promise<boolean> =>
         .eq("id", profileId);
 
       if (error) {
-        console.error("Error updating buyer profile in Supabase:", error);
+        // Don't log 404 errors as these are expected for demo profiles
+        if (error.message?.includes('404') || error.code === 'PGRST116') {
+          console.log("Profile not found in Supabase (demo profile), updating localStorage only");
+        } else {
+          console.error("Error updating buyer profile in Supabase:", error);
+        }
       } else {
         console.log("Buyer profile deactivated in Supabase successfully");
       }
     }
-  } catch (supabaseError) {
-    console.error("Failed to update buyer profile in Supabase:", supabaseError);
+  } catch (supabaseError: any) {
+    // Don't log 404 errors as these are expected for demo profiles
+    if (!supabaseError?.message?.includes('404')) {
+      console.error("Failed to update buyer profile in Supabase:", supabaseError);
+    }
   }
 
   // Also update in localStorage for immediate local consistency
@@ -182,81 +190,24 @@ export const getBuyerProfileStats = (yardId: string) => {
   };
 };
 
-// Create default buyer profiles for demo
-export const createDefaultBuyerProfiles = (yardId: string): void => {
-  const existingProfiles = getBuyerProfiles(yardId);
-  if (existingProfiles.length > 0) return; // Don't create if profiles already exist
-
-  const defaultProfiles = [
-    {
-      companyName: "Milwaukee Scrap & Metal",
-      contactName: "John Smith",
-      address: "456 Industrial Blvd",
-      city: "Milwaukee",
-      state: "WI",
-      zip: "53202",
-      phone: "(414) 555-0200",
-      email: "purchasing@milwaukeescrap.com",
-      secondaryEmail: "john.smith@milwaukeescrap.com",
-      licenseNumber: "WI-SCRAP-2024-001",
-      buyerType: "scrap_yard" as const,
-      notes: "Pays cash, picks up same day. Prefers complete vehicles.",
-      isActive: true,
-      yardId,
-    },
-    {
-      companyName: "Auto Parts Plus",
-      contactName: "Sarah Johnson",
-      address: "789 Parts Avenue",
-      city: "Madison",
-      state: "WI",
-      zip: "53703",
-      phone: "(608) 555-0300",
-      email: "buyers@autopartsplus.com",
-      licenseNumber: "WI-PARTS-2024-002",
-      buyerType: "parts_dealer" as const,
-      notes:
-        "Specializes in engines and transmissions. Good prices for newer vehicles.",
-      isActive: true,
-      yardId,
-    },
-    {
-      companyName: "Global Auto Export LLC",
-      contactName: "Mike Rodriguez",
-      address: "321 Export Drive",
-      city: "Green Bay",
-      state: "WI",
-      zip: "54301",
-      phone: "(920) 555-0400",
-      email: "mike@globalautoexport.com",
-      secondaryEmail: "operations@globalautoexport.com",
-      licenseNumber: "WI-EXPORT-2024-003",
-      buyerType: "export_company" as const,
-      notes:
-        "Exports to overseas markets. Interested in luxury and foreign vehicles.",
-      isActive: true,
-      yardId,
-    },
-    {
-      companyName: "Badger State Recycling",
-      contactName: "Lisa Chen",
-      address: "654 Recycling Way",
-      city: "Appleton",
-      state: "WI",
-      zip: "54911",
-      phone: "(920) 555-0500",
-      email: "lisa@badgerstaterecycling.com",
-      buyerType: "scrap_yard" as const,
-      notes:
-        "Environmental focus, proper disposal certifications. Bulk pricing available.",
-      isActive: true,
-      yardId,
-    },
+// Clear demo buyer profiles - run once to clean up
+export const clearDemoBuyerProfiles = (yardId: string): void => {
+  const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
+  
+  // Remove demo profiles (those with specific demo company names)
+  const demoCompanyNames = [
+    "Milwaukee Scrap & Metal",
+    "Auto Parts Plus", 
+    "Global Auto Export LLC",
+    "Badger State Recycling"
   ];
-
-  defaultProfiles.forEach((profileData) => {
-    createBuyerProfile(profileData);
-  });
+  
+  const filteredProfiles = profiles.filter((profile: BuyerProfile) => 
+    profile.yardId !== yardId || !demoCompanyNames.includes(profile.companyName)
+  );
+  
+  localStorage.setItem("buyerProfiles", JSON.stringify(filteredProfiles));
+  console.log("Demo buyer profiles cleared for yard:", yardId);
 };
 
 // Get buyer profiles with Supabase sync - New async version
