@@ -97,6 +97,11 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
 
   const loadProfiles = () => {
     const allProfiles = getAllBuyerProfiles(user.yardId);
+    console.log("Loading buyer profiles:", allProfiles.length, "total");
+    console.log("Profile statuses:", allProfiles.map(p => ({ 
+      name: p.companyName, 
+      isActive: p.isActive 
+    })));
     setProfiles(allProfiles);
   };
 
@@ -175,16 +180,24 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
     }, 3000);
   };
 
-  const handleDeleteProfile = (profileId: string) => {
+  const handleDeleteProfile = async (profileId: string) => {
     if (
       window.confirm("Are you sure you want to deactivate this buyer profile?")
     ) {
       try {
-        deleteBuyerProfile(profileId);
-        setSuccess("Buyer profile deactivated successfully!");
-        loadProfiles();
-        loadStats();
+        console.log("User confirmed deletion of profile:", profileId);
+        const result = await deleteBuyerProfile(profileId);
+        
+        if (result) {
+          setSuccess("Buyer profile deactivated successfully!");
+          console.log("Profile deactivated, refreshing lists...");
+          loadProfiles();
+          loadStats();
+        } else {
+          setError("Failed to deactivate buyer profile - profile not found");
+        }
       } catch (err) {
+        console.error("Error deactivating buyer profile:", err);
         setError("Failed to deactivate buyer profile");
       }
 
@@ -192,6 +205,8 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
         setSuccess("");
         setError("");
       }, 3000);
+    } else {
+      console.log("User cancelled profile deletion");
     }
   };
 

@@ -91,18 +91,47 @@ export const updateBuyerProfile = (
 };
 
 // Delete buyer profile (soft delete - set inactive)
-export const deleteBuyerProfile = (profileId: string): boolean => {
+export const deleteBuyerProfile = async (profileId: string): Promise<boolean> => {
+  console.log("Attempting to delete buyer profile:", profileId);
+  
+  try {
+    // First try to update in Supabase if available
+    if (supabase) {
+      const { error } = await supabase
+        .from("buyer_profiles")
+        .update({ 
+          is_active: false, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", profileId);
+
+      if (error) {
+        console.error("Error updating buyer profile in Supabase:", error);
+      } else {
+        console.log("Buyer profile deactivated in Supabase successfully");
+      }
+    }
+  } catch (supabaseError) {
+    console.error("Failed to update buyer profile in Supabase:", supabaseError);
+  }
+
+  // Also update in localStorage for immediate local consistency
   const profiles = JSON.parse(localStorage.getItem("buyerProfiles") || "[]");
   const profileIndex = profiles.findIndex(
     (profile: BuyerProfile) => profile.id === profileId,
   );
 
-  if (profileIndex === -1) return false;
+  if (profileIndex === -1) {
+    console.error("Buyer profile not found in localStorage:", profileId);
+    return false;
+  }
 
+  console.log("Found buyer profile in localStorage, deactivating:", profiles[profileIndex].companyName);
   profiles[profileIndex].isActive = false;
   profiles[profileIndex].updatedAt = new Date().toISOString();
 
   localStorage.setItem("buyerProfiles", JSON.stringify(profiles));
+  console.log("Buyer profile deactivated in localStorage successfully");
   return true;
 };
 
