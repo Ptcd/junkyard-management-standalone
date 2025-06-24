@@ -89,10 +89,13 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
   });
 
   useEffect(() => {
-    loadProfiles();
-    loadStats();
     // Clear any demo profiles on first load
     clearDemoBuyerProfiles(user.yardId);
+    // Small delay to ensure cleanup completes before loading
+    setTimeout(() => {
+      loadProfiles();
+      loadStats();
+    }, 100);
   }, [user.yardId]);
 
   const loadProfiles = () => {
@@ -334,6 +337,21 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
             onClick={handleSearch}
           >
             Search
+          </Button>
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() => {
+              clearDemoBuyerProfiles(user.yardId);
+              setTimeout(() => {
+                loadProfiles();
+                loadStats();
+                setSuccess("Demo profiles cleared!");
+                setTimeout(() => setSuccess(""), 2000);
+              }, 100);
+            }}
+          >
+            Clear Demo Data
           </Button>
           <Button
             variant="contained"
