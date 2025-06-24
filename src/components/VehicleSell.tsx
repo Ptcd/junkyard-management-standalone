@@ -236,8 +236,25 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       return;
     }
 
+    // Support partial VIN search - look for VINs that contain the search term
+    const searchTerm = searchVIN.toLowerCase().trim();
     const found = availableVehicles.find(
-      (vehicle) => vehicle.vehicleVIN.toLowerCase() === searchVIN.toLowerCase(),
+      (vehicle) => {
+        const vehicleVIN = vehicle.vehicleVIN.toLowerCase();
+        // Exact match first
+        if (vehicleVIN === searchTerm) {
+          return true;
+        }
+        // Then check if the VIN contains the search term
+        if (vehicleVIN.includes(searchTerm)) {
+          return true;
+        }
+        // Also check if the VIN ends with the search term (common for shortened VINs)
+        if (vehicleVIN.endsWith(searchTerm)) {
+          return true;
+        }
+        return false;
+      }
     );
 
     if (found) {
@@ -256,7 +273,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         originalVehicle: null,
       }));
       setError(
-        "VIN not found in available inventory. Vehicle may already be sold or not exist.",
+        `VIN containing "${searchVIN}" not found in available inventory. Vehicle may already be sold or not exist.`,
       );
     }
   };
@@ -266,9 +283,24 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     setShowVINScanner(false);
     // Auto-search after scanning
     setTimeout(() => {
+      const searchTerm = vinData.vin.toLowerCase();
       const found = availableVehicles.find(
-        (vehicle) =>
-          vehicle.vehicleVIN.toLowerCase() === vinData.vin.toLowerCase(),
+        (vehicle) => {
+          const vehicleVIN = vehicle.vehicleVIN.toLowerCase();
+          // Exact match first
+          if (vehicleVIN === searchTerm) {
+            return true;
+          }
+          // Then check if the VIN contains the search term
+          if (vehicleVIN.includes(searchTerm)) {
+            return true;
+          }
+          // Also check if the VIN ends with the search term
+          if (vehicleVIN.endsWith(searchTerm)) {
+            return true;
+          }
+          return false;
+        }
       );
       if (found) {
         setSelectedVehicle(found);
@@ -279,7 +311,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         }));
         setError("");
       } else {
-        setError("Scanned VIN not found in available inventory.");
+        setError(`Scanned VIN "${vinData.vin}" not found in available inventory.`);
       }
     }, 100);
   };
@@ -647,7 +679,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             value={searchVIN}
             onChange={(e) => setSearchVIN(e.target.value)}
             inputProps={{ maxLength: 17 }}
-            helperText="17-character VIN"
+            helperText="Full VIN or last 5-8 digits (e.g., 75705)"
             sx={{ flexGrow: 1 }}
             InputProps={{
               endAdornment: (
