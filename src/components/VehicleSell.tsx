@@ -111,6 +111,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
   const [availableVehicles, setAvailableVehicles] = useState<
     VehicleTransaction[]
   >([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<
+    VehicleTransaction[]
+  >([]);
   const [selectedVehicle, setSelectedVehicle] =
     useState<VehicleTransaction | null>(null);
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
@@ -215,6 +218,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
       console.log("Available vehicles for sale:", formattedVehicles.length);
       setAvailableVehicles(formattedVehicles);
+      setFilteredVehicles(formattedVehicles); // Initialize filtered list
     } catch (err) {
       console.error("Error loading available vehicles:", err);
       setError("Failed to load available vehicles. Please try again.");
@@ -230,51 +234,34 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
   };
 
+  // Filter vehicles based on search input
+  useEffect(() => {
+    if (!searchVIN.trim()) {
+      setFilteredVehicles(availableVehicles);
+      return;
+    }
+
+    const searchTerm = searchVIN.toLowerCase().trim();
+    const filtered = availableVehicles.filter((vehicle) => {
+      const vehicleVIN = vehicle.vehicleVIN.toLowerCase();
+      return vehicleVIN.includes(searchTerm) || vehicleVIN.endsWith(searchTerm);
+    });
+
+    setFilteredVehicles(filtered);
+  }, [searchVIN, availableVehicles]);
+
   const handleVINSearch = () => {
+    // Search is now handled automatically by the useEffect above
+    // This function is kept for the search button but doesn't need to do anything
     if (!searchVIN.trim()) {
       setError("Please enter a VIN to search");
       return;
     }
-
-    // Support partial VIN search - look for VINs that contain the search term
-    const searchTerm = searchVIN.toLowerCase().trim();
-    const found = availableVehicles.find(
-      (vehicle) => {
-        const vehicleVIN = vehicle.vehicleVIN.toLowerCase();
-        // Exact match first
-        if (vehicleVIN === searchTerm) {
-          return true;
-        }
-        // Then check if the VIN contains the search term
-        if (vehicleVIN.includes(searchTerm)) {
-          return true;
-        }
-        // Also check if the VIN ends with the search term (common for shortened VINs)
-        if (vehicleVIN.endsWith(searchTerm)) {
-          return true;
-        }
-        return false;
-      }
-    );
-
-    if (found) {
-      setSelectedVehicle(found);
-      setFormData((prev) => ({
-        ...prev,
-        originalVehicle: found,
-        actualSalePrice: "", // Leave empty for user to fill
-      }));
-      setError("");
-      setSuccess(false);
+    
+    if (filteredVehicles.length === 0) {
+      setError(`No vehicles found with VIN containing "${searchVIN}"`);
     } else {
-      setSelectedVehicle(null);
-      setFormData((prev) => ({
-        ...prev,
-        originalVehicle: null,
-      }));
-      setError(
-        `VIN containing "${searchVIN}" not found in available inventory. Vehicle may already be sold or not exist.`,
-      );
+      setError("");
     }
   };
 
@@ -383,7 +370,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, generatePDF: boolean = false) => {
     e.preventDefault();
 
     if (!formData.originalVehicle) {
@@ -564,12 +551,8 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         // Don't fail the entire transaction for NMVTIS issues
       }
 
-      // Send MV2459 email if buyer email is provided
-      if (
-        formData.buyerEmail &&
-        formData.buyerEmail.trim() &&
-        formData.sendEmailMV2459
-      ) {
+      // Handle PDF generation and email if requested
+      if (generatePDF || (formData.buyerEmail && formData.buyerEmail.trim() && formData.sendEmailMV2459)) {
         setEmailSending(true);
         try {
           // Get yard info from settings (mock for now)
@@ -584,22 +567,33 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             licenseNumber: "WI-JUNK-2024-001",
           };
 
-          const emailResult = await sendMV2459Email(
-            saleRecord,
-            yardInfo,
-            formData.buyerEmail,
-          );
-
-          if (emailResult.success) {
-            setSuccess(true);
-            setError("");
-          } else {
-            setError(`Sale recorded but email failed: ${emailResult.message}`);
+          if (generatePDF) {
+            // Generate and download PDF
+            try {
+              downloadMV2459(saleRecord, yardInfo);
+              console.log("MV2459 PDF generated and downloaded successfully");
+            } catch (pdfError) {
+              console.error("Failed to generate PDF:", pdfError);
+              setError("Sale recorded but PDF generation failed. You can download it manually later.");
+            }
           }
-        } catch (emailError) {
-          console.error("Failed to send email:", emailError);
+
+          // Also send email if buyer email is provided and checkbox is checked
+          if (formData.buyerEmail && formData.buyerEmail.trim() && formData.sendEmailMV2459) {
+            const emailResult = await sendMV2459Email(
+              saleRecord,
+              yardInfo,
+              formData.buyerEmail,
+            );
+
+            if (!emailResult.success) {
+              setError(`Sale recorded but email failed: ${emailResult.message}`);
+            }
+          }
+        } catch (pdfError) {
+          console.error("Failed to generate PDF or send email:", pdfError);
           setError(
-            "Sale recorded but failed to send MV2459 email. You can download it manually.",
+            "Sale recorded but failed to generate MV2459 PDF. You can download it manually later.",
           );
         } finally {
           setEmailSending(false);
@@ -619,6 +613,9 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       setError("Failed to save sale. Please try again.");
     }
   };
+
+  const handleSubmitWithPDF = (e: React.FormEvent) => handleSubmit(e, true);
+  const handleSubmitNoPDF = (e: React.FormEvent) => handleSubmit(e, false);
 
   return (
     <Box>
@@ -704,48 +701,17 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             Search
           </Button>
         </Stack>
-
-        {selectedVehicle && (
-          <Card
-            sx={{
-              mt: 2,
-              bgcolor: "success.light",
-              color: "success.contrastText",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h6">Vehicle Found!</Typography>
-              <Typography>
-                <strong>VIN:</strong> {selectedVehicle.vehicleVIN}
-              </Typography>
-              <Typography>
-                <strong>Vehicle:</strong> {selectedVehicle.vehicleYear}{" "}
-                {selectedVehicle.vehicleMake}
-              </Typography>
-              <Typography>
-                <strong>Purchase Date:</strong>{" "}
-                {new Date(selectedVehicle.saleDate).toLocaleDateString()}
-              </Typography>
-              <Typography>
-                <strong>Purchase Price:</strong> ${selectedVehicle.salePrice}
-              </Typography>
-              <Button
-                variant="outlined"
-                startIcon={<ViewIcon />}
-                onClick={() => setShowVehicleDetails(true)}
-                sx={{ mt: 1, color: "inherit", borderColor: "currentColor" }}
-              >
-                View Full Details
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </Paper>
 
       {/* Available Vehicles Table */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Available Inventory ({availableVehicles.length} vehicles)
+          Available Inventory ({filteredVehicles.length} vehicles)
+          {searchVIN && (
+            <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+              {searchVIN ? `- Filtered by VIN containing "${searchVIN}"` : ""}
+            </Typography>
+          )}
         </Typography>
         <TableContainer>
           <Table>
@@ -760,14 +726,17 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {availableVehicles.length === 0 ? (
+              {filteredVehicles.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    No vehicles available for sale in inventory
+                    {searchVIN 
+                      ? `No vehicles found with VIN containing "${searchVIN}"`
+                      : "No vehicles available for sale in inventory"
+                    }
                   </TableCell>
                 </TableRow>
               ) : (
-                availableVehicles.map((vehicle) => (
+                filteredVehicles.map((vehicle) => (
                   <TableRow key={vehicle.id}>
                     <TableCell>
                       {new Date(vehicle.saleDate).toLocaleDateString()}
@@ -811,7 +780,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           <Typography variant="h6" gutterBottom>
             Step 2: Complete Sale Information
           </Typography>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmitNoPDF}>
             <Stack spacing={3}>
               {/* Buyer Information */}
               <Stack spacing={2}>
@@ -1066,15 +1035,27 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                 label="Email MV2459 Junk Bill to Buyer"
               />
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={<SaveIcon />}
-                size="large"
-              >
-                Complete Sale
-              </Button>
+              {/* Submit Buttons */}
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Button
+                  type="button"
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  size="large"
+                  onClick={handleSubmitWithPDF}
+                  sx={{ flex: 1 }}
+                >
+                  Complete Sale & Generate PDF
+                </Button>
+                <Button
+                  type="submit"
+                  variant="outlined"
+                  size="large"
+                  sx={{ minWidth: "200px" }}
+                >
+                  Complete Sale (No PDF)
+                </Button>
+              </Stack>
             </Stack>
           </form>
         </Paper>
@@ -1105,11 +1086,11 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                 {selectedVehicle.vehicleMake}
               </Typography>
               <Typography>
-                Purchase Price: ${selectedVehicle.salePrice}
-              </Typography>
-              <Typography>
                 Purchase Date:{" "}
                 {new Date(selectedVehicle.saleDate).toLocaleDateString()}
+              </Typography>
+              <Typography>
+                Purchase Price: ${selectedVehicle.salePrice}
               </Typography>
 
               <Typography variant="h6" sx={{ mt: 2 }}>
