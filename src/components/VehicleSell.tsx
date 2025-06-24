@@ -718,17 +718,16 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             <TableHead>
               <TableRow>
                 <TableCell>Action</TableCell>
-                <TableCell>Purchase Date</TableCell>
                 <TableCell>VIN</TableCell>
+                <TableCell>Purchase Date</TableCell>
                 <TableCell>Vehicle</TableCell>
-                <TableCell>Purchase Price</TableCell>
                 <TableCell>Status</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredVehicles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={5} align="center">
                     {searchVIN 
                       ? `No vehicles found with VIN containing "${searchVIN}"`
                       : "No vehicles available for sale in inventory"
@@ -749,17 +748,16 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                       </Button>
                     </TableCell>
                     <TableCell>
-                      {new Date(vehicle.saleDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
                       <Typography variant="body2" fontFamily="monospace">
                         {vehicle.vehicleVIN}
                       </Typography>
                     </TableCell>
                     <TableCell>
+                      {new Date(vehicle.saleDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
                       {vehicle.vehicleYear} {vehicle.vehicleMake}
                     </TableCell>
-                    <TableCell>${vehicle.salePrice}</TableCell>
                     <TableCell>
                       <Chip
                         label={vehicle.vehicleDisposition}
