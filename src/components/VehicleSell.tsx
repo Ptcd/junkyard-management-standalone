@@ -717,12 +717,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Action</TableCell>
                 <TableCell>Purchase Date</TableCell>
                 <TableCell>VIN</TableCell>
                 <TableCell>Vehicle</TableCell>
                 <TableCell>Purchase Price</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Action</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -738,6 +738,16 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
               ) : (
                 filteredVehicles.map((vehicle) => (
                   <TableRow key={vehicle.id}>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleSelectVehicle(vehicle)}
+                        color="primary"
+                      >
+                        Select
+                      </Button>
+                    </TableCell>
                     <TableCell>
                       {new Date(vehicle.saleDate).toLocaleDateString()}
                     </TableCell>
@@ -756,15 +766,6 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                         color="warning"
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleSelectVehicle(vehicle)}
-                      >
-                        Select
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -1036,14 +1037,23 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
               />
 
               {/* Submit Buttons */}
-              <Stack direction="row" spacing={2} alignItems="center">
+              <Stack 
+                direction={{ xs: "column", sm: "row" }} 
+                spacing={2} 
+                alignItems="stretch"
+                sx={{ mt: 2 }}
+              >
                 <Button
                   type="button"
                   variant="contained"
                   startIcon={<SaveIcon />}
                   size="large"
                   onClick={handleSubmitWithPDF}
-                  sx={{ flex: 1 }}
+                  fullWidth
+                  sx={{ 
+                    py: 1.5,
+                    fontSize: { xs: "1rem", sm: "0.875rem" }
+                  }}
                 >
                   Complete Sale & Generate PDF
                 </Button>
@@ -1051,7 +1061,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                   type="submit"
                   variant="outlined"
                   size="large"
-                  sx={{ minWidth: "200px" }}
+                  fullWidth
+                  sx={{ 
+                    py: 1.5,
+                    fontSize: { xs: "1rem", sm: "0.875rem" },
+                    minWidth: { sm: "200px" }
+                  }}
                 >
                   Complete Sale (No PDF)
                 </Button>
