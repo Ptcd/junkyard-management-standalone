@@ -85,75 +85,82 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   pdf.text(data.make, 95, yPos);
   yPos += 15;
   
-  // Seller Information Section
+  // Seller and Purchaser Information Side by Side
+  const sellerColumnX = 20;
+  const purchaserColumnX = pageWidth / 2 + 10;
+  const startYPos = yPos;
+  
+  // Seller Information Section (Left Column)
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('SELLER INFORMATION', 20, yPos);
+  pdf.text('SELLER INFORMATION', sellerColumnX, yPos);
   yPos += 10;
   
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   
-  pdf.text('Name:', 20, yPos);
+  pdf.text('Name:', sellerColumnX, yPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`${data.sellerFirstName} ${data.sellerLastName}`, 35, yPos);
+  pdf.text(`${data.sellerFirstName} ${data.sellerLastName}`, sellerColumnX + 15, yPos);
   yPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Address:', 20, yPos);
+  pdf.text('Address:', sellerColumnX, yPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.sellerAddress, 40, yPos);
+  pdf.text(data.sellerAddress, sellerColumnX + 20, yPos);
   yPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('City, State, ZIP:', 20, yPos);
+  pdf.text('City, State, ZIP:', sellerColumnX, yPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`${data.sellerCity}, ${data.sellerState} ${data.sellerZip}`, 55, yPos);
+  pdf.text(`${data.sellerCity}, ${data.sellerState} ${data.sellerZip}`, sellerColumnX + 35, yPos);
   yPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Phone:', 20, yPos);
+  pdf.text('Phone:', sellerColumnX, yPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.sellerPhone, 40, yPos);
-  yPos += 15;
+  pdf.text(data.sellerPhone, sellerColumnX + 20, yPos);
   
-  // Purchaser Information Section
+  // Purchaser Information Section (Right Column)
+  let rightYPos = startYPos;
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('PURCHASER INFORMATION', 20, yPos);
-  yPos += 10;
+  pdf.text('PURCHASER INFORMATION', purchaserColumnX, rightYPos);
+  rightYPos += 10;
   
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
   
-  pdf.text('Business Name:', 20, yPos);
+  pdf.text('Business Name:', purchaserColumnX, rightYPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.yardName, 55, yPos);
-  yPos += 8;
+  pdf.text(data.yardName, purchaserColumnX + 35, rightYPos);
+  rightYPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Purchaser:', 20, yPos);
+  pdf.text('Purchaser:', purchaserColumnX, rightYPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.purchaserName, 45, yPos);
-  yPos += 8;
+  pdf.text(data.purchaserName, purchaserColumnX + 25, rightYPos);
+  rightYPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Address:', 20, yPos);
+  pdf.text('Address:', purchaserColumnX, rightYPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.yardAddress, 40, yPos);
-  yPos += 8;
+  pdf.text(data.yardAddress, purchaserColumnX + 20, rightYPos);
+  rightYPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('City, State, ZIP:', 20, yPos);
+  pdf.text('City, State, ZIP:', purchaserColumnX, rightYPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(`${data.yardCity}, ${data.yardState} ${data.yardZip}`, 55, yPos);
-  yPos += 8;
+  pdf.text(`${data.yardCity}, ${data.yardState} ${data.yardZip}`, purchaserColumnX + 35, rightYPos);
+  rightYPos += 8;
   
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Phone:', 20, yPos);
+  pdf.text('Phone:', purchaserColumnX, rightYPos);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(data.yardPhone, 40, yPos);
-  yPos += 15;
+  pdf.text(data.yardPhone, purchaserColumnX + 20, rightYPos);
+  
+  // Set yPos to the maximum of both columns plus some spacing
+  yPos = Math.max(yPos, rightYPos) + 15;
   
   // Sale Information
   pdf.setFontSize(12);
@@ -190,44 +197,29 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   
   yPos += 10;
   
-  // Signature Section - Improved layout to prevent cutoff
+  // Signature Section - Now with plenty of space from side-by-side layout above
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
   pdf.text('SELLER SIGNATURE & ID VERIFICATION', 20, yPos);
-  yPos += 10;
-  
-  // Check if we have enough space for signature section, otherwise add new page
-  const signatureHeight = 55; // Increased space needed for signature + labels + margins
-  const bottomMargin = 40; // Increased bottom margin for safety
-  
-  if (yPos + signatureHeight > pageHeight - bottomMargin) {
-    pdf.addPage();
-    yPos = 30;
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('SELLER SIGNATURE & ID VERIFICATION (continued)', 20, yPos);
-    yPos += 15; // More space after header on new page
-  }
+  yPos += 15;
   
   // Create a two-column layout for signature and ID photo
   const leftColumnX = 20;
-  const rightColumnX = pageWidth / 2 + 10; // Start right column at middle + margin
-  const maxImageWidth = (pageWidth / 2) - 40; // Max width for each column with margins
+  const rightColumnX = pageWidth / 2 + 15;
+  const maxImageWidth = (pageWidth / 2) - 50;
   
   // Add signature image if available (left column)
   if (data.signatureDataUrl) {
     try {
-      // Calculate signature dimensions to fit properly
-      const signatureWidth = Math.min(maxImageWidth, 70);
+      const signatureWidth = Math.min(maxImageWidth, 65);
       const signatureHeight = 25;
       
       pdf.addImage(data.signatureDataUrl, 'PNG', leftColumnX, yPos, signatureWidth, signatureHeight);
       
-      // Add signature label with more spacing
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Seller Signature', leftColumnX, yPos + signatureHeight + 8);
-      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + signatureHeight + 15);
+      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + signatureHeight + 16);
     } catch (error) {
       console.error('Error adding signature:', error);
       pdf.setFontSize(9);
@@ -240,16 +232,13 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   // Add ID photo if available (right column)
   if (data.idPhotoDataUrl) {
     try {
-      // Calculate ID photo dimensions to fit properly
-      const idWidth = Math.min(maxImageWidth, 50);
-      const idHeight = 30;
+      const idWidth = Math.min(maxImageWidth, 45);
+      const idHeight = 28;
       
-      // Ensure ID photo doesn't go off the right edge
-      const idPhotoX = Math.min(rightColumnX, pageWidth - idWidth - 20);
+      const idPhotoX = Math.min(rightColumnX, pageWidth - idWidth - 25);
       
       pdf.addImage(data.idPhotoDataUrl, 'JPEG', idPhotoX, yPos, idWidth, idHeight);
       
-      // Add ID photo label with more spacing
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Driver License Photo', idPhotoX, yPos + idHeight + 8);
@@ -260,9 +249,6 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
       pdf.text('ID Photo: [On file]', rightColumnX, yPos);
     }
   }
-  
-  // Update yPos to account for the signature/ID section with extra spacing
-  yPos += 50;
   
   // Footer - ensure it's at the bottom of the page with proper margin
   pdf.setFontSize(8);
