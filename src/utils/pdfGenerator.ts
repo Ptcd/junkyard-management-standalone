@@ -36,6 +36,8 @@ interface VehiclePurchaseData {
 
 export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob> => {
   // Force rebuild - Updated layout with side-by-side seller/purchaser info
+  // PDF Layout Version: 2.0 - Side-by-side seller/purchaser layout
+  console.log('🔄 PDF Generator v2.0 - Side-by-side layout active');
   const pdf = new jsPDF('p', 'mm', 'letter');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -256,7 +258,7 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   pdf.setFont('helvetica', 'italic');
   const footerY = pageHeight - 15; // Moved footer up slightly for better visibility
   pdf.text('This document was electronically generated and is legally binding.', pageWidth / 2, footerY, { align: 'center' });
-  pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, footerY + 5, { align: 'center' });
+  pdf.text(`Generated: ${new Date().toLocaleString()} | Layout v2.0`, pageWidth / 2, footerY + 5, { align: 'center' });
   
   // Return PDF as blob
   return pdf.output('blob');
