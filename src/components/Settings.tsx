@@ -44,30 +44,14 @@ import BackupManager from "./BackupManager";
 import UserManagement from "./UserManagement";
 import BuyerProfilesManager from "./BuyerProfilesManager";
 import { User, updateUserProfile, deleteAccount } from "../utils/supabaseAuth";
-
-interface NMVTISSettings {
-  nmvtisId: string;
-  nmvtisPin: string;
-  entityName: string;
-  businessAddress: string;
-  businessCity: string;
-  businessState: string;
-  businessZip: string;
-  businessPhone: string;
-  businessEmail: string;
-  reportingFrequency: string;
-}
-
-interface YardSettings {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
-  email: string;
-  licenseNumber: string;
-}
+import { 
+  getYardSettingsSync, 
+  saveYardSettingsSync, 
+  getNMVTISSettingsSync, 
+  saveNMVTISSettingsSync,
+  YardSettings,
+  NMVTISSettings 
+} from "../utils/settingsSync";
 
 interface SettingsProps {
   user: User;
@@ -125,45 +109,36 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   ];
 
   useEffect(() => {
-    // Load yard settings from localStorage first
-    const savedYardSettings = localStorage.getItem("yardSettings");
-    let loadedYardSettings = yardSettings;
-    
-    if (savedYardSettings) {
+    const loadSettings = async () => {
       try {
-        loadedYardSettings = JSON.parse(savedYardSettings);
-        setYardSettings((prev) => ({ ...prev, ...loadedYardSettings }));
-      } catch (e) {
-        console.error("Error loading yard settings:", e);
-      }
-    }
+        // Load yard settings with Supabase sync
+        const loadedYardSettings = await getYardSettingsSync(user.yardId);
+        setYardSettings(loadedYardSettings);
 
-    // Load NMVTIS settings from localStorage
-    const savedSettings = localStorage.getItem("nmvtisSettings");
-    if (savedSettings) {
-      try {
-        const loaded = JSON.parse(savedSettings);
-        setSettings((prev) => ({
-          ...prev,
-          ...loaded,
-          // Only use yard settings as fallback if the loaded values are empty
-          entityName: loaded.entityName || loadedYardSettings.name,
-          businessAddress: loaded.businessAddress || loadedYardSettings.address,
-          businessEmail: loaded.businessEmail || loadedYardSettings.email,
-        }));
-      } catch (e) {
-        console.error("Error loading settings:", e);
+        // Load NMVTIS settings with Supabase sync
+        const loadedNMVTISSettings = await getNMVTISSettingsSync(user.yardId);
+        
+        // Merge yard settings into NMVTIS settings if NMVTIS fields are empty
+        const mergedSettings = {
+          ...loadedNMVTISSettings,
+          entityName: loadedNMVTISSettings.entityName || loadedYardSettings.name,
+          businessAddress: loadedNMVTISSettings.businessAddress || loadedYardSettings.address,
+          businessCity: loadedNMVTISSettings.businessCity || loadedYardSettings.city,
+          businessState: loadedNMVTISSettings.businessState || loadedYardSettings.state,
+          businessZip: loadedNMVTISSettings.businessZip || loadedYardSettings.zip,
+          businessPhone: loadedNMVTISSettings.businessPhone || loadedYardSettings.phone,
+          businessEmail: loadedNMVTISSettings.businessEmail || loadedYardSettings.email,
+        };
+        
+        setSettings(mergedSettings);
+      } catch (error) {
+        console.error("Error loading settings:", error);
+        setError("Failed to load settings. Using local defaults.");
       }
-    } else {
-      // Only initialize from yardSettings if no saved NMVTIS settings exist
-      setSettings((prev) => ({
-        ...prev,
-        entityName: loadedYardSettings.name,
-        businessAddress: loadedYardSettings.address,
-        businessEmail: loadedYardSettings.email,
-      }));
-    }
-  }, []); // Keep empty dependencies to run only once on mount
+    };
+
+    loadSettings();
+  }, [user.yardId]);
 
   const handleInputChange =
     (field: keyof NMVTISSettings) =>
@@ -174,10 +149,19 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       }));
     };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleYardSettingsChange =
+    (field: keyof YardSettings) =>
+    (event: React.ChangeEvent<HTMLInputElement> | any) => {
+      setYardSettings((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields - check actual source values
+    // Validate required fields
     const requiredFields = [];
     const missingFields = [];
 
@@ -206,19 +190,37 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       return;
     }
 
-    // Save to localStorage with automatic syncing
-    localStorage.setItem("nmvtisSettings", JSON.stringify({
-      ...settings,
-      entityName: yardSettings.name,
-      businessAddress: yardSettings.address,
-      businessEmail: yardSettings.email, // Sync email from yard settings
-    }));
+    try {
+      // Create updated NMVTIS settings with yard settings merged in
+      const updatedNMVTISSettings = {
+        ...settings,
+        entityName: yardSettings.name,
+        businessAddress: yardSettings.address,
+        businessCity: yardSettings.city,
+        businessState: yardSettings.state,
+        businessZip: yardSettings.zip,
+        businessPhone: yardSettings.phone,
+        businessEmail: yardSettings.email,
+      };
 
-    // Also save yard settings
-    localStorage.setItem("yardSettings", JSON.stringify(yardSettings));
+      // Save both settings with Supabase sync
+      const [yardSaveResult, nmvtisSaveResult] = await Promise.all([
+        saveYardSettingsSync(user.yardId, yardSettings),
+        saveNMVTISSettingsSync(user.yardId, updatedNMVTISSettings)
+      ]);
 
-    setSuccess(true);
-    setError("");
+      if (yardSaveResult && nmvtisSaveResult) {
+        setSuccess(true);
+        setError("");
+      } else {
+        setSuccess(true);
+        setError("Settings saved locally but may not sync across devices");
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      setError("Failed to save settings. Please try again.");
+      return;
+    }
 
     // Clear success message after 3 seconds
     setTimeout(() => {
@@ -408,12 +410,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     fullWidth
                     label="Business Name"
                     value={yardSettings.name}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
+                    onChange={handleYardSettingsChange("name")}
                     required
                     helperText="Legal business name for documentation"
                   />
@@ -422,12 +419,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     fullWidth
                     label="Business Address"
                     value={yardSettings.address}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                      }))
-                    }
+                    onChange={handleYardSettingsChange("address")}
                     required
                   />
 
@@ -436,12 +428,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                       fullWidth
                       label="City"
                       value={yardSettings.city}
-                      onChange={(e) =>
-                        setYardSettings((prev) => ({
-                          ...prev,
-                          city: e.target.value,
-                        }))
-                      }
+                      onChange={handleYardSettingsChange("city")}
                       required
                     />
 
@@ -449,12 +436,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                       <InputLabel>State</InputLabel>
                       <Select
                         value={yardSettings.state}
-                        onChange={(e) =>
-                          setYardSettings((prev) => ({
-                            ...prev,
-                            state: e.target.value,
-                          }))
-                        }
+                        onChange={handleYardSettingsChange("state")}
                         required
                       >
                         <MenuItem value="WI">Wisconsin</MenuItem>
@@ -468,12 +450,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                       fullWidth
                       label="ZIP Code"
                       value={yardSettings.zip}
-                      onChange={(e) =>
-                        setYardSettings((prev) => ({
-                          ...prev,
-                          zip: e.target.value,
-                        }))
-                      }
+                      onChange={handleYardSettingsChange("zip")}
                       required
                     />
                   </Stack>
@@ -482,12 +459,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     fullWidth
                     label="Business Phone"
                     value={yardSettings.phone}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        phone: e.target.value,
-                      }))
-                    }
+                    onChange={handleYardSettingsChange("phone")}
                     required
                   />
 
@@ -495,12 +467,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     fullWidth
                     label="License Number"
                     value={yardSettings.licenseNumber}
-                    onChange={(e) =>
-                      setYardSettings((prev) => ({
-                        ...prev,
-                        licenseNumber: e.target.value,
-                      }))
-                    }
+                    onChange={handleYardSettingsChange("licenseNumber")}
                   />
 
                   {/* NMVTIS Settings Section */}
