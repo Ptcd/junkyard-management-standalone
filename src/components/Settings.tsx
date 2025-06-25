@@ -49,6 +49,8 @@ import {
   saveYardSettingsSync, 
   getNMVTISSettingsSync, 
   saveNMVTISSettingsSync,
+  forceUpdateYardSettings,
+  forceUpdateNMVTISSettings,
   YardSettings,
   NMVTISSettings 
 } from "../utils/settingsSync";
@@ -158,6 +160,46 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
       }));
     };
 
+  // Function to clear demo data and force real settings
+  const handleClearDemoData = async () => {
+    try {
+      const realSettings = {
+        name: "",
+        address: "",
+        city: "",
+        state: "WI",
+        zip: "",
+        phone: "",
+        email: "",
+        licenseNumber: "",
+      };
+
+      // Force update to clear demo data
+      const result = await forceUpdateYardSettings(user.yardId, realSettings);
+      if (result) {
+        setYardSettings(realSettings);
+        setSuccess(true);
+        setError("");
+      } else {
+        setError("Failed to clear demo data");
+      }
+    } catch (error) {
+      console.error("Error clearing demo data:", error);
+      setError("Failed to clear demo data");
+    }
+
+    setTimeout(() => {
+      setSuccess(false);
+      setError("");
+    }, 3000);
+  };
+
+  // Function to check if current settings are demo data
+  const isDemoData = () => {
+    return yardSettings.name === "Demo Junkyard & Auto Parts" ||
+           yardSettings.address === "123 Salvage Road";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -203,10 +245,17 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         businessEmail: yardSettings.email,
       };
 
-      // Save both settings with Supabase sync
+      // If this is demo data or the user is saving real data over demo data,
+      // use force update to ensure it takes precedence over database defaults
+      const isDemo = isDemoData();
+      
       const [yardSaveResult, nmvtisSaveResult] = await Promise.all([
-        saveYardSettingsSync(user.yardId, yardSettings),
-        saveNMVTISSettingsSync(user.yardId, updatedNMVTISSettings)
+        isDemo ? 
+          forceUpdateYardSettings(user.yardId, yardSettings) :
+          saveYardSettingsSync(user.yardId, yardSettings),
+        isDemo ?
+          forceUpdateNMVTISSettings(user.yardId, updatedNMVTISSettings) :
+          saveNMVTISSettingsSync(user.yardId, updatedNMVTISSettings)
       ]);
 
       if (yardSaveResult && nmvtisSaveResult) {
@@ -524,6 +573,26 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     required
                     helperText="Your NMVTIS reporting PIN (required)"
                   />
+
+                  {/* Demo Data Warning and Clear Button */}
+                  {isDemoData() && (
+                    <Alert severity="warning" sx={{ my: 2 }}>
+                      <Typography variant="body2">
+                        <strong>Demo Data Detected:</strong> Your settings are currently showing demo information. 
+                        Click "Clear Demo Data" to start fresh, or simply edit the fields above with your real information.
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<Delete />}
+                        onClick={handleClearDemoData}
+                        sx={{ mt: 1 }}
+                        size="small"
+                      >
+                        Clear Demo Data
+                      </Button>
+                    </Alert>
+                  )}
 
                   <Button
                     type="submit"

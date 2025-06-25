@@ -321,4 +321,96 @@ export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSet
     console.error("Failed to save NMVTIS settings:", error);
     return false;
   }
+};
+
+// Force clear demo settings and save real settings - call this when user first saves real data
+export const forceUpdateYardSettings = async (yardId: string, settings: YardSettings): Promise<boolean> => {
+  try {
+    // Always save to localStorage first for immediate feedback
+    localStorage.setItem("yardSettings", JSON.stringify(settings));
+
+    // Force update in Supabase - this will override any existing demo data
+    if (supabase) {
+      // First delete any existing record for this yard
+      await supabase
+        .from("yard_settings")
+        .delete()
+        .eq("yard_id", yardId);
+
+      // Then insert the new settings
+      const { error } = await supabase
+        .from("yard_settings")
+        .insert({
+          yard_id: yardId,
+          entity_name: settings.name,
+          business_address: settings.address,
+          business_city: settings.city,
+          business_state: settings.state,
+          business_zip: settings.zip,
+          business_phone: settings.phone,
+          business_email: settings.email,
+          license_number: settings.licenseNumber,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error("Error force updating yard settings:", error);
+        return false;
+      }
+      
+      return true; // Successfully synced
+    }
+
+    return false; // Supabase not available
+  } catch (error) {
+    console.error("Failed to force update yard settings:", error);
+    return false;
+  }
+};
+
+// Force clear demo NMVTIS settings and save real settings
+export const forceUpdateNMVTISSettings = async (yardId: string, settings: NMVTISSettings): Promise<boolean> => {
+  try {
+    // Always save to localStorage first for immediate feedback
+    localStorage.setItem("nmvtisSettings", JSON.stringify(settings));
+
+    // Force update in Supabase - this will override any existing demo data
+    if (supabase) {
+      // First delete any existing record for this yard
+      await supabase
+        .from("yard_settings")
+        .delete()
+        .eq("yard_id", yardId);
+
+      // Then insert the new settings
+      const { error } = await supabase
+        .from("yard_settings")
+        .insert({
+          yard_id: yardId,
+          nmvtis_id: settings.nmvtisId,
+          nmvtis_pin: settings.nmvtisPin,
+          entity_name: settings.entityName,
+          business_address: settings.businessAddress,
+          business_city: settings.businessCity,
+          business_state: settings.businessState,
+          business_zip: settings.businessZip,
+          business_phone: settings.businessPhone,
+          business_email: settings.businessEmail,
+          reporting_frequency: settings.reportingFrequency,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error("Error force updating NMVTIS settings:", error);
+        return false;
+      }
+      
+      return true; // Successfully synced
+    }
+
+    return false; // Supabase not available
+  } catch (error) {
+    console.error("Failed to force update NMVTIS settings:", error);
+    return false;
+  }
 }; 
