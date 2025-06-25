@@ -190,43 +190,79 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   
   yPos += 10;
   
-  // Signature Section
+  // Signature Section - Improved layout to prevent cutoff
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
   pdf.text('SELLER SIGNATURE & ID VERIFICATION', 20, yPos);
   yPos += 10;
   
-  // Add signature image if available
+  // Check if we have enough space for signature section, otherwise add new page
+  const signatureHeight = 40; // Space needed for signature + labels
+  if (yPos + signatureHeight > pageHeight - 30) {
+    pdf.addPage();
+    yPos = 30;
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SELLER SIGNATURE & ID VERIFICATION (continued)', 20, yPos);
+    yPos += 10;
+  }
+  
+  // Create a two-column layout for signature and ID photo
+  const leftColumnX = 20;
+  const rightColumnX = pageWidth / 2 + 10; // Start right column at middle + margin
+  const maxImageWidth = (pageWidth / 2) - 40; // Max width for each column with margins
+  
+  // Add signature image if available (left column)
   if (data.signatureDataUrl) {
     try {
-      pdf.addImage(data.signatureDataUrl, 'PNG', 20, yPos, 60, 20);
+      // Calculate signature dimensions to fit properly
+      const signatureWidth = Math.min(maxImageWidth, 70);
+      const signatureHeight = 25;
+      
+      pdf.addImage(data.signatureDataUrl, 'PNG', leftColumnX, yPos, signatureWidth, signatureHeight);
+      
+      // Add signature label
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Seller Signature', 20, yPos + 25);
-      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, 20, yPos + 30);
+      pdf.text('Seller Signature', leftColumnX, yPos + signatureHeight + 5);
+      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + signatureHeight + 10);
     } catch (error) {
       console.error('Error adding signature:', error);
       pdf.setFontSize(9);
-      pdf.text('Signature: [Digital signature on file]', 20, yPos);
-      yPos += 10;
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Signature: [Digital signature on file]', leftColumnX, yPos);
+      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + 5);
     }
   }
   
-  // Add ID photo if available
+  // Add ID photo if available (right column)
   if (data.idPhotoDataUrl) {
     try {
-      pdf.addImage(data.idPhotoDataUrl, 'JPEG', 120, yPos, 40, 25);
+      // Calculate ID photo dimensions to fit properly
+      const idWidth = Math.min(maxImageWidth, 50);
+      const idHeight = 30;
+      
+      // Ensure ID photo doesn't go off the right edge
+      const idPhotoX = Math.min(rightColumnX, pageWidth - idWidth - 20);
+      
+      pdf.addImage(data.idPhotoDataUrl, 'JPEG', idPhotoX, yPos, idWidth, idHeight);
+      
+      // Add ID photo label
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Driver License Photo', 120, yPos + 30);
+      pdf.text('Driver License Photo', idPhotoX, yPos + idHeight + 5);
     } catch (error) {
       console.error('Error adding ID photo:', error);
       pdf.setFontSize(9);
-      pdf.text('ID Photo: [On file]', 120, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('ID Photo: [On file]', rightColumnX, yPos);
     }
   }
   
-  // Footer
+  // Update yPos to account for the signature/ID section
+  yPos += 45;
+  
+  // Footer - ensure it's at the bottom of the page
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'italic');
   const footerY = pageHeight - 20;
