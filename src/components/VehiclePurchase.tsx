@@ -30,7 +30,7 @@ import { scheduleVehiclePurchaseReport } from "../utils/nmvtisScheduler";
 import SignaturePad from "./SignaturePad";
 import { User } from "../utils/supabaseAuth";
 import { supabase } from '../utils/supabaseAuth';
-import { generateMV2459PDF, fileToDataURL } from '../utils/pdfGenerator';
+import { generateMV2459PDF_v2, fileToDataURL } from '../utils/pdfGenerator';
 
 interface VINDecodeResult {
   vin: string;
@@ -370,7 +370,7 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
           };
 
           // Generate PDF
-          const pdfBlob = await generateMV2459PDF(pdfData);
+          const pdfBlob = await generateMV2459PDF_v2(pdfData);
           
           // Upload PDF to storage
           const pdfFileName = `bill-of-sale/${transactionId}_MV2459_${Date.now()}.pdf`;

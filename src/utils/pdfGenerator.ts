@@ -34,10 +34,13 @@ interface VehiclePurchaseData {
   idPhotoDataUrl: string;
 }
 
-export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob> => {
+// PDF Generator v2.1 - Force cache invalidation
+export const generateMV2459PDF_v2 = async (data: VehiclePurchaseData): Promise<Blob> => {
   // Force rebuild - Updated layout with side-by-side seller/purchaser info
-  // PDF Layout Version: 2.0 - Side-by-side seller/purchaser layout
-  console.log('🔄 PDF Generator v2.0 - Side-by-side layout active');
+  // PDF Layout Version: 2.1 - Side-by-side seller/purchaser layout - CACHE BUST
+  console.log('🔄 PDF Generator v2.1 - Side-by-side layout active - CACHE BUSTED');
+  const timestamp = Date.now();
+  console.log('Cache bust timestamp:', timestamp);
   const pdf = new jsPDF('p', 'mm', 'letter');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -258,7 +261,7 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   pdf.setFont('helvetica', 'italic');
   const footerY = pageHeight - 15; // Moved footer up slightly for better visibility
   pdf.text('This document was electronically generated and is legally binding.', pageWidth / 2, footerY, { align: 'center' });
-  pdf.text(`Generated: ${new Date().toLocaleString()} | Layout v2.0`, pageWidth / 2, footerY + 5, { align: 'center' });
+  pdf.text(`Generated: ${new Date().toLocaleString()} | Layout v2.1`, pageWidth / 2, footerY + 5, { align: 'center' });
   
   // Return PDF as blob
   return pdf.output('blob');
