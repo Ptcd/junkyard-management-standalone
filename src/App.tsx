@@ -54,7 +54,6 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   Person,
-  Folder,
 } from "@mui/icons-material";
 import Login from "./components/Login";
 import PasswordReset from "./components/PasswordReset";
@@ -71,9 +70,8 @@ import AccountingDashboard from "./components/AccountingDashboard";
 import ExpenseReporting from "./components/ExpenseReporting";
 import NMVTISManager from "./components/NMVTISManager";
 import VAWorkflowHelper from "./components/VAWorkflowHelper";
-import DocumentManager from "./components/DocumentManager";
 import { initializeNMVTISScheduler } from "./utils/nmvtisScheduler";
-import { initializeNMVTIS } from "./utils/nmvtisReporting";
+import { initializeDataProtection } from "./utils/dataProtection";
 import { getCurrentUser, signOut, User } from "./utils/supabaseAuth";
 import "./App.css";
 
@@ -220,7 +218,7 @@ const getMenuItems = (userRole: string) =>
     },
     {
       path: "/logbook",
-      label: "Log Book",
+      label: "Log Book & Documents",
       icon: <Assignment />,
       roles: ["admin", "driver"],
     },
@@ -259,12 +257,6 @@ const getMenuItems = (userRole: string) =>
       label: "Settings",
       icon: <SettingsIcon />,
       roles: ["admin", "driver"],
-    },
-    {
-      path: "/document-manager",
-      label: "Document Manager",
-      icon: <Folder />,
-      roles: ["admin"],
     },
   ].filter((item) => item.roles.includes(userRole));
 
@@ -561,7 +553,6 @@ function MainApp({ user }: { user: User }) {
             element={<VAWorkflowHelper user={user} />}
           />
           <Route path="/settings" element={<Settings user={user} />} />
-          <Route path="/document-manager" element={<DocumentManager user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>
@@ -572,41 +563,39 @@ function MainApp({ user }: { user: User }) {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Check authentication status
   useEffect(() => {
-    const checkUser = async () => {
+    const initializeApp = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const { user: currentUser, error: authError } = await getCurrentUser();
-
-        if (authError) {
-          console.error("Auth check error:", authError);
-          setError(
-            typeof authError === "string" ? authError : "Authentication error",
-          );
+        // Initialize data protection first
+        initializeDataProtection();
+        
+        const { user: currentUser, error } = await getCurrentUser();
+        if (error) {
+          console.error("Auth error:", error);
           setUser(null);
         } else {
           setUser(currentUser);
+
+          if (currentUser) {
+            initializeNMVTISScheduler();
+            // Note: initializeNMVTIS requires config and should be called from NMVTIS manager
+          }
         }
-      } catch (e) {
-        console.error("Unexpected error during auth check:", e);
-        setError("Unexpected authentication error");
+      } catch (error) {
+        console.error("Error initializing app:", error);
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    checkUser();
+    initializeApp();
   }, []);
 
   // Handle login success
   const handleLogin = (userData: User) => {
     setUser(userData);
-    setError(null);
   };
 
   if (loading) {

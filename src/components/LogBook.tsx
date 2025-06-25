@@ -33,7 +33,12 @@ import {
   Sync,
   CloudOff,
   Delete as DeleteIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Visibility,
+  PictureAsPdf,
+  Assignment,
+  Image,
+  GetApp
 } from "@mui/icons-material";
 import { supabase } from "../utils/supabaseAuth";
 
@@ -62,6 +67,12 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // PDF viewing states
+  const [pdfViewOpen, setPdfViewOpen] = useState(false);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string>("");
+  const [documentViewOpen, setDocumentViewOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<string>("");
 
   const fetchTransactions = async () => {
     try {
@@ -447,6 +458,73 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
     }
   };
 
+  // PDF and document viewing functions
+  const viewPDF = (pdfUrl: string) => {
+    setSelectedPdfUrl(pdfUrl);
+    setPdfViewOpen(true);
+  };
+
+  const viewDocument = (url: string) => {
+    setSelectedDocument(url);
+    setDocumentViewOpen(true);
+  };
+
+  const downloadDocument = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      setError("Failed to download document");
+    }
+  };
+
+  const downloadAllDocuments = (transaction: any) => {
+    const documents = [];
+    
+    // Add PDF if available
+    if (transaction.bill_of_sale_pdf_url) {
+      documents.push({ 
+        url: transaction.bill_of_sale_pdf_url, 
+        name: `${transaction.vin || transaction.vehicleVIN}_MV2459.pdf` 
+      });
+    }
+    
+    // Add signature if available
+    if (transaction.signature_url || transaction.signatureUrl) {
+      documents.push({ 
+        url: transaction.signature_url || transaction.signatureUrl, 
+        name: `${transaction.vin || transaction.vehicleVIN}_signature.png` 
+      });
+    }
+    
+    // Add ID photo if available
+    if (transaction.id_photo_url || transaction.idPhotoUrl) {
+      documents.push({ 
+        url: transaction.id_photo_url || transaction.idPhotoUrl, 
+        name: `${transaction.vin || transaction.vehicleVIN}_id_photo.jpg` 
+      });
+    }
+
+    if (documents.length === 0) {
+      setError("No documents available for this transaction");
+      return;
+    }
+
+    // Download all documents with delay to prevent browser blocking
+    documents.forEach((doc, index) => {
+      setTimeout(() => {
+        downloadDocument(doc.url, doc.name);
+      }, index * 1000);
+    });
+  };
+
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -484,7 +562,7 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
         </Stack>
       </Stack>
       <Typography variant="subtitle1" gutterBottom color="text.secondary">
-        Complete record of all vehicle transactions for NMVTIS compliance
+        Complete vehicle transaction history with document access
       </Typography>
 
       {/* Error Alert */}
@@ -635,11 +713,10 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                 <TableCell>Date</TableCell>
                 <TableCell>VIN</TableCell>
                 <TableCell>Vehicle</TableCell>
-                <TableCell>Seller First Name</TableCell>
-                <TableCell>Seller Last Name</TableCell>
-                <TableCell>Seller Address</TableCell>
+                <TableCell>Seller</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Disposition</TableCell>
+                <TableCell>Documents</TableCell>
                 {user.role === "admin" && <TableCell>Driver</TableCell>}
                 <TableCell>Status</TableCell>
                 {user.role === "admin" && <TableCell>Actions</TableCell>}
@@ -657,21 +734,26 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                     {transaction.vin || transaction.vehicleVIN}
                   </TableCell>
                   <TableCell>
-                    {transaction.year || transaction.vehicleYear} {transaction.make || transaction.vehicleMake}{" "}
-                    {transaction.model || transaction.vehicleModel}
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      {transaction.color || transaction.vehicleColor} {transaction.vehicle_type || transaction.vehicleBody}
+                    <Typography variant="body2" fontWeight="medium">
+                      {transaction.year || transaction.vehicleYear} {transaction.make || transaction.vehicleMake}
                     </Typography>
+                    {(transaction.model || transaction.vehicleModel) && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {transaction.model || transaction.vehicleModel}
+                      </Typography>
+                    )}
+                    {(transaction.color || transaction.vehicleColor) && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {transaction.color || transaction.vehicleColor}
+                      </Typography>
+                    )}
                   </TableCell>
-                  <TableCell>{transaction.seller_first_name || transaction.sellerFirstName}</TableCell>
-                  <TableCell>{transaction.seller_last_name || transaction.sellerLastName}</TableCell>
                   <TableCell>
-                    {transaction.seller_address || transaction.sellerAddress}
-                    <br />
-                    <Typography variant="caption" color="text.secondary">
-                      {transaction.seller_city || transaction.sellerCity}, {transaction.seller_state || transaction.sellerState}{" "}
-                      {transaction.seller_zip || transaction.sellerZip}
+                    <Typography variant="body2">
+                      {transaction.seller_first_name || transaction.sellerFirstName} {transaction.seller_last_name || transaction.sellerLastName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {transaction.seller_address || transaction.sellerAddress}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -687,6 +769,70 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                       }
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1}>
+                      {/* PDF Document */}
+                      {transaction.bill_of_sale_pdf_url && (
+                        <Tooltip title="View MV2459 PDF">
+                          <IconButton
+                            size="small"
+                            onClick={() => viewPDF(transaction.bill_of_sale_pdf_url)}
+                            color="primary"
+                          >
+                            <PictureAsPdf />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
+                      {/* Signature */}
+                      {(transaction.signature_url || transaction.signatureUrl) && (
+                        <Tooltip title="View Signature">
+                          <IconButton
+                            size="small"
+                            onClick={() => viewDocument(transaction.signature_url || transaction.signatureUrl)}
+                            color="secondary"
+                          >
+                            <Assignment />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
+                      {/* ID Photo */}
+                      {(transaction.id_photo_url || transaction.idPhotoUrl) && (
+                        <Tooltip title="View ID Photo">
+                          <IconButton
+                            size="small"
+                            onClick={() => viewDocument(transaction.id_photo_url || transaction.idPhotoUrl)}
+                            color="info"
+                          >
+                            <Image />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
+                      {/* Download All */}
+                      {(transaction.bill_of_sale_pdf_url || transaction.signature_url || transaction.signatureUrl || transaction.id_photo_url || transaction.idPhotoUrl) && (
+                        <Tooltip title="Download All Documents">
+                          <IconButton
+                            size="small"
+                            onClick={() => downloadAllDocuments(transaction)}
+                            color="success"
+                          >
+                            <GetApp />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
+                    
+                    {/* Show document count */}
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      {[
+                        transaction.bill_of_sale_pdf_url ? 'PDF' : null,
+                        transaction.signature_url || transaction.signatureUrl ? 'Signature' : null,
+                        transaction.id_photo_url || transaction.idPhotoUrl ? 'ID' : null
+                      ].filter(Boolean).join(', ') || 'No docs'}
+                    </Typography>
                   </TableCell>
                   {user.role === "admin" && (
                     <TableCell>{transaction.driver_name || transaction.driverName || transaction.purchaserName}</TableCell>
@@ -729,6 +875,88 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
           </Box>
         )}
       </Paper>
+
+      {/* PDF Viewer Dialog */}
+      <Dialog
+        open={pdfViewOpen}
+        onClose={() => setPdfViewOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { height: '90vh' } }}
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">MV2459 Bill of Sale Document</Typography>
+            <Button
+              variant="outlined"
+              startIcon={<Download />}
+              onClick={() => {
+                if (selectedPdfUrl) {
+                  downloadDocument(selectedPdfUrl, 'MV2459_bill_of_sale.pdf');
+                }
+              }}
+            >
+              Download PDF
+            </Button>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, height: '100%' }}>
+          {selectedPdfUrl && (
+            <iframe
+              src={selectedPdfUrl}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none'
+              }}
+              title="PDF Viewer"
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPdfViewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Document Image Viewer Dialog */}
+      <Dialog
+        open={documentViewOpen}
+        onClose={() => setDocumentViewOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Document Viewer</DialogTitle>
+        <DialogContent>
+          {selectedDocument && (
+            <Box textAlign="center">
+              <img
+                src={selectedDocument}
+                alt="Document"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "70vh",
+                  objectFit: "contain",
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDocumentViewOpen(false)}>Close</Button>
+          {selectedDocument && (
+            <Button
+              variant="contained"
+              startIcon={<Download />}
+              onClick={() => {
+                const filename = selectedDocument.includes("signature") ? "signature.png" : "id_photo.jpg";
+                downloadDocument(selectedDocument, filename);
+              }}
+            >
+              Download
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Dialog */}
       <Dialog
@@ -785,7 +1013,17 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                 </Typography>
                 {transactionToDelete.bill_of_sale_pdf_url && (
                   <Typography variant="body2">
-                    • Associated PDF document from storage
+                    • MV2459 PDF document from storage
+                  </Typography>
+                )}
+                {(transactionToDelete.signature_url || transactionToDelete.signatureUrl) && (
+                  <Typography variant="body2">
+                    • Seller signature document
+                  </Typography>
+                )}
+                {(transactionToDelete.id_photo_url || transactionToDelete.idPhotoUrl) && (
+                  <Typography variant="body2">
+                    • ID photo document
                   </Typography>
                 )}
               </Box>

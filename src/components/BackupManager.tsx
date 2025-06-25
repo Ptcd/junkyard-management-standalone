@@ -17,6 +17,17 @@ import {
   Switch,
   Chip,
   Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import {
   CloudDownload,
@@ -26,28 +37,55 @@ import {
   Warning,
   CheckCircle,
   RestoreFromTrash,
+  CloudUpload,
+  Save,
+  Restore,
+  Error as ErrorIcon,
+  Delete,
+  Backup,
+  Security,
 } from "@mui/icons-material";
 import {
+  getAllBackupData,
   downloadBackupFiles,
   sendBackupEmail,
+  restoreFromBackup as restoreFromBackupFile,
   isBackupDue,
   scheduleMonthlyBackup,
-  getAllBackupData,
-  restoreFromBackup,
 } from "../utils/backupManager";
+import {
+  getDataProtectionConfig,
+  saveDataProtectionConfig,
+  createLocalBackup,
+  validateDataIntegrity,
+  getLocalBackups,
+  restoreFromBackup as restoreFromLocalBackup,
+  emergencyDataRecovery,
+  syncCriticalDataToCloud,
+  DataProtectionConfig,
+  DataValidationResult,
+} from "../utils/dataProtection";
 
 const BackupManager: React.FC = () => {
   const [backupEmail, setBackupEmail] = useState("");
-  const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState(true);
   const [emailSending, setEmailSending] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [backupStatus, setBackupStatus] = useState({
     isDue: false,
-    daysUntilNext: 0,
+    daysUntilNext: 30,
   });
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  
+  // Data protection states
+  const [protectionConfig, setProtectionConfig] = useState<DataProtectionConfig | null>(null);
+  const [validationResult, setValidationResult] = useState<DataValidationResult | null>(null);
+  const [localBackups, setLocalBackups] = useState<any[]>([]);
+  const [showBackupsDialog, setShowBackupsDialog] = useState(false);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Load backup settings
@@ -65,6 +103,18 @@ const BackupManager: React.FC = () => {
     if (autoBackup && savedEmail && status.isDue) {
       scheduleMonthlyBackup(savedEmail);
     }
+
+    // Load data protection config
+    const config = getDataProtectionConfig();
+    setProtectionConfig(config);
+
+    // Run initial data validation
+    const validation = validateDataIntegrity();
+    setValidationResult(validation);
+
+    // Load local backups
+    const backups = getLocalBackups();
+    setLocalBackups(backups);
   }, []);
 
   const handleDownloadBackup = () => {
@@ -107,9 +157,92 @@ const BackupManager: React.FC = () => {
     }
   };
 
+  const handleCreateLocalBackup = async () => {
+    setIsCreatingBackup(true);
+    try {
+      const result = await createLocalBackup("manual");
+      if (result.success) {
+        setSuccess(result.message);
+        // Refresh local backups list
+        const backups = getLocalBackups();
+        setLocalBackups(backups);
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError("Failed to create local backup");
+    } finally {
+      setIsCreatingBackup(false);
+      setTimeout(() => {
+        setSuccess("");
+        setError("");
+      }, 3000);
+    }
+  };
+
+  const handleSyncToCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncCriticalDataToCloud();
+      if (result.success) {
+        setSuccess(result.message);
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError("Failed to sync to cloud");
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => {
+        setSuccess("");
+        setError("");
+      }, 3000);
+    }
+  };
+
+  const handleEmergencyRecovery = async () => {
+    try {
+      const result = await emergencyDataRecovery();
+      if (result.success) {
+        setSuccess(result.message);
+        // Refresh validation
+        const validation = validateDataIntegrity();
+        setValidationResult(validation);
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError("Emergency recovery failed");
+    }
+  };
+
+  const handleRestoreFromLocalBackup = (backupId: string) => {
+    const result = restoreFromLocalBackup(backupId);
+    if (result.success) {
+      setSuccess(result.message);
+      // Refresh validation
+      const validation = validateDataIntegrity();
+      setValidationResult(validation);
+    } else {
+      setError(result.message);
+    }
+    setShowBackupsDialog(false);
+  };
+
   const handleSaveSettings = () => {
+    if (!protectionConfig) return;
+
     localStorage.setItem("backupEmail", backupEmail);
     localStorage.setItem("autoBackupEnabled", autoBackupEnabled.toString());
+    
+    const updatedConfig = {
+      ...protectionConfig,
+      autoBackupEnabled,
+      backupEmail,
+    };
+    
+    saveDataProtectionConfig(updatedConfig);
+    setProtectionConfig(updatedConfig);
     setSuccess("Backup settings saved!");
     setTimeout(() => setSuccess(""), 3000);
   };
@@ -121,11 +254,14 @@ const BackupManager: React.FC = () => {
     reader.onload = (e) => {
       try {
         const backupData = JSON.parse(e.target?.result as string);
-        const success = restoreFromBackup(backupData);
+        const success = restoreFromBackupFile(backupData);
 
         if (success) {
           setSuccess("Data restored successfully! Please refresh the page.");
           setShowRestoreDialog(false);
+          // Refresh validation
+          const validation = validateDataIntegrity();
+          setValidationResult(validation);
         } else {
           setError("Failed to restore backup data");
         }
@@ -160,11 +296,10 @@ const BackupManager: React.FC = () => {
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
-        Data Backup & Recovery
+        Data Protection & Backup Manager
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Protect your junkyard data with automated backups and easy recovery
-        options
+        Protect your data with automatic backups, validation checks, and emergency recovery
       </Typography>
 
       {success && (
@@ -179,188 +314,257 @@ const BackupManager: React.FC = () => {
         </Alert>
       )}
 
+      {/* Data Validation Status */}
+      {validationResult && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              {validationResult.isValid ? (
+                <CheckCircle color="success" />
+              ) : (
+                <ErrorIcon color="error" />
+              )}
+              <Box>
+                <Typography variant="h6">
+                  Data Integrity: {validationResult.isValid ? "Good" : "Issues Found"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Checked {validationResult.checkedTables.length} data tables
+                </Typography>
+              </Box>
+            </Stack>
+            
+            {validationResult.errors.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" color="error">Errors:</Typography>
+                <List dense>
+                  {validationResult.errors.map((error, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={error} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+            
+            {validationResult.warnings.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" color="warning.main">Warnings:</Typography>
+                <List dense>
+                  {validationResult.warnings.map((warning, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={warning} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Actions */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>
+            <Button
+              variant="contained"
+              startIcon={<Backup />}
+              onClick={handleCreateLocalBackup}
+              disabled={isCreatingBackup}
+            >
+              {isCreatingBackup ? "Creating..." : "Create Backup"}
+            </Button>
+            
+            <Button
+              variant="outlined"
+              startIcon={<CloudUpload />}
+              onClick={handleSyncToCloud}
+              disabled={isSyncing}
+            >
+              {isSyncing ? "Syncing..." : "Sync to Cloud"}
+            </Button>
+            
+            <Button
+              variant="outlined"
+              startIcon={<CloudDownload />}
+              onClick={() => setShowBackupsDialog(true)}
+            >
+              View Backups ({localBackups.length})
+            </Button>
+            
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<Security />}
+              onClick={handleEmergencyRecovery}
+            >
+              Emergency Recovery
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+
       {/* Backup Status */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-            <Schedule color={backupStatus.isDue ? "warning" : "success"} />
-            <Typography variant="h6">Backup Status</Typography>
-            {backupStatus.isDue ? (
-              <Chip label="Backup Due" color="warning" />
-            ) : (
-              <Chip
-                label={`${backupStatus.daysUntilNext} days until next backup`}
-                color="success"
-              />
-            )}
-          </Stack>
-
-          <Stack direction="row" spacing={4}>
+          <Typography variant="h6" gutterBottom>
+            Backup Status
+          </Typography>
+          <Stack direction="row" spacing={3}>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Vehicle Purchases
+                Last Backup
               </Typography>
-              <Typography variant="h6">{stats.vehiclePurchases}</Typography>
+              <Typography variant="body1">
+                {protectionConfig ? new Date(protectionConfig.lastBackup).toLocaleString() : "Never"}
+              </Typography>
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Vehicle Sales
+                Next Backup Due
               </Typography>
-              <Typography variant="h6">{stats.vehicleSales}</Typography>
+              <Typography variant="body1">
+                {backupStatus.isDue ? (
+                  <Chip color="warning" label="Backup Due Now" size="small" />
+                ) : (
+                  `${backupStatus.daysUntilNext} days`
+                )}
+              </Typography>
             </Box>
             <Box>
               <Typography variant="body2" color="text.secondary">
-                Cash Transactions
+                Local Backups
               </Typography>
-              <Typography variant="h6">{stats.cashTransactions}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Total Records
-              </Typography>
-              <Typography variant="h6">{stats.totalRecords}</Typography>
+              <Typography variant="body1">{localBackups.length} available</Typography>
             </Box>
           </Stack>
         </CardContent>
       </Card>
 
-      {/* Manual Backup Options */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Manual Backup
-        </Typography>
-        <Stack spacing={2}>
-          <Button
-            variant="outlined"
-            startIcon={<CloudDownload />}
-            onClick={handleDownloadBackup}
-            size="large"
-          >
-            Download Backup Files
-          </Button>
-
-          <Divider />
-
-          <Stack direction="row" spacing={2} alignItems="end">
+      {/* Configuration */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Backup Configuration
+          </Typography>
+          <Stack spacing={3}>
             <TextField
-              label="Email Address"
+              fullWidth
+              label="Backup Email Address"
+              type="email"
               value={backupEmail}
               onChange={(e) => setBackupEmail(e.target.value)}
-              type="email"
-              fullWidth
-              helperText="Enter email to receive backup files"
+              helperText="Email address for automatic backup notifications"
             />
-            <Button
-              variant="contained"
-              startIcon={<Email />}
-              onClick={handleEmailBackup}
-              disabled={emailSending}
-              size="large"
-            >
-              {emailSending ? "Sending..." : "Email Backup"}
-            </Button>
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={autoBackupEnabled}
+                  onChange={(e) => setAutoBackupEnabled(e.target.checked)}
+                />
+              }
+              label="Enable Automatic Daily Backups"
+            />
+
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="contained"
+                startIcon={<Save />}
+                onClick={handleSaveSettings}
+              >
+                Save Settings
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<Email />}
+                onClick={handleEmailBackup}
+                disabled={emailSending || !backupEmail}
+              >
+                {emailSending ? "Sending..." : "Send Backup Email"}
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<CloudDownload />}
+                onClick={handleDownloadBackup}
+              >
+                Download Backup
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<Restore />}
+                onClick={() => setShowRestoreDialog(true)}
+              >
+                Restore from File
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
-      </Paper>
+        </CardContent>
+      </Card>
 
-      {/* Automated Backup Settings */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Automated Monthly Backups
-        </Typography>
-        <Stack spacing={2}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={autoBackupEnabled}
-                onChange={(e) => setAutoBackupEnabled(e.target.checked)}
-              />
-            }
-            label="Enable automatic monthly email backups"
-          />
-
-          {autoBackupEnabled && (
-            <Alert severity="info">
-              <Typography variant="body2">
-                <strong>Automated backups will:</strong>
-              </Typography>
-              <ul>
-                <li>Send backup files to your email every 30 days</li>
-                <li>Include vehicle purchases, sales, and NMVTIS logbook</li>
-                <li>Provide both JSON and CSV formats</li>
-                <li>Keep you compliant with record-keeping requirements</li>
-              </ul>
-            </Alert>
+      {/* Local Backups Dialog */}
+      <Dialog open={showBackupsDialog} onClose={() => setShowBackupsDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Local Backups</DialogTitle>
+        <DialogContent>
+          {localBackups.length === 0 ? (
+            <Typography>No local backups available</Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Label</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Tables</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {localBackups.map((backup) => (
+                    <TableRow key={backup.id}>
+                      <TableCell>{backup.label}</TableCell>
+                      <TableCell>{new Date(backup.timestamp).toLocaleString()}</TableCell>
+                      <TableCell>{Object.keys(backup.tables).length}</TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          onClick={() => handleRestoreFromLocalBackup(backup.id)}
+                        >
+                          Restore
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
-
-          <Button
-            variant="contained"
-            onClick={handleSaveSettings}
-            disabled={!backupEmail}
-          >
-            Save Backup Settings
-          </Button>
-        </Stack>
-      </Paper>
-
-      {/* Data Restore */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Data Recovery
-        </Typography>
-        <Stack spacing={2}>
-          <Alert severity="warning">
-            <strong>Warning:</strong> Restoring from backup will overwrite all
-            current data. Make sure to download a current backup first!
-          </Alert>
-
-          <Button
-            variant="outlined"
-            startIcon={<RestoreFromTrash />}
-            onClick={() => setShowRestoreDialog(true)}
-            color="warning"
-          >
-            Restore from Backup File
-          </Button>
-        </Stack>
-      </Paper>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowBackupsDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Restore Dialog */}
-      <Dialog
-        open={showRestoreDialog}
-        onClose={() => setShowRestoreDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Warning color="warning" />
-            <Typography variant="h6">Restore from Backup</Typography>
-          </Stack>
-        </DialogTitle>
+      <Dialog open={showRestoreDialog} onClose={() => setShowRestoreDialog(false)}>
+        <DialogTitle>Restore from Backup File</DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <Alert severity="error">
-              <strong>This will permanently replace all current data!</strong>
-              <br />
-              Make sure you have a current backup before proceeding.
-            </Alert>
-
-            <input
-              type="file"
-              accept=".json"
-              onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
-              style={{ display: "none" }}
-              id="restore-file-upload"
-            />
-            <label htmlFor="restore-file-upload">
-              <Button variant="outlined" component="span" fullWidth>
-                {restoreFile
-                  ? `Selected: ${restoreFile.name}`
-                  : "Choose Backup File (.json)"}
-              </Button>
-            </label>
-          </Stack>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This will replace all current data with the backup data. This action cannot be undone.
+          </Alert>
+          <input
+            type="file"
+            accept=".json"
+            onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+            style={{ margin: "16px 0" }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowRestoreDialog(false)}>Cancel</Button>
