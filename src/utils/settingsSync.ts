@@ -40,22 +40,17 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
     licenseNumber: "WI-JUNK-2024-001",
   };
 
-  console.log("🔍 getYardSettingsSync called with yardId:", yardId);
-
   try {
     // First try to get from Supabase
     if (supabase) {
-      console.log("📡 Attempting to fetch from Supabase yard_settings table...");
       const { data, error } = await supabase
         .from("yard_settings")
         .select("*")
         .eq("yard_id", yardId)
         .single();
 
-      console.log("📊 Supabase response - data:", data, "error:", error);
-
       if (!error && data) {
-        console.log("✅ Loaded yard settings from Supabase:", data);
+        // Found existing settings in Supabase
         const formattedSettings: YardSettings = {
           name: data.entity_name || data.name || defaultYardSettings.name,
           address: data.business_address || data.address || defaultYardSettings.address,
@@ -67,34 +62,69 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
           licenseNumber: data.license_number || defaultYardSettings.licenseNumber,
         };
 
-        console.log("🔄 Formatted settings:", formattedSettings);
-        // Update localStorage with fresh data
+        // Update localStorage with fresh data from Supabase
         localStorage.setItem("yardSettings", JSON.stringify(formattedSettings));
         return formattedSettings;
       } else {
-        console.log("⚠️ No yard settings found in Supabase, using localStorage/defaults");
+        // No settings found in Supabase, check if we have localStorage data to sync up
+        const stored = localStorage.getItem("yardSettings");
+        let settingsToSync = defaultYardSettings;
+        
+        if (stored) {
+          try {
+            const parsedStored = JSON.parse(stored);
+            settingsToSync = { ...defaultYardSettings, ...parsedStored };
+          } catch (e) {
+            // Invalid localStorage data, use defaults
+          }
+        }
+
+        // Create the settings record in Supabase
+        const { error: insertError } = await supabase
+          .from("yard_settings")
+          .insert({
+            yard_id: yardId,
+            entity_name: settingsToSync.name,
+            business_address: settingsToSync.address,
+            business_city: settingsToSync.city,
+            business_state: settingsToSync.state,
+            business_zip: settingsToSync.zip,
+            business_phone: settingsToSync.phone,
+            business_email: settingsToSync.email,
+            license_number: settingsToSync.licenseNumber,
+            updated_at: new Date().toISOString()
+          });
+
+        if (!insertError) {
+          // Successfully created, update localStorage and return
+          localStorage.setItem("yardSettings", JSON.stringify(settingsToSync));
+          return settingsToSync;
+        }
       }
-    } else {
-      console.log("❌ Supabase not available");
     }
 
-    // Fallback to localStorage
+    // Fallback to localStorage only if Supabase completely failed
     const stored = localStorage.getItem("yardSettings");
-    console.log("💾 localStorage yardSettings:", stored);
     if (stored) {
-      const parsedStored = JSON.parse(stored);
-      console.log("📦 Using localStorage settings:", parsedStored);
-      return { ...defaultYardSettings, ...parsedStored };
+      try {
+        const parsedStored = JSON.parse(stored);
+        return { ...defaultYardSettings, ...parsedStored };
+      } catch (e) {
+        // Invalid localStorage data
+      }
     }
 
-    console.log("🏭 Using default settings:", defaultYardSettings);
     return defaultYardSettings;
   } catch (error) {
-    console.error("💥 Error getting yard settings:", error);
+    console.error("Error getting yard settings:", error);
     // Final fallback to localStorage or defaults
     const stored = localStorage.getItem("yardSettings");
     if (stored) {
-      return { ...defaultYardSettings, ...JSON.parse(stored) };
+      try {
+        return { ...defaultYardSettings, ...JSON.parse(stored) };
+      } catch (e) {
+        return defaultYardSettings;
+      }
     }
     return defaultYardSettings;
   }
@@ -102,12 +132,12 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
 
 // Save yard settings to both Supabase and localStorage
 export const saveYardSettingsSync = async (yardId: string, settings: YardSettings): Promise<boolean> => {
-  console.log("💾 saveYardSettingsSync called with yardId:", yardId, "settings:", settings);
-  
   try {
-    // First save to Supabase - update the yard_settings table with both yard and business info
+    // Always save to localStorage first for immediate feedback
+    localStorage.setItem("yardSettings", JSON.stringify(settings));
+
+    // Then save to Supabase
     if (supabase) {
-      console.log("📡 Saving to Supabase...");
       const { error } = await supabase
         .from("yard_settings")
         .upsert({
@@ -121,25 +151,21 @@ export const saveYardSettingsSync = async (yardId: string, settings: YardSetting
           business_email: settings.email,
           license_number: settings.licenseNumber,
           updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'yard_id' 
         });
 
       if (error) {
-        console.error("❌ Error saving yard settings to Supabase:", error);
-      } else {
-        console.log("✅ Yard settings saved to Supabase successfully");
+        console.error("Error saving yard settings to Supabase:", error);
+        return false; // Indicate sync failure
       }
-    } else {
-      console.log("❌ Supabase not available for saving");
+      
+      return true; // Successfully synced
     }
 
-    // Also save to localStorage for immediate access
-    localStorage.setItem("yardSettings", JSON.stringify(settings));
-    console.log("✅ Yard settings saved to localStorage");
-    return true;
+    return false; // Supabase not available
   } catch (error) {
-    console.error("💥 Failed to save yard settings:", error);
-    // Still save to localStorage as fallback
-    localStorage.setItem("yardSettings", JSON.stringify(settings));
+    console.error("Failed to save yard settings:", error);
     return false;
   }
 };
@@ -160,7 +186,7 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
   };
 
   try {
-    // Get from Supabase yard_settings table (not nmvtis_settings)
+    // Get from Supabase yard_settings table (not separate nmvtis_settings table)
     if (supabase) {
       const { data, error } = await supabase
         .from("yard_settings")
@@ -169,7 +195,7 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
         .single();
 
       if (!error && data) {
-        console.log("Loaded NMVTIS settings from Supabase yard_settings table");
+        // Found existing settings in Supabase
         const formattedSettings: NMVTISSettings = {
           nmvtisId: data.nmvtis_id || defaultNMVTISSettings.nmvtisId,
           nmvtisPin: data.nmvtis_pin || defaultNMVTISSettings.nmvtisPin,
@@ -183,18 +209,60 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
           reportingFrequency: data.reporting_frequency || defaultNMVTISSettings.reportingFrequency,
         };
 
-        // Update localStorage with fresh data
+        // Update localStorage with fresh data from Supabase
         localStorage.setItem("nmvtisSettings", JSON.stringify(formattedSettings));
         return formattedSettings;
       } else {
-        console.log("No NMVTIS settings found in Supabase, using localStorage/defaults");
+        // No settings found in Supabase, check if we have localStorage data to sync up
+        const stored = localStorage.getItem("nmvtisSettings");
+        let settingsToSync = defaultNMVTISSettings;
+        
+        if (stored) {
+          try {
+            const parsedStored = JSON.parse(stored);
+            settingsToSync = { ...defaultNMVTISSettings, ...parsedStored };
+          } catch (e) {
+            // Invalid localStorage data, use defaults
+          }
+        }
+
+        // Create/update the settings record in Supabase (might already exist from yard settings)
+        const { error: upsertError } = await supabase
+          .from("yard_settings")
+          .upsert({
+            yard_id: yardId,
+            nmvtis_id: settingsToSync.nmvtisId,
+            nmvtis_pin: settingsToSync.nmvtisPin,
+            entity_name: settingsToSync.entityName,
+            business_address: settingsToSync.businessAddress,
+            business_city: settingsToSync.businessCity,
+            business_state: settingsToSync.businessState,
+            business_zip: settingsToSync.businessZip,
+            business_phone: settingsToSync.businessPhone,
+            business_email: settingsToSync.businessEmail,
+            reporting_frequency: settingsToSync.reportingFrequency,
+            updated_at: new Date().toISOString()
+          }, { 
+            onConflict: 'yard_id' 
+          });
+
+        if (!upsertError) {
+          // Successfully created/updated, update localStorage and return
+          localStorage.setItem("nmvtisSettings", JSON.stringify(settingsToSync));
+          return settingsToSync;
+        }
       }
     }
 
-    // Fallback to localStorage
+    // Fallback to localStorage only if Supabase completely failed
     const stored = localStorage.getItem("nmvtisSettings");
     if (stored) {
-      return { ...defaultNMVTISSettings, ...JSON.parse(stored) };
+      try {
+        const parsedStored = JSON.parse(stored);
+        return { ...defaultNMVTISSettings, ...parsedStored };
+      } catch (e) {
+        // Invalid localStorage data
+      }
     }
 
     return defaultNMVTISSettings;
@@ -203,7 +271,11 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
     // Final fallback to localStorage or defaults
     const stored = localStorage.getItem("nmvtisSettings");
     if (stored) {
-      return { ...defaultNMVTISSettings, ...JSON.parse(stored) };
+      try {
+        return { ...defaultNMVTISSettings, ...JSON.parse(stored) };
+      } catch (e) {
+        return defaultNMVTISSettings;
+      }
     }
     return defaultNMVTISSettings;
   }
@@ -212,7 +284,10 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
 // Save NMVTIS settings to both Supabase and localStorage - uses same yard_settings table
 export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSettings): Promise<boolean> => {
   try {
-    // Save to Supabase yard_settings table (not separate nmvtis_settings table)
+    // Always save to localStorage first for immediate feedback
+    localStorage.setItem("nmvtisSettings", JSON.stringify(settings));
+
+    // Then save to Supabase yard_settings table
     if (supabase) {
       const { error } = await supabase
         .from("yard_settings")
@@ -229,23 +304,21 @@ export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSet
           business_email: settings.businessEmail,
           reporting_frequency: settings.reportingFrequency,
           updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'yard_id' 
         });
 
       if (error) {
         console.error("Error saving NMVTIS settings to Supabase:", error);
-      } else {
-        console.log("NMVTIS settings saved to Supabase successfully");
+        return false; // Indicate sync failure
       }
+      
+      return true; // Successfully synced
     }
 
-    // Also save to localStorage for immediate access
-    localStorage.setItem("nmvtisSettings", JSON.stringify(settings));
-    console.log("NMVTIS settings saved to localStorage");
-    return true;
+    return false; // Supabase not available
   } catch (error) {
     console.error("Failed to save NMVTIS settings:", error);
-    // Still save to localStorage as fallback
-    localStorage.setItem("nmvtisSettings", JSON.stringify(settings));
     return false;
   }
 }; 
