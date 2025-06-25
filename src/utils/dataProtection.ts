@@ -136,7 +136,8 @@ export const validateDataIntegrity = (): DataValidationResult => {
 
       // Specific validations for critical tables
       if (table === "vehicleTransactions") {
-        for (const [index, transaction] of parsed.entries()) {
+        for (let index = 0; index < parsed.length; index++) {
+          const transaction = parsed[index];
           if (!transaction.vin && !transaction.vehicleVIN) {
             result.errors.push(`Vehicle transaction at index ${index} missing VIN`);
             result.isValid = false;
@@ -148,7 +149,8 @@ export const validateDataIntegrity = (): DataValidationResult => {
       }
 
       if (table === "driverCashRecords") {
-        for (const [index, record] of parsed.entries()) {
+        for (let index = 0; index < parsed.length; index++) {
+          const record = parsed[index];
           if (typeof record.currentCash !== 'number') {
             result.errors.push(`Cash record at index ${index} has invalid cash amount`);
             result.isValid = false;
