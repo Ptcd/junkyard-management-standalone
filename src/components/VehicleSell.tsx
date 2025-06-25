@@ -136,7 +136,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     sendEmailMV2459: false,
   });
 
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [driverCashBalance, setDriverCashBalance] = useState(0);
   const [emailSending, setEmailSending] = useState(false);
@@ -370,7 +370,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, generatePDF: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent, generatePDF: boolean = false, paymentStatus: string = "completed") => {
     e.preventDefault();
 
     if (!formData.originalVehicle) {
@@ -400,6 +400,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     try {
       // Generate sale transaction ID
       const saleId = `SALE-${Date.now()}`;
+      const isPending = paymentStatus === "pending";
 
       // Create sale record
       const saleRecord = {
@@ -418,8 +419,8 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         saleDate: formData.saleDate,
         disposition: formData.disposition,
         notes: formData.notes,
-        paymentStatus: "completed",
-        actualReceivedAmount: formData.actualSalePrice,
+        paymentStatus: isPending ? "pending" : "completed",
+        actualReceivedAmount: isPending ? "0" : formData.actualSalePrice,
         timestamp: new Date().toISOString(),
         soldBy: `${user.firstName} ${user.lastName}`,
         userId: user.id,
@@ -489,8 +490,8 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             sale_date: formData.saleDate,
             disposition: formData.disposition,
             notes: formData.notes,
-            payment_status: "completed",
-            actual_received_amount: parseFloat(formData.actualSalePrice),
+            payment_status: isPending ? "pending" : "completed",
+            actual_received_amount: isPending ? "0" : parseFloat(formData.actualSalePrice),
             timestamp: new Date().toISOString(),
             sold_by: `${user.firstName} ${user.lastName}`,
             user_id: user.id,
@@ -515,18 +516,21 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
       // Record cash transaction for estimated sale amount
       try {
-        recordVehicleSale(
-          user.id,
-          `${user.firstName} ${user.lastName}`,
-          user.yardId,
-          parseFloat(formData.actualSalePrice),
-          formData.originalVehicle.vehicleVIN,
-          saleId,
-        );
+        // Only record cash for completed payments
+        if (!isPending) {
+          recordVehicleSale(
+            user.id,
+            `${user.firstName} ${user.lastName}`,
+            user.yardId,
+            parseFloat(formData.actualSalePrice),
+            formData.originalVehicle.vehicleVIN,
+            saleId,
+          );
 
-        // Update driver's cash balance display
-        const newBalance = getDriverCashBalance(user.id);
-        setDriverCashBalance(newBalance);
+          // Update driver's cash balance display
+          const newBalance = getDriverCashBalance(user.id);
+          setDriverCashBalance(newBalance);
+        }
       } catch (cashError) {
         console.error("Failed to record cash transaction:", cashError);
         // Don't fail the entire transaction for cash tracking issues
@@ -599,7 +603,12 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
           setEmailSending(false);
         }
       } else {
-        setSuccess(true);
+        // Set appropriate success message based on payment status
+        if (isPending) {
+          setSuccess("Vehicle delivery recorded! Payment collection pending. Check 'Pending Collections' to complete the transaction.");
+        } else {
+          setSuccess("Vehicle sale completed successfully!");
+        }
         setError("");
       }
 
@@ -647,9 +656,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Vehicle sale recorded successfully!{" "}
-          {formData.buyerEmail && "MV2459 form sent to buyer."} NMVTIS sale
-          report submitted immediately.
+          {success}
         </Alert>
       )}
 
@@ -1054,6 +1061,21 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
                   }}
                 >
                   Complete Sale & Generate PDF
+                </Button>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  color="info"
+                  size="large"
+                  onClick={(e) => handleSubmit(e, false, "pending")}
+                  fullWidth
+                  sx={{ 
+                    py: 1.5,
+                    fontSize: { xs: "1rem", sm: "0.875rem" },
+                    minWidth: { sm: "200px" }
+                  }}
+                >
+                  Deliver Vehicle (Pending Payment)
                 </Button>
                 <Button
                   type="submit"

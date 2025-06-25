@@ -339,21 +339,6 @@ const BuyerProfilesManager: React.FC<BuyerProfilesManagerProps> = ({
             Search
           </Button>
           <Button
-            variant="outlined"
-            color="warning"
-            onClick={() => {
-              clearDemoBuyerProfiles(user.yardId);
-              setTimeout(() => {
-                loadProfiles();
-                loadStats();
-                setSuccess("Demo profiles cleared!");
-                setTimeout(() => setSuccess(""), 2000);
-              }, 100);
-            }}
-          >
-            Clear Demo Data
-          </Button>
-          <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setShowAddDialog(true)}

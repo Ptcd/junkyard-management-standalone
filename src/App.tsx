@@ -62,6 +62,7 @@ import AdminDashboard from "./components/AdminDashboard";
 import DriverDashboard from "./components/DriverDashboard";
 import VehiclePurchase from "./components/VehiclePurchase";
 import VehicleSell from "./components/VehicleSell";
+import PendingCollections from "./components/PendingCollections";
 import LogBook from "./components/LogBook";
 import Settings from "./components/Settings";
 import ImpoundLienManager from "./components/ImpoundLienManager";
@@ -209,6 +210,12 @@ const getMenuItems = (userRole: string) =>
       path: "/sell",
       label: "Vehicle Sell",
       icon: <AttachMoney />,
+      roles: ["admin", "driver"],
+    },
+    {
+      path: "/pending-collections",
+      label: "Pending Collections",
+      icon: <Receipt />,
       roles: ["admin", "driver"],
     },
     {
@@ -540,6 +547,7 @@ function MainApp({ user }: { user: User }) {
           />
           <Route path="/purchase" element={<VehiclePurchase user={user} />} />
           <Route path="/sell" element={<VehicleSell user={user} />} />
+          <Route path="/pending-collections" element={<PendingCollections user={user} />} />
           <Route path="/logbook" element={<LogBook user={user} />} />
           <Route path="/impound" element={<ImpoundLienManager user={user} />} />
           <Route
