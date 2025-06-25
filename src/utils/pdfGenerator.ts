@@ -35,6 +35,7 @@ interface VehiclePurchaseData {
 }
 
 export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob> => {
+  // Force rebuild - Updated layout with side-by-side seller/purchaser info
   const pdf = new jsPDF('p', 'mm', 'letter');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
