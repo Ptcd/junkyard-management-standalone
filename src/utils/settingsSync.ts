@@ -52,13 +52,13 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
       if (!error && data) {
         console.log("Loaded yard settings from Supabase");
         const formattedSettings: YardSettings = {
-          name: data.name || defaultYardSettings.name,
-          address: data.address || defaultYardSettings.address,
-          city: data.city || defaultYardSettings.city,
-          state: data.state || defaultYardSettings.state,
-          zip: data.zip || defaultYardSettings.zip,
-          phone: data.phone || defaultYardSettings.phone,
-          email: data.email || defaultYardSettings.email,
+          name: data.entity_name || data.name || defaultYardSettings.name,
+          address: data.business_address || data.address || defaultYardSettings.address,
+          city: data.business_city || data.city || defaultYardSettings.city,
+          state: data.business_state || data.state || defaultYardSettings.state,
+          zip: data.business_zip || data.zip || defaultYardSettings.zip,
+          phone: data.business_phone || data.phone || defaultYardSettings.phone,
+          email: data.business_email || data.email || defaultYardSettings.email,
           licenseNumber: data.license_number || defaultYardSettings.licenseNumber,
         };
 
@@ -91,19 +91,19 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
 // Save yard settings to both Supabase and localStorage
 export const saveYardSettingsSync = async (yardId: string, settings: YardSettings): Promise<boolean> => {
   try {
-    // First save to Supabase
+    // First save to Supabase - update the yard_settings table with both yard and business info
     if (supabase) {
       const { error } = await supabase
         .from("yard_settings")
         .upsert({
           yard_id: yardId,
-          name: settings.name,
-          address: settings.address,
-          city: settings.city,
-          state: settings.state,
-          zip: settings.zip,
-          phone: settings.phone,
-          email: settings.email,
+          entity_name: settings.name,
+          business_address: settings.address,
+          business_city: settings.city,
+          business_state: settings.state,
+          business_zip: settings.zip,
+          business_phone: settings.phone,
+          business_email: settings.email,
           license_number: settings.licenseNumber,
           updated_at: new Date().toISOString()
         });
@@ -127,7 +127,7 @@ export const saveYardSettingsSync = async (yardId: string, settings: YardSetting
   }
 };
 
-// Get NMVTIS settings with Supabase sync
+// Get NMVTIS settings with Supabase sync - uses same yard_settings table
 export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSettings> => {
   const defaultNMVTISSettings: NMVTISSettings = {
     nmvtisId: "",
@@ -143,16 +143,16 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
   };
 
   try {
-    // First try to get from Supabase
+    // Get from Supabase yard_settings table (not nmvtis_settings)
     if (supabase) {
       const { data, error } = await supabase
-        .from("nmvtis_settings")
+        .from("yard_settings")
         .select("*")
         .eq("yard_id", yardId)
         .single();
 
       if (!error && data) {
-        console.log("Loaded NMVTIS settings from Supabase");
+        console.log("Loaded NMVTIS settings from Supabase yard_settings table");
         const formattedSettings: NMVTISSettings = {
           nmvtisId: data.nmvtis_id || defaultNMVTISSettings.nmvtisId,
           nmvtisPin: data.nmvtis_pin || defaultNMVTISSettings.nmvtisPin,
@@ -192,13 +192,13 @@ export const getNMVTISSettingsSync = async (yardId: string): Promise<NMVTISSetti
   }
 };
 
-// Save NMVTIS settings to both Supabase and localStorage
+// Save NMVTIS settings to both Supabase and localStorage - uses same yard_settings table
 export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSettings): Promise<boolean> => {
   try {
-    // First save to Supabase
+    // Save to Supabase yard_settings table (not separate nmvtis_settings table)
     if (supabase) {
       const { error } = await supabase
-        .from("nmvtis_settings")
+        .from("yard_settings")
         .upsert({
           yard_id: yardId,
           nmvtis_id: settings.nmvtisId,
