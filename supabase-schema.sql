@@ -357,16 +357,24 @@ CREATE POLICY "Users can view settings for their yard" ON yard_settings
         )
     );
 
-CREATE POLICY "Admins can update settings for their yard" ON yard_settings
+CREATE POLICY "Users can update settings for their yard" ON yard_settings
     FOR UPDATE USING (
         EXISTS (
             SELECT 1 FROM user_profiles 
-            WHERE id = auth.uid() AND role = 'admin' AND yard_id = yard_settings.yard_id
+            WHERE id = auth.uid() AND yard_id = yard_settings.yard_id
         )
     );
 
-CREATE POLICY "Admins can insert settings for their yard" ON yard_settings
+CREATE POLICY "Users can insert settings for their yard" ON yard_settings
     FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM user_profiles 
+            WHERE id = auth.uid() AND yard_id = yard_settings.yard_id
+        )
+    );
+
+CREATE POLICY "Users can delete settings for their yard" ON yard_settings
+    FOR DELETE USING (
         EXISTS (
             SELECT 1 FROM user_profiles 
             WHERE id = auth.uid() AND role = 'admin' AND yard_id = yard_settings.yard_id

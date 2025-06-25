@@ -138,6 +138,7 @@ export const saveYardSettingsSync = async (yardId: string, settings: YardSetting
 
     // Then save to Supabase
     if (supabase) {
+      console.log("🔄 Attempting to save yard settings to Supabase for yardId:", yardId);
       const { error } = await supabase
         .from("yard_settings")
         .upsert({
@@ -156,16 +157,24 @@ export const saveYardSettingsSync = async (yardId: string, settings: YardSetting
         });
 
       if (error) {
-        console.error("Error saving yard settings to Supabase:", error);
+        console.error("❌ Supabase error saving yard settings:", {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return false; // Indicate sync failure
       }
       
+      console.log("✅ Yard settings saved successfully to Supabase");
       return true; // Successfully synced
     }
 
+    console.warn("⚠️ Supabase not available");
     return false; // Supabase not available
   } catch (error) {
-    console.error("Failed to save yard settings:", error);
+    console.error("💥 Exception saving yard settings:", error);
     return false;
   }
 };
@@ -289,6 +298,7 @@ export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSet
 
     // Then save to Supabase yard_settings table
     if (supabase) {
+      console.log("🔄 Attempting to save NMVTIS settings to Supabase for yardId:", yardId);
       const { error } = await supabase
         .from("yard_settings")
         .upsert({
@@ -309,16 +319,24 @@ export const saveNMVTISSettingsSync = async (yardId: string, settings: NMVTISSet
         });
 
       if (error) {
-        console.error("Error saving NMVTIS settings to Supabase:", error);
+        console.error("❌ Supabase error saving NMVTIS settings:", {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return false; // Indicate sync failure
       }
       
+      console.log("✅ NMVTIS settings saved successfully to Supabase");
       return true; // Successfully synced
     }
 
+    console.warn("⚠️ Supabase not available");
     return false; // Supabase not available
   } catch (error) {
-    console.error("Failed to save NMVTIS settings:", error);
+    console.error("💥 Exception saving NMVTIS settings:", error);
     return false;
   }
 };
