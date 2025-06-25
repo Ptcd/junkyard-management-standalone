@@ -197,14 +197,16 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
   yPos += 10;
   
   // Check if we have enough space for signature section, otherwise add new page
-  const signatureHeight = 40; // Space needed for signature + labels
-  if (yPos + signatureHeight > pageHeight - 30) {
+  const signatureHeight = 55; // Increased space needed for signature + labels + margins
+  const bottomMargin = 40; // Increased bottom margin for safety
+  
+  if (yPos + signatureHeight > pageHeight - bottomMargin) {
     pdf.addPage();
     yPos = 30;
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
     pdf.text('SELLER SIGNATURE & ID VERIFICATION (continued)', 20, yPos);
-    yPos += 10;
+    yPos += 15; // More space after header on new page
   }
   
   // Create a two-column layout for signature and ID photo
@@ -221,17 +223,17 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
       
       pdf.addImage(data.signatureDataUrl, 'PNG', leftColumnX, yPos, signatureWidth, signatureHeight);
       
-      // Add signature label
+      // Add signature label with more spacing
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Seller Signature', leftColumnX, yPos + signatureHeight + 5);
-      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + signatureHeight + 10);
+      pdf.text('Seller Signature', leftColumnX, yPos + signatureHeight + 8);
+      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + signatureHeight + 15);
     } catch (error) {
       console.error('Error adding signature:', error);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Signature: [Digital signature on file]', leftColumnX, yPos);
-      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + 5);
+      pdf.text(`Date: ${new Date(data.purchaseDate).toLocaleDateString()}`, leftColumnX, yPos + 8);
     }
   }
   
@@ -247,10 +249,10 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
       
       pdf.addImage(data.idPhotoDataUrl, 'JPEG', idPhotoX, yPos, idWidth, idHeight);
       
-      // Add ID photo label
+      // Add ID photo label with more spacing
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('Driver License Photo', idPhotoX, yPos + idHeight + 5);
+      pdf.text('Driver License Photo', idPhotoX, yPos + idHeight + 8);
     } catch (error) {
       console.error('Error adding ID photo:', error);
       pdf.setFontSize(9);
@@ -259,13 +261,13 @@ export const generateMV2459PDF = async (data: VehiclePurchaseData): Promise<Blob
     }
   }
   
-  // Update yPos to account for the signature/ID section
-  yPos += 45;
+  // Update yPos to account for the signature/ID section with extra spacing
+  yPos += 50;
   
-  // Footer - ensure it's at the bottom of the page
+  // Footer - ensure it's at the bottom of the page with proper margin
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'italic');
-  const footerY = pageHeight - 20;
+  const footerY = pageHeight - 15; // Moved footer up slightly for better visibility
   pdf.text('This document was electronically generated and is legally binding.', pageWidth / 2, footerY, { align: 'center' });
   pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, footerY + 5, { align: 'center' });
   
