@@ -233,10 +233,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
     }
 
     try {
-      console.log("🚀 Starting settings save process...");
-      console.log("👤 User yardId:", user.yardId);
-      console.log("📋 Yard settings to save:", yardSettings);
-
       // Create updated NMVTIS settings with yard settings merged in
       const updatedNMVTISSettings = {
         ...settings,
@@ -249,14 +245,10 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
         businessEmail: yardSettings.email,
       };
 
-      console.log("📋 NMVTIS settings to save:", updatedNMVTISSettings);
-
       // If this is demo data or the user is saving real data over demo data,
       // use force update to ensure it takes precedence over database defaults
       const isDemo = isDemoData();
-      console.log("🎭 Is demo data:", isDemo);
-
-      console.log("💾 Attempting to save settings...");
+      
       const [yardSaveResult, nmvtisSaveResult] = await Promise.all([
         isDemo ? 
           forceUpdateYardSettings(user.yardId, yardSettings) :
@@ -266,19 +258,15 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
           saveNMVTISSettingsSync(user.yardId, updatedNMVTISSettings)
       ]);
 
-      console.log("📊 Save results - Yard:", yardSaveResult, "NMVTIS:", nmvtisSaveResult);
-
       if (yardSaveResult && nmvtisSaveResult) {
         setSuccess(true);
         setError("");
-        console.log("✅ Settings saved successfully!");
       } else {
         setSuccess(true);
         setError("Settings saved locally but may not sync across devices - Check console for details");
-        console.log("⚠️ Partial save failure - check above logs for errors");
       }
     } catch (error) {
-      console.error("💥 Exception during settings save:", error);
+      console.error("Error saving settings:", error);
       setError("Failed to save settings. Please try again.");
       return;
     }
@@ -605,23 +593,6 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                       </Button>
                     </Alert>
                   )}
-
-                  {/* Debug Panel */}
-                  <Alert severity="info" sx={{ my: 2 }}>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      <strong>Debug Info:</strong>
-                    </Typography>
-                    <Typography variant="body2" component="div">
-                      • User Role: {user.role}<br/>
-                      • Yard ID: {user.yardId}<br/>
-                      • Demo Data: {isDemoData() ? 'Yes' : 'No'}<br/>
-                      • Current Business Name: {yardSettings.name}<br/>
-                      • Last Save Status: {success ? 'Success' : error ? 'Error' : 'Not saved yet'}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1, fontSize: '0.8em', color: 'text.secondary' }}>
-                      After clicking "Save Settings", check your browser console (F12) for detailed sync logs with emoji indicators (🔄 ✅ ❌).
-                    </Typography>
-                  </Alert>
 
                   <Button
                     type="submit"
