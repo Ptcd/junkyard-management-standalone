@@ -40,17 +40,22 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
     licenseNumber: "WI-JUNK-2024-001",
   };
 
+  console.log("🔍 getYardSettingsSync called with yardId:", yardId);
+
   try {
     // First try to get from Supabase
     if (supabase) {
+      console.log("📡 Attempting to fetch from Supabase yard_settings table...");
       const { data, error } = await supabase
         .from("yard_settings")
         .select("*")
         .eq("yard_id", yardId)
         .single();
 
+      console.log("📊 Supabase response - data:", data, "error:", error);
+
       if (!error && data) {
-        console.log("Loaded yard settings from Supabase");
+        console.log("✅ Loaded yard settings from Supabase:", data);
         const formattedSettings: YardSettings = {
           name: data.entity_name || data.name || defaultYardSettings.name,
           address: data.business_address || data.address || defaultYardSettings.address,
@@ -62,23 +67,30 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
           licenseNumber: data.license_number || defaultYardSettings.licenseNumber,
         };
 
+        console.log("🔄 Formatted settings:", formattedSettings);
         // Update localStorage with fresh data
         localStorage.setItem("yardSettings", JSON.stringify(formattedSettings));
         return formattedSettings;
       } else {
-        console.log("No yard settings found in Supabase, using localStorage/defaults");
+        console.log("⚠️ No yard settings found in Supabase, using localStorage/defaults");
       }
+    } else {
+      console.log("❌ Supabase not available");
     }
 
     // Fallback to localStorage
     const stored = localStorage.getItem("yardSettings");
+    console.log("💾 localStorage yardSettings:", stored);
     if (stored) {
-      return { ...defaultYardSettings, ...JSON.parse(stored) };
+      const parsedStored = JSON.parse(stored);
+      console.log("📦 Using localStorage settings:", parsedStored);
+      return { ...defaultYardSettings, ...parsedStored };
     }
 
+    console.log("🏭 Using default settings:", defaultYardSettings);
     return defaultYardSettings;
   } catch (error) {
-    console.error("Error getting yard settings:", error);
+    console.error("💥 Error getting yard settings:", error);
     // Final fallback to localStorage or defaults
     const stored = localStorage.getItem("yardSettings");
     if (stored) {
@@ -90,9 +102,12 @@ export const getYardSettingsSync = async (yardId: string): Promise<YardSettings>
 
 // Save yard settings to both Supabase and localStorage
 export const saveYardSettingsSync = async (yardId: string, settings: YardSettings): Promise<boolean> => {
+  console.log("💾 saveYardSettingsSync called with yardId:", yardId, "settings:", settings);
+  
   try {
     // First save to Supabase - update the yard_settings table with both yard and business info
     if (supabase) {
+      console.log("📡 Saving to Supabase...");
       const { error } = await supabase
         .from("yard_settings")
         .upsert({
@@ -109,18 +124,20 @@ export const saveYardSettingsSync = async (yardId: string, settings: YardSetting
         });
 
       if (error) {
-        console.error("Error saving yard settings to Supabase:", error);
+        console.error("❌ Error saving yard settings to Supabase:", error);
       } else {
-        console.log("Yard settings saved to Supabase successfully");
+        console.log("✅ Yard settings saved to Supabase successfully");
       }
+    } else {
+      console.log("❌ Supabase not available for saving");
     }
 
     // Also save to localStorage for immediate access
     localStorage.setItem("yardSettings", JSON.stringify(settings));
-    console.log("Yard settings saved to localStorage");
+    console.log("✅ Yard settings saved to localStorage");
     return true;
   } catch (error) {
-    console.error("Failed to save yard settings:", error);
+    console.error("💥 Failed to save yard settings:", error);
     // Still save to localStorage as fallback
     localStorage.setItem("yardSettings", JSON.stringify(settings));
     return false;
