@@ -379,12 +379,18 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     }
 
     // Validate required fields
+    const isPending = paymentStatus === "pending";
     const requiredFields = [
       "buyerName",
-      "buyerAddress",
+      "buyerAddress", 
       "buyerPhone",
-      "actualSalePrice",
     ];
+    
+    // Only require sale price if payment is not pending
+    if (!isPending) {
+      requiredFields.push("actualSalePrice");
+    }
+    
     const missingFields = requiredFields.filter(
       (field) => !formData[field as keyof VehicleSaleData],
     );
@@ -400,7 +406,6 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
     try {
       // Generate sale transaction ID
       const saleId = `SALE-${Date.now()}`;
-      const isPending = paymentStatus === "pending";
 
       // Create sale record
       const saleRecord = {
@@ -415,7 +420,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
         buyerPhone: formData.buyerPhone,
         buyerEmail: formData.buyerEmail,
         buyerLicenseNumber: formData.buyerLicenseNumber,
-        salePrice: formData.actualSalePrice,
+        salePrice: isPending ? "0" : formData.actualSalePrice,
         saleDate: formData.saleDate,
         disposition: formData.disposition,
         notes: formData.notes,
@@ -486,7 +491,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
             buyer_phone: formData.buyerPhone,
             buyer_email: formData.buyerEmail,
             buyer_license_number: formData.buyerLicenseNumber,
-            sale_price: parseFloat(formData.actualSalePrice),
+            sale_price: isPending ? 0 : parseFloat(formData.actualSalePrice),
             sale_date: formData.saleDate,
             disposition: formData.disposition,
             notes: formData.notes,
@@ -517,7 +522,7 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
       // Record cash transaction for estimated sale amount
       try {
         // Only record cash for completed payments
-        if (!isPending) {
+        if (!isPending && formData.actualSalePrice) {
           recordVehicleSale(
             user.id,
             `${user.firstName} ${user.lastName}`,
@@ -961,11 +966,11 @@ const VehicleSell: React.FC<VehicleSellProps> = ({ user }) => {
 
               <TextField
                 fullWidth
-                label="Sale Price *"
+                label="Sale Price (Optional for pending payments)"
                 value={formData.actualSalePrice}
                 onChange={handleInputChange("actualSalePrice")}
                 type="number"
-                required
+                helperText="Required for completed sales, optional when delivering with pending payment"
                 InputProps={{
                   startAdornment: "$",
                 }}
