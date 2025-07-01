@@ -261,7 +261,6 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
       "sellerFirstName",
       "sellerLastName",
       "sellerAddress",
-      "sellerPhone",
       "vehicleYear",
       "vehicleMake",
       "vehicleVIN",
@@ -572,10 +571,10 @@ const VehiclePurchase: React.FC<VehiclePurchaseProps> = ({ user }) => {
             <Box>
               <TextField
                 fullWidth
-                label="Seller's Phone Number *"
+                label="Seller's Phone Number"
                 value={formData.sellerPhone}
                 onChange={handleInputChange("sellerPhone")}
-                required
+                helperText="Optional - leave blank if not available"
               />
             </Box>
 
