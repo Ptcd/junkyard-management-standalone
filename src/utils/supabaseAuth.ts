@@ -230,15 +230,30 @@ export const getCurrentUser = async () => {
 
 // Password reset
 export const resetPassword = async (email: string) => {
-  // Determine the correct redirect URL based on the current environment
-  const baseURL = window.location.origin;
-  const redirectTo = `${baseURL}/reset-password`;
+  try {
+    // Determine the correct redirect URL based on the current environment
+    const baseURL = window.location.origin;
+    const redirectTo = `${baseURL}/reset-password`;
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: redirectTo,
-  });
-  
-  return { error };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectTo,
+    });
+    
+    if (error) {
+      // Provide more specific error messages for common issues
+      if (error.message.includes('rate limit') || error.message.includes('429')) {
+        throw new Error("Too many password reset attempts. Please wait an hour before trying again, or contact support if you continue to have issues.");
+      }
+      if (error.message.includes('email not found') || error.message.includes('user not found')) {
+        throw new Error("No account found with this email address. Please check your email or sign up for a new account.");
+      }
+      throw error;
+    }
+    
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
 };
 
 // Update user profile

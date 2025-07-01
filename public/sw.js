@@ -1,10 +1,8 @@
 const CACHE_NAME = "junkyard-mgmt-v1";
 const urlsToCache = [
   "/",
-  "/static/js/bundle.js",
-  "/static/css/main.css",
-  "/manifest.json",
-  // Add other static assets
+  "/manifest.json"
+  // Removed problematic static resources that may not exist
 ];
 
 // Install event - cache resources
@@ -12,8 +10,16 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log("Opened cache");
-      return cache.addAll(urlsToCache);
-    }),
+      // Use addAll with error handling
+      return Promise.allSettled(
+        urlsToCache.map(url => cache.add(url).catch(err => {
+          console.warn("Failed to cache:", url, err);
+          return Promise.resolve(); // Continue even if some resources fail
+        }))
+      );
+    }).catch(error => {
+      console.error("Cache installation failed:", error);
+    })
   );
   // Force the waiting service worker to become the active service worker
   self.skipWaiting();

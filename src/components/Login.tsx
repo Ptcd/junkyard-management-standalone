@@ -135,14 +135,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const { error: resetError } = await resetPassword(email);
 
     if (resetError) {
-      setError(
-        typeof resetError === "string"
-          ? resetError
-          : (resetError as any)?.message ||
-              "Failed to send password reset email",
-      );
+      let errorMessage = "";
+      
+      if (typeof resetError === "string") {
+        errorMessage = resetError;
+      } else if (resetError && typeof resetError === "object") {
+        errorMessage = (resetError as any)?.message || "Failed to send password reset email";
+      }
+      
+      // Provide additional context and solutions for rate limiting
+      if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
+        errorMessage += "\n\n🔧 Immediate Solutions:\n" +
+          "1. Wait 1 hour before trying again\n" +
+          "2. Try using a different email address\n" +
+          "3. Contact your admin to reset your password directly\n" +
+          "4. Admin can create a new account for you in Settings > User Management";
+      }
+      
+      setError(errorMessage);
     } else {
-      setSuccess("Password reset email sent! Check your inbox.");
+      setSuccess("Password reset email sent! Check your inbox and spam folder.");
       setShowPasswordReset(false);
     }
 

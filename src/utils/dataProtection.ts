@@ -30,7 +30,11 @@ const PROTECTED_TABLES = [
   "expenseReports",
   "buyerProfiles",
   "scheduledNMVTISReports",
-  "impoundLienVehicles",
+  "impoundLienVehicles"
+];
+
+// Settings tables that are objects, not arrays
+const SETTINGS_TABLES = [
   "yardSettings",
   "nmvtisSettings"
 ];
@@ -117,6 +121,7 @@ export const validateDataIntegrity = (): DataValidationResult => {
     checkedTables: []
   };
 
+  // Check array-based tables
   for (const table of PROTECTED_TABLES) {
     result.checkedTables.push(table);
     
@@ -160,6 +165,33 @@ export const validateDataIntegrity = (): DataValidationResult => {
 
     } catch (error) {
       result.errors.push(`Table ${table} contains invalid JSON`);
+      result.isValid = false;
+    }
+  }
+
+  // Check settings tables (objects, not arrays)
+  for (const table of SETTINGS_TABLES) {
+    result.checkedTables.push(table);
+    
+    try {
+      const data = localStorage.getItem(table);
+      if (!data) {
+        result.warnings.push(`Settings ${table} is empty`);
+        continue;
+      }
+
+      const parsed = JSON.parse(data);
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+        result.errors.push(`Settings ${table} is not a valid object`);
+        result.isValid = false;
+        continue;
+      }
+
+      // Settings are valid if they're objects
+      // You can add specific validation rules here if needed
+
+    } catch (error) {
+      result.errors.push(`Settings ${table} contains invalid JSON`);
       result.isValid = false;
     }
   }
