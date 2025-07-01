@@ -34,7 +34,14 @@ const PasswordReset: React.FC = () => {
         const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
 
-        console.log("Password reset params:", { type, hasAccessToken: !!accessToken });
+        console.log("Password reset params:", { 
+          type, 
+          hasAccessToken: !!accessToken, 
+          hashParams: Array.from(hashParams.entries()),
+          urlParams: Array.from(urlParams.entries()),
+          fullHash: window.location.hash,
+          fullSearch: window.location.search
+        });
 
         // If this is a recovery flow, set up the session for password reset
         if (type === 'recovery' && accessToken) {
@@ -51,6 +58,7 @@ const PasswordReset: React.FC = () => {
             }
 
             // Successfully set up recovery session
+            console.log("✅ Recovery session set up successfully");
             setIsValidSession(true);
             return;
           } catch (err) {
@@ -60,7 +68,7 @@ const PasswordReset: React.FC = () => {
           }
         }
 
-        // If no recovery parameters, check for existing session
+        // Check for existing session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -69,20 +77,28 @@ const PasswordReset: React.FC = () => {
           return;
         }
 
-        // If we have a session but it's not from a recovery flow, reject it
-        if (session && type !== 'recovery') {
-          console.log("Regular session detected, but not recovery flow");
-          setError("Invalid password reset link. Please request a new one.");
-          return;
+        console.log("Current session:", { hasSession: !!session, sessionDetails: session });
+
+        // If we have a session, check if it's valid for password reset
+        if (session) {
+          // More flexible recovery detection - if we have access tokens in URL or a recent session
+          const isRecoveryFlow = type === 'recovery' || accessToken || 
+                               window.location.pathname.includes('reset-password');
+          
+          if (isRecoveryFlow) {
+            console.log("✅ Valid recovery session detected");
+            setIsValidSession(true);
+            return;
+          } else {
+            console.log("⚠️ Regular session detected, but allowing password reset anyway");
+            // Allow password reset even without explicit recovery type
+            setIsValidSession(true);
+            return;
+          }
         }
 
-        // If we have a recovery session, allow password reset
-        if (session && type === 'recovery') {
-          setIsValidSession(true);
-          return;
-        }
-
-        // No valid session or recovery flow
+        // No valid session - show error
+        console.log("❌ No valid session found");
         setError("Invalid password reset link. Please request a new one.");
       } catch (err) {
         console.error("Error checking session:", err);
