@@ -101,8 +101,8 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
       // For drivers, only show their transactions; for admins, show all
       const userTransactions =
         user.role === "admin"
-          ? data
-          : data.filter((t: any) => t.user_id === user.id);
+          ? data // Admins see all transactions, including those with NULL user_id (deleted users)
+          : data.filter((t: any) => t.user_id === user.id); // Drivers only see their own
 
       console.log("After user filtering:", userTransactions.length, "transactions for this user");
       setTransactions(userTransactions);
@@ -835,7 +835,18 @@ const LogBook: React.FC<LogBookProps> = ({ user }) => {
                     </Typography>
                   </TableCell>
                   {user.role === "admin" && (
-                    <TableCell>{transaction.driver_name || transaction.driverName || transaction.purchaserName}</TableCell>
+                    <TableCell>
+                      {transaction.user_id === null ? (
+                        <Chip 
+                          label="Deleted User" 
+                          color="warning" 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      ) : (
+                        transaction.driver_name || transaction.driverName || transaction.purchaserName || "Unknown"
+                      )}
+                    </TableCell>
                   )}
                   <TableCell>
                     <Chip

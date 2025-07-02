@@ -58,6 +58,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     pendingNMVTIS: 0,
     scheduledNMVTISReports: 0,
     failedNMVTISReports: 0,
+    deletedUserTransactions: 0,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +81,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       // Load sales data using the sync function
       const salesData = await getVehicleSalesSync();
 
-      // Calculate stats
+      // Calculate stats - handle NULL user_id values
       const totalRevenue = data.reduce(
         (sum: number, t: any) => sum + parseFloat(t.salePrice || 0),
         0,
@@ -100,12 +101,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
         );
       }).length;
 
-      // Get NMVTIS report statistics
+      // Get NMVTIS report statistics - handle NULL user_id
       const scheduledReports = getScheduledNMVTISReports();
       const pendingReportsCount = getPendingNMVTISReportsCount();
       const failedReportsCount = scheduledReports.filter(
         (r) => r.status === "failed",
       ).length;
+
+      // Count transactions with deleted users for admin awareness
+      const deletedUserTransactions = data.filter((t: any) => t.user_id === null).length;
 
       setStats({
         totalVehicles: data.length,
@@ -115,6 +119,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           .length,
         scheduledNMVTISReports: pendingReportsCount,
         failedNMVTISReports: failedReportsCount,
+        deletedUserTransactions, // Add this for admin awareness
       });
     };
 
