@@ -621,3 +621,68 @@ export const deleteUserProfileOnly = async (targetUserId: string) => {
     return { error: error instanceof Error ? error.message : "Failed to delete user profile" };
   }
 };
+
+// Temporary function to clean up orphaned auth records
+export const deleteOrphanedAuthRecord = async (email: string) => {
+  try {
+    console.log("Looking for orphaned auth record for email:", email);
+    
+    // First, check if user exists in auth but not in profiles
+    const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error("Error listing users:", listError);
+      return { error: "Failed to list users" };
+    }
+    
+    const orphanedUser = authUsers.users.find(user => user.email === email);
+    
+    if (!orphanedUser) {
+      return { error: "No auth record found for this email" };
+    }
+    
+    console.log("Found orphaned auth record:", orphanedUser.id);
+    
+    // Delete the auth record
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(orphanedUser.id);
+    
+    if (deleteError) {
+      console.error("Failed to delete auth record:", deleteError);
+      return { error: deleteError.message || "Failed to delete auth record" };
+    }
+    
+    console.log("Successfully deleted orphaned auth record");
+    return { 
+      success: true, 
+      message: `Orphaned auth record for ${email} deleted successfully. They can now be re-invited.` 
+    };
+    
+  } catch (error) {
+    console.error("Error deleting orphaned auth record:", error);
+    return { error: error instanceof Error ? error.message : "Failed to delete orphaned auth record" };
+  }
+};
+
+// Helper function to check if user exists in auth by email
+export const checkUserExistsInAuth = async (email: string) => {
+  try {
+    const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error("Error listing users:", listError);
+      return { error: "Failed to list users" };
+    }
+    
+    const user = authUsers.users.find(user => user.email === email);
+    
+    return { 
+      exists: !!user, 
+      user: user || null,
+      message: user ? `User exists in auth with ID: ${user.id}` : "User does not exist in auth"
+    };
+    
+  } catch (error) {
+    console.error("Error checking user existence:", error);
+    return { error: error instanceof Error ? error.message : "Failed to check user existence" };
+  }
+};
