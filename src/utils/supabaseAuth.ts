@@ -26,7 +26,8 @@ export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
+        persistSession: false,
+        storageKey: "junkyard-admin-token", // Different storage key to avoid conflicts
       }
     })
   : null;
@@ -77,6 +78,9 @@ export const inviteUser = async (
       }
       if (error.message.includes('invalid email')) {
         throw new Error("Please enter a valid email address.");
+      }
+      if (error.message.includes('rate limit') || error.message.includes('429')) {
+        throw new Error(`Email invitation rate limit exceeded. Please wait 1 hour before sending more invitations, or create users manually in your Supabase dashboard (Authentication → Users → Add user).`);
       }
       
       throw error;
