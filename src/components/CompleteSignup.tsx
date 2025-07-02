@@ -46,29 +46,46 @@ const CompleteSignup: React.FC = () => {
             return;
           }
         } else {
-          // Try to handle invitation from URL parameters
-          const urlParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = urlParams.get('access_token');
-          const refreshToken = urlParams.get('refresh_token');
+          // Try to handle invitation from URL parameters (query params first, then hash)
+          const searchParams = new URLSearchParams(window.location.search);
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          
+          // Check for tokens in query parameters first (typical for invitations)
+          let accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+          let refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
+          let type = searchParams.get('type') || hashParams.get('type');
+          
+          console.log("URL parsing:", {
+            search: window.location.search,
+            hash: window.location.hash,
+            accessToken: accessToken ? "present" : "missing",
+            refreshToken: refreshToken ? "present" : "missing",
+            type: type
+          });
           
           if (accessToken && refreshToken) {
+            console.log("Found tokens, setting session...");
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
             });
             
             if (sessionError) {
-              setError("Invalid or expired invitation link.");
+              console.error("Session setting error:", sessionError);
+              setError("Invalid or expired invitation link. Please request a new invitation.");
             } else {
-              window.location.reload(); // Reload to get session
+              // Session set successfully, reload to get the session
+              console.log("Session set successfully, reloading...");
+              window.location.href = window.location.pathname; // Remove query params
             }
           } else {
+            console.log("No tokens found in URL");
             setError("Invalid invitation link. Please request a new invitation.");
           }
         }
       } catch (err) {
         console.error("Error checking session:", err);
-        setError("Something went wrong. Please try again.");
+        setError("Something went wrong. Please try again or request a new invitation.");
       }
     };
 
