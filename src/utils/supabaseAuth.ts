@@ -502,75 +502,87 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
   try {
     console.log("Starting admin deletion for user:", targetUserId);
     
-    // Try the database function first
-    const { data, error } = await supabase.rpc('delete_user_complete', {
-      target_user_id: targetUserId
-    });
-
-    // Check if the RPC call failed OR if the function returned an error
-    if (error || (data && !data.success)) {
-      if (error) {
-        console.error("Error calling delete_user_complete:", error);
-      } else {
-        console.error("Database function returned error:", data.error);
-      }
-      console.log("Database function failed, trying direct deletion approach...");
+    // First get user info before deletion
+    const { data: userData, error: getUserError } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", targetUserId)
+      .single();
       
-      // Fallback: Direct deletion approach
-      try {
-        // First get user info before deletion
-        const { data: userData, error: getUserError } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", targetUserId)
-          .single();
-          
-        if (getUserError) {
-          console.error("Error getting user data:", getUserError);
-          return { error: "User not found" };
-        }
+    if (getUserError) {
+      console.error("Error getting user data:", getUserError);
+      return { error: "User not found" };
+    }
+    
+    console.log("Found user to delete:", userData.first_name, userData.last_name);
+    
+    try {
+      // Step 1: Delete user profile and preserve their data
+      // Set user_id to null for all their records to preserve business data
+      console.log("Preserving user data by nullifying user_id references...");
+      
+      const updatePromises = [
+        supabase.from("vehicle_transactions").update({ user_id: null }).eq("user_id", targetUserId),
+        supabase.from("vehicle_sales").update({ user_id: null }).eq("user_id", targetUserId),
+        supabase.from("cash_transactions").update({ user_id: null }).eq("user_id", targetUserId),
+        supabase.from("expenses").update({ user_id: null }).eq("user_id", targetUserId),
+        supabase.from("impound_lien_vehicles").update({ user_id: null }).eq("user_id", targetUserId),
+        supabase.from("nmvtis_reports").update({ user_id: null }).eq("user_id", targetUserId),
+      ];
+      
+      await Promise.all(updatePromises);
+      console.log("Successfully preserved all user data");
+      
+      // Step 2: Delete the user profile
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .delete()
+        .eq("id", targetUserId);
         
-        console.log("Found user to delete:", userData.first_name, userData.last_name);
-        
-        // Delete user profile (CASCADE should handle related records)
-        const { error: deleteError } = await supabase
-          .from("user_profiles")
-          .delete()
-          .eq("id", targetUserId);
-          
-        if (deleteError) {
-          console.error("Error deleting user profile:", deleteError);
-          return { error: deleteError.message || "Failed to delete user profile" };
-        }
-        
-        console.log("Successfully deleted user profile");
-        
+      if (profileError) {
+        console.error("Error deleting user profile:", profileError);
+        return { error: profileError.message || "Failed to delete user profile" };
+      }
+      
+      console.log("Successfully deleted user profile");
+      
+      // Step 3: Delete the auth record so they can be re-invited
+      console.log("Deleting auth record...");
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(targetUserId);
+      
+      if (authDeleteError) {
+        console.warn("Failed to delete auth record:", authDeleteError);
+        // Don't fail the whole operation if auth deletion fails
+        // The user profile is already deleted, which is the main goal
         return { 
           success: true, 
-          message: `User ${userData.first_name} ${userData.last_name} deleted successfully`,
+          message: `User ${userData.first_name} ${userData.last_name} profile deleted successfully. Auth record deletion failed - they may not be able to be re-invited with the same email.`,
           deletionSummary: {
             deleted_user: userData,
-            message: "User profile deleted successfully"
+            auth_deletion_failed: true,
+            message: "Profile deleted, auth record may still exist"
           }
         };
-        
-      } catch (fallbackError) {
-        console.error("Fallback deletion failed:", fallbackError);
-        return { error: fallbackError instanceof Error ? fallbackError.message : "Fallback deletion failed" };
       }
-    }
-
-    // The function succeeded
-    if (data && data.success) {
+      
+      console.log("Successfully deleted auth record");
+      
       return { 
         success: true, 
-        message: data.message,
-        deletionSummary: data 
+        message: `User ${userData.first_name} ${userData.last_name} completely deleted. They can now be re-invited with the same email address.`,
+        deletionSummary: {
+          deleted_user: userData,
+          auth_deleted: true,
+          data_preserved: true,
+          message: "User completely deleted - can be re-invited"
+        }
       };
+      
+    } catch (deleteError) {
+      console.error("Deletion process failed:", deleteError);
+      return { error: deleteError instanceof Error ? deleteError.message : "Deletion process failed" };
     }
-
-    console.error("Unexpected response from deletion function:", data);
-    return { error: "Unexpected response from deletion function" };
+    
   } catch (error) {
     console.error("Error in deleteUserAsAdmin:", error);
     return { error: error instanceof Error ? error.message : "Failed to delete user" };
