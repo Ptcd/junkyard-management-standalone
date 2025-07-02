@@ -3,13 +3,6 @@ export const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || "";
 export const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 export const SUPABASE_SERVICE_ROLE_KEY = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY || "";
 
-// Debug: Log environment variables to help troubleshoot
-console.log("Environment variables debug:");
-console.log("SUPABASE_URL:", SUPABASE_URL ? "✓ Set" : "❌ Missing");
-console.log("SUPABASE_ANON_KEY:", SUPABASE_ANON_KEY ? "✓ Set" : "❌ Missing");
-console.log("SUPABASE_SERVICE_ROLE_KEY:", SUPABASE_SERVICE_ROLE_KEY ? "✓ Set" : "❌ Missing");
-console.log("All REACT_APP vars:", Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
-
 // Site Configuration
 export const SITE_URL = "https://junk.autosalvageautomation.com";
 
@@ -28,7 +21,7 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 }
 
 // Additional configuration
-export const APP_VERSION = "1.0.5";
+export const APP_VERSION = "1.0.6";
 export const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 // CORS configuration

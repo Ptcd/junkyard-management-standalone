@@ -104,20 +104,47 @@ const CompleteSignup: React.FC = () => {
         throw updateError;
       }
 
-      // Update user profile status to active
+      // Update user profile status to active and transfer invitation data
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Get invitation data from user metadata
+        const invitationData = user.user_metadata || {};
+        
+        console.log("User metadata from invitation:", invitationData);
+        
+        // Update profile with invitation data and set status to active
+        const profileUpdates: any = {
+          status: "active",
+          updated_at: new Date().toISOString()
+        };
+        
+        // Transfer name data from invitation if available
+        if (invitationData.firstName) {
+          profileUpdates.first_name = invitationData.firstName;
+        }
+        if (invitationData.lastName) {
+          profileUpdates.last_name = invitationData.lastName;
+        }
+        if (invitationData.phone) {
+          profileUpdates.phone = invitationData.phone;
+        }
+        if (invitationData.licenseNumber) {
+          profileUpdates.license_number = invitationData.licenseNumber;
+        }
+        
+        console.log("Updating profile with:", profileUpdates);
+        
         const { error: profileError } = await supabase
           .from("user_profiles")
-          .update({ 
-            status: "active",
-            updated_at: new Date().toISOString()
-          })
+          .update(profileUpdates)
           .eq("id", user.id);
 
         if (profileError) {
-          console.warn("Profile update failed:", profileError);
+          console.error("Profile update failed:", profileError);
+          throw new Error("Failed to complete profile setup. Please contact support.");
         }
+        
+        console.log("Profile updated successfully");
       }
 
       setSuccess("Account setup complete! Redirecting to dashboard...");
