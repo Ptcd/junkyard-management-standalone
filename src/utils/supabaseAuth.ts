@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY } from "./config";
 
 // Create Supabase client with standard settings (no custom CORS headers)
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -20,6 +20,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     schema: 'public'
   }
 });
+
+// Create admin client for admin operations (like inviting users)
+export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY 
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
 
 export interface User {
   id: string;
@@ -47,10 +57,14 @@ export const inviteUser = async (
   try {
     console.log("Inviting user:", email, userData);
 
-    // Use Supabase's invitation flow
+    if (!supabaseAdmin) {
+      throw new Error("Admin operations require SUPABASE_SERVICE_ROLE_KEY to be configured. Please add it to your environment variables.");
+    }
+
+    // Use Supabase's invitation flow with admin client
     const redirectTo = `${window.location.origin}/complete-signup`;
     
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: redirectTo,
       data: userData // This gets stored in user_metadata
     });
@@ -502,6 +516,10 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
   try {
     console.log("Starting admin deletion for user:", targetUserId);
     
+    if (!supabaseAdmin) {
+      throw new Error("Admin operations require SUPABASE_SERVICE_ROLE_KEY to be configured.");
+    }
+    
     // First get user info before deletion
     const { data: userData, error: getUserError } = await supabase
       .from("user_profiles")
@@ -546,9 +564,9 @@ export const deleteUserAsAdmin = async (targetUserId: string) => {
       
       console.log("Successfully deleted user profile");
       
-      // Step 3: Delete the auth record so they can be re-invited
+      // Step 3: Delete the auth record so they can be re-invited (using admin client)
       console.log("Deleting auth record...");
-      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(targetUserId);
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
       
       if (authDeleteError) {
         console.warn("Failed to delete auth record:", authDeleteError);
@@ -627,8 +645,12 @@ export const deleteOrphanedAuthRecord = async (email: string) => {
   try {
     console.log("Looking for orphaned auth record for email:", email);
     
+    if (!supabaseAdmin) {
+      throw new Error("Admin operations require SUPABASE_SERVICE_ROLE_KEY to be configured.");
+    }
+    
     // First, check if user exists in auth but not in profiles
-    const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+    const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
       console.error("Error listing users:", listError);
@@ -644,7 +666,7 @@ export const deleteOrphanedAuthRecord = async (email: string) => {
     console.log("Found orphaned auth record:", orphanedUser.id);
     
     // Delete the auth record
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(orphanedUser.id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(orphanedUser.id);
     
     if (deleteError) {
       console.error("Failed to delete auth record:", deleteError);
@@ -666,7 +688,11 @@ export const deleteOrphanedAuthRecord = async (email: string) => {
 // Helper function to check if user exists in auth by email
 export const checkUserExistsInAuth = async (email: string) => {
   try {
-    const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+    if (!supabaseAdmin) {
+      throw new Error("Admin operations require SUPABASE_SERVICE_ROLE_KEY to be configured.");
+    }
+    
+    const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
       console.error("Error listing users:", listError);

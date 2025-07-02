@@ -1,6 +1,7 @@
 // Supabase Configuration
 export const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || "";
 export const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || "";
+export const SUPABASE_SERVICE_ROLE_KEY = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Site Configuration
 export const SITE_URL = "https://junk.autosalvageautomation.com";
@@ -9,6 +10,13 @@ export const SITE_URL = "https://junk.autosalvageautomation.com";
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error(
     "Missing Supabase configuration. Please check your environment variables.",
+  );
+}
+
+// Warn if service role key is missing (needed for admin functions)
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn(
+    "Missing SUPABASE_SERVICE_ROLE_KEY. Admin functions like user invitations will not work.",
   );
 }
 
