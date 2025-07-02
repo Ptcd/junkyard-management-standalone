@@ -9,11 +9,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,
     flowType: "pkce",
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: "junkyard-auth-token",
+    storageKey: "junkyard-auth-main",
   },
   global: {
     headers: {
-      'X-Client-Info': 'junkyard-management-mobile'
+      'X-Client-Info': 'junkyard-management-main'
     }
   },
   db: {
@@ -27,7 +27,13 @@ export const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-        storageKey: "junkyard-admin-token", // Different storage key to avoid conflicts
+        detectSessionInUrl: false,
+        storageKey: "junkyard-auth-admin",
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'junkyard-management-admin'
+        }
       }
     })
   : null;
@@ -90,25 +96,37 @@ export const inviteUser = async (
 
     // Store role and user data in a pending invitations table or user_profiles
     if (data.user) {
-      // Create user profile with pending status
+      // Use upsert to handle existing profiles gracefully
+      const profileData = {
+        id: data.user.id,
+        email: email,
+        role: userData.role || "driver",
+        yard_id: userData.yardId || "default-yard",
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        phone: userData.phone,
+        license_number: userData.licenseNumber || "",
+        status: "pending", // User needs to complete signup
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log("Creating/updating user profile:", profileData);
+
+      // Use upsert (insert with conflict resolution) to handle existing records
       const { error: profileError } = await supabase
         .from("user_profiles")
-        .insert({
-          id: data.user.id,
-          email: email,
-          role: userData.role || "driver",
-          yard_id: userData.yardId || "default-yard",
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          phone: userData.phone,
-          license_number: userData.licenseNumber || "",
-          status: "pending", // User needs to complete signup
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+        .upsert(profileData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false // Update existing record if conflict
         });
 
       if (profileError) {
-        console.warn("Profile creation failed, but invitation was sent:", profileError);
+        console.error("Profile creation/update failed:", profileError);
+        // Don't throw here - the invitation was still sent successfully
+        console.warn("Profile creation failed, but invitation was sent. User can still complete signup.");
+      } else {
+        console.log("User profile created/updated successfully");
       }
     }
 
@@ -199,7 +217,12 @@ export const getCurrentUser = async () => {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return { user: null, error: "No authenticated user" };
+    if (!user) {
+      console.log("No authenticated user found");
+      return { user: null, error: "No authenticated user" };
+    }
+
+    console.log("Found authenticated user:", user.id, user.email);
 
     const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
@@ -207,7 +230,17 @@ export const getCurrentUser = async () => {
       .eq("id", user.id)
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Profile lookup failed for user:", user.id, profileError);
+      throw profileError;
+    }
+
+    if (!profile) {
+      console.error("No profile found for authenticated user:", user.id);
+      throw new Error("User profile not found - contact administrator");
+    }
+
+    console.log("Found user profile:", profile.first_name, profile.last_name, profile.role);
 
     const userData: User = {
       id: profile.id,
@@ -224,6 +257,7 @@ export const getCurrentUser = async () => {
 
     return { user: userData, error: null };
   } catch (error) {
+    console.error("getCurrentUser error:", error);
     return { user: null, error };
   }
 };
