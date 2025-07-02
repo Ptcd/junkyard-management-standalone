@@ -48,7 +48,7 @@ import { getDriverExpenses, getExpenseStats } from "../utils/expenseManager";
 import {
   User,
   getAllUsers,
-  signUp,
+  inviteUser,
   updateUserProfile,
   deleteUserAsAdmin,
 } from "../utils/supabaseAuth";
@@ -64,13 +64,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [newUser, setNewUser] = useState({
-    password: "",
     firstName: "",
     lastName: "",
     role: "driver" as "admin" | "driver",
@@ -96,7 +94,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   const handleAddUser = async () => {
     if (
-      !newUser.password ||
       !newUser.firstName ||
       !newUser.lastName ||
       !newUser.email
@@ -115,9 +112,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       licenseNumber: newUser.licenseNumber,
     };
 
-    const { data, error: createError } = await signUp(
+    const { data, error: createError } = await inviteUser(
       newUser.email,
-      newUser.password,
       userData,
     );
 
@@ -125,13 +121,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       setError(
         typeof createError === "string"
           ? createError
-          : (createError as any)?.message || "Failed to create user",
+          : (createError as any)?.message || "Failed to send invitation",
       );
     } else if (data?.user) {
-      setSuccess("User added successfully!");
+      setSuccess(`Invitation sent to ${newUser.email}! They will receive an email to complete their account setup.`);
       setShowAddUserDialog(false);
       setNewUser({
-        password: "",
         firstName: "",
         lastName: "",
         role: "driver",
@@ -197,7 +192,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       if (result.error) {
         setError(`Failed to delete user: ${result.error}`);
       } else if (result.success) {
-        setSuccess(`User ${userToDelete.firstName} ${userToDelete.lastName} deleted successfully!`);
+        setSuccess(`User ${userToDelete.firstName} ${userToDelete.lastName} access removed successfully! All their data has been preserved.`);
         
         // Log deletion summary if available
         if (result.deletionSummary) {
@@ -349,7 +344,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
           startIcon={<PersonAdd />}
           onClick={() => setShowAddUserDialog(true)}
         >
-          Add User
+          Invite User
         </Button>
       </Stack>
 
@@ -448,10 +443,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="delete-dialog-title">
+        <DialogTitle>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <WarningIcon color="error" />
-            <Typography variant="h6">Permanently Delete User</Typography>
+            <WarningIcon color="warning" />
+            <Typography variant="h6">Remove User Access</Typography>
           </Stack>
         </DialogTitle>
         <DialogContent>
@@ -482,17 +477,36 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary">
-                  This will permanently delete:
+                  This will permanently delete the user account, but preserve all their data:
                 </Typography>
-                <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-                  <li>User account and authentication</li>
-                  <li>All vehicle transactions by this user</li>
-                  <li>All vehicle sales by this user</li>
-                  <li>All cash transactions by this user</li>
-                  <li>All expense reports by this user</li>
-                  <li>All NMVTIS reports by this user</li>
-                  <li>Associated document files</li>
-                </ul>
+                
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom color="error.main">
+                    <strong>Will be deleted:</strong>
+                  </Typography>
+                  <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                    <li>User account and authentication access</li>
+                    <li>User login credentials</li>
+                  </ul>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom color="success.main">
+                    <strong>Will be preserved for business records:</strong>
+                  </Typography>
+                  <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                    <li>All vehicle transactions (marked as "Deleted User")</li>
+                    <li>All vehicle sales records</li>
+                    <li>All cash transaction history</li>
+                    <li>All expense reports</li>
+                    <li>All NMVTIS reports</li>
+                    <li>Associated document files</li>
+                  </ul>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    💡 Data is preserved for legal compliance, auditing, and business continuity. 
+                    Only the user's access is removed.
+                  </Typography>
+                </Box>
               </>
             )}
           </DialogContentText>
@@ -506,12 +520,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
           </Button>
           <Button 
             onClick={confirmDeleteUser} 
-            color="error" 
+            color="warning" 
             variant="contained"
             disabled={deleting}
             startIcon={deleting ? null : <Delete />}
           >
-            {deleting ? "Deleting..." : "Delete Permanently"}
+            {deleting ? "Removing..." : "Remove User Access"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -523,7 +537,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add New User</DialogTitle>
+        <DialogTitle>Invite New User</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={2}>
@@ -553,24 +567,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                 setNewUser((prev) => ({ ...prev, email: e.target.value }))
               }
               fullWidth
-            />
-
-            <TextField
-              label="Password *"
-              type={showPassword ? "text" : "password"}
-              value={newUser.password}
-              onChange={(e) =>
-                setNewUser((prev) => ({ ...prev, password: e.target.value }))
-              }
-              fullWidth
-              helperText="Password must be at least 6 characters"
-              InputProps={{
-                endAdornment: (
-                  <IconButton onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                ),
-              }}
+              helperText="User will receive an invitation email to complete their account setup"
             />
 
             <FormControl fullWidth>
@@ -618,7 +615,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
             variant="contained"
             disabled={loading}
           >
-            {loading ? "Adding..." : "Add User"}
+            {loading ? "Sending Invitation..." : "Send Invitation"}
           </Button>
         </DialogActions>
       </Dialog>

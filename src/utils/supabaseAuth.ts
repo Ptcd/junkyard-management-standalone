@@ -39,82 +39,64 @@ export interface AuthUser {
   session: any;
 }
 
-// Sign up a new user
-export const signUp = async (
+// Invite user via email (better than signUp with password)
+export const inviteUser = async (
   email: string,
-  password: string,
   userData: Partial<User>,
 ) => {
   try {
-    console.log("Starting signUp with:", { email, userData });
+    console.log("Inviting user:", email, userData);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          role: userData.role || "driver",
-        },
-      },
+    // Use Supabase's invitation flow
+    const redirectTo = `${window.location.origin}/complete-signup`;
+    
+    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: redirectTo,
+      data: userData // This gets stored in user_metadata
     });
 
-    console.log("Auth signUp result:", { data, error });
-
     if (error) {
-      // Provide more specific error messages for common issues
-      if (error.message.includes('rate limit')) {
-        throw new Error("Too many signup attempts. Please wait an hour before trying again, or use a different email address.");
-      }
+      console.error("Invitation error:", error);
+      
       if (error.message.includes('already registered')) {
-        throw new Error("An account with this email already exists. Please try signing in instead.");
+        throw new Error("An account with this email already exists.");
       }
       if (error.message.includes('invalid email')) {
         throw new Error("Please enter a valid email address.");
-      }
-      if (error.message.includes('password')) {
-        throw new Error("Password must be at least 6 characters long.");
       }
       
       throw error;
     }
 
-    // If signup succeeds, try to update the profile
-    if (data.user) {
-      // Wait for trigger to create profile
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    console.log("Invitation sent successfully:", data);
 
-      // Try to update the profile with correct data
-      const { error: updateError } = await supabase
+    // Store role and user data in a pending invitations table or user_profiles
+    if (data.user) {
+      // Create user profile with pending status
+      const { error: profileError } = await supabase
         .from("user_profiles")
-        .update({
+        .insert({
+          id: data.user.id,
+          email: email,
           role: userData.role || "driver",
           yard_id: userData.yardId || "default-yard",
           first_name: userData.firstName,
           last_name: userData.lastName,
           phone: userData.phone,
           license_number: userData.licenseNumber || "",
-          hire_date: new Date().toISOString().split("T")[0],
-          status: "active",
+          status: "pending", // User needs to complete signup
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", data.user.id);
+        });
 
-      console.log("Profile update result:", { updateError });
-
-      // Don't fail if profile update fails - the trigger should handle basic creation
-      if (updateError) {
-        console.warn(
-          "Profile update failed, but user was created:",
-          updateError,
-        );
+      if (profileError) {
+        console.warn("Profile creation failed, but invitation was sent:", profileError);
       }
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error("SignUp error:", error);
+    console.error("Invite user error:", error);
     return { data: null, error };
   }
 };

@@ -1,0 +1,239 @@
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Alert,
+  Stack,
+  IconButton,
+} from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { supabase } from "../utils/supabaseAuth";
+import { useNavigate } from "react-router-dom";
+
+const CompleteSignup: React.FC = () => {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user has a valid session from invitation
+    const checkInviteSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          setError("Invalid or expired invitation link.");
+          return;
+        }
+
+        if (session?.user) {
+          setUserEmail(session.user.email || "");
+          
+          // Check if user already has a password set
+          if (session.user.user_metadata?.invitation_accepted) {
+            navigate("/");
+            return;
+          }
+        } else {
+          // Try to handle invitation from URL parameters
+          const urlParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = urlParams.get('access_token');
+          const refreshToken = urlParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (sessionError) {
+              setError("Invalid or expired invitation link.");
+            } else {
+              window.location.reload(); // Reload to get session
+            }
+          } else {
+            setError("Invalid invitation link. Please request a new invitation.");
+          }
+        }
+      } catch (err) {
+        console.error("Error checking session:", err);
+        setError("Something went wrong. Please try again.");
+      }
+    };
+
+    checkInviteSession();
+  }, [navigate]);
+
+  const handleCompleteSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Update user password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password,
+        data: {
+          invitation_accepted: true
+        }
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update user profile status to active
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from("user_profiles")
+          .update({ 
+            status: "active",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", user.id);
+
+        if (profileError) {
+          console.warn("Profile update failed:", profileError);
+        }
+      }
+
+      setSuccess("Account setup complete! Redirecting to dashboard...");
+      
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+
+    } catch (err: any) {
+      console.error("Signup completion error:", err);
+      setError(err.message || "Failed to complete account setup. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "grey.50",
+        p: 2,
+      }}
+    >
+      <Card sx={{ maxWidth: 400, width: "100%" }}>
+        <CardContent sx={{ p: 4 }}>
+          <Typography variant="h4" align="center" gutterBottom>
+            Complete Your Account
+          </Typography>
+          
+          {userEmail && (
+            <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
+              Setting up account for: <strong>{userEmail}</strong>
+            </Typography>
+          )}
+
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+            Create a secure password to complete your account setup.
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
+
+          <form onSubmit={handleCompleteSignup}>
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label="Create Password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                helperText="Must be at least 6 characters"
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+                required
+              />
+
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  ),
+                }}
+                required
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={loading}
+                sx={{ mt: 2 }}
+              >
+                {loading ? "Setting up account..." : "Complete Setup"}
+              </Button>
+            </Stack>
+          </form>
+
+          <Typography variant="caption" color="text.secondary" align="center" display="block" sx={{ mt: 2 }}>
+            Having trouble? Contact your administrator for assistance.
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
+
+export default CompleteSignup; 

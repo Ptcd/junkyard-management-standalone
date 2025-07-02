@@ -57,6 +57,7 @@ import {
 } from "@mui/icons-material";
 import Login from "./components/Login";
 import PasswordReset from "./components/PasswordReset";
+import CompleteSignup from "./components/CompleteSignup";
 import AdminDashboard from "./components/AdminDashboard";
 import DriverDashboard from "./components/DriverDashboard";
 import VehiclePurchase from "./components/VehiclePurchase";
@@ -623,6 +624,7 @@ function App() {
         <Routes>
           {/* Public routes - no authentication required */}
           <Route path="/reset-password" element={<PasswordReset />} />
+          <Route path="/complete-signup" element={<CompleteSignup />} />
           
           {/* Protected routes - authentication required */}
           <Route path="/*" element={
